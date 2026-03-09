@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(done)",
+      "Bash(wc:*)",
+      "Bash(node scripts/generate-word-all.mjs:*)",
+      "Bash(python3:*)",
+      "Bash(node -e:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}

@@ -1,0 +1,4586 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ORDERS_QUICK_REFERENCE.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="referencia-rapida--modulo-de-ordenes">Referencia Rapida — Modulo de Ordenes</h1>
+<h2 id="tms-navitel--cheat-sheet-para-desarrollo">TMS Navitel · Cheat Sheet para Desarrollo</h2>
+<blockquote>
+<p><strong>Basado en:</strong> ORDERS_SYSTEM_DESIGN4.md (v4.0)
+<strong>Fecha:</strong> Febrero 2026
+<strong>Proposito:</strong> Consulta rapida para desarrolladores. Para detalle completo, ver el documento fuente.</p>
+</blockquote>
+<hr>
+<h2 id="indice">Indice</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Seccion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><a href="#1-contexto-del-modulo">Contexto del Modulo</a></td>
+</tr>
+<tr>
+<td>2</td>
+<td><a href="#2-entidades-del-dominio">Entidades del Dominio</a></td>
+</tr>
+<tr>
+<td>3</td>
+<td><a href="#3-modelo-de-base-de-datos--postgresql">Modelo de Base de Datos — PostgreSQL</a></td>
+</tr>
+<tr>
+<td>4</td>
+<td><a href="#4-maquina-de-estados--orderstatus">Maquina de Estados — OrderStatus</a></td>
+</tr>
+<tr>
+<td>5</td>
+<td><a href="#5-maquina-de-estados--milestonestatus">Maquina de Estados — MilestoneStatus</a></td>
+</tr>
+<tr>
+<td>6</td>
+<td><a href="#6-maquina-de-estados--ordersyncstatus">Maquina de Estados — OrderSyncStatus</a></td>
+</tr>
+<tr>
+<td>7</td>
+<td><a href="#7-tabla-de-referencia-operativa-de-transiciones">Tabla de Referencia Operativa de Transiciones</a></td>
+</tr>
+<tr>
+<td>8</td>
+<td><a href="#8-casos-de-uso--referencia-backend">Casos de Uso — Referencia Backend</a></td>
+</tr>
+<tr>
+<td>9</td>
+<td><a href="#9-endpoints-api-rest">Endpoints API REST</a></td>
+</tr>
+<tr>
+<td>10</td>
+<td><a href="#10-eventos-de-dominio">Eventos de Dominio</a></td>
+</tr>
+<tr>
+<td>11</td>
+<td><a href="#11-reglas-de-negocio-clave">Reglas de Negocio Clave</a></td>
+</tr>
+<tr>
+<td>12</td>
+<td><a href="#12-catalogo-de-errores-http">Catalogo de Errores HTTP</a></td>
+</tr>
+<tr>
+<td>13</td>
+<td><a href="#13-permisos-rbac">Permisos RBAC</a></td>
+</tr>
+<tr>
+<td>14</td>
+<td><a href="#14-diagrama-de-componentes">Diagrama de Componentes</a></td>
+</tr>
+<tr>
+<td>15</td>
+<td><a href="#15-diagrama-de-despliegue">Diagrama de Despliegue</a></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h1 id="1-contexto-del-modulo">1. Contexto del Modulo</h1>
+<pre><code class="language-mermaid"><div class="mermaid">graph TB
+    subgraph "TMS Navitel"
+        ORD["MODULO ORDENES<br/>(Nucleo)"]
+    end
+
+    MASTER["Modulo Maestro<br/>Clientes - Vehiculos - Conductores<br/>Geocercas - Operadores"]
+    WORKFLOW["Modulo Workflows<br/>Plantillas de flujo operativo"]
+    MONITOR["Modulo Monitoreo<br/>Tracking GPS - Geocercas"]
+    SCHED["Modulo Programacion<br/>Asignacion de recursos"]
+    FIN["Modulo Finanzas<br/>Facturacion - Costos"]
+    REP["Modulo Reportes<br/>Analisis - Metricas"]
+    ROUTE["Route Planner<br/>Optimizacion de rutas"]
+    GPS["Sistemas GPS Externos<br/>Wialon - Navitel Fleet"]
+
+    MASTER -->|provee datos base| ORD
+    WORKFLOW -->|auto-asigna flujo| ORD
+    ORD -->|eventos de estado| MONITOR
+    ORD -->|eventos de estado| SCHED
+    ORD -->|orden completada/cerrada| FIN
+    ORD -->|datos de ordenes| REP
+    ORD <-->|ordenes planificables| ROUTE
+    ORD -->|sincronizacion| GPS
+</div></code></pre>
+<p><strong>Responsabilidades:</strong> CRUD de ordenes, gestion de estados (9 estados, 18 transiciones), hitos de ruta, asignacion de recursos con deteccion de conflictos, cierre administrativo, sincronizacion GPS, importacion/exportacion masiva, eventos de dominio, conexion con workflows.</p>
+<hr>
+<h1 id="2-entidades-del-dominio">2. Entidades del Dominio</h1>
+<pre><code class="language-mermaid"><div class="mermaid">erDiagram
+    Order ||--|{ OrderMilestone : "milestones (2..*)"
+    Order ||--o| OrderCargo : "cargo (0..1)"
+    Order ||--o| OrderClosureData : "closureData (0..1)"
+    Order ||--|{ StatusHistoryEntry : "statusHistory (1..*)"
+    OrderClosureData ||--o{ OrderIncidentRecord : "incidents (0..*)"
+    OrderClosureData ||--o{ DeviationReason : "deviationReasons (0..*)"
+    OrderMilestone ||--o| ManualEntryData : "manualEntryData (0..1)"
+</div></code></pre>
+<table>
+<thead>
+<tr>
+<th>Entidad</th>
+<th>Tipo</th>
+<th>Campos clave</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Order</strong></td>
+<td>Raiz (aggregate root)</td>
+<td>id, orderNumber, customerId, status, syncStatus, milestones, cargo, closureData, statusHistory</td>
+<td>Entidad principal. Ciclo de vida completo de un servicio de transporte.</td>
+</tr>
+<tr>
+<td><strong>OrderMilestone</strong></td>
+<td>Sub-entidad</td>
+<td>id, orderId, name, type, sequence, status, coordinates, geofenceId</td>
+<td>Punto de control en la ruta (origen, waypoint, destino). Min 2 por orden.</td>
+</tr>
+<tr>
+<td><strong>OrderCargo</strong></td>
+<td>Value Object</td>
+<td>type, description, weight, volume, quantity, declaredValue</td>
+<td>Datos de la carga transportada.</td>
+</tr>
+<tr>
+<td><strong>OrderClosureData</strong></td>
+<td>Value Object</td>
+<td>observations, incidents, deliveryPhotos, customerSignature, customerRating</td>
+<td>Datos del cierre administrativo. Solo existe cuando status = closed.</td>
+</tr>
+<tr>
+<td><strong>StatusHistoryEntry</strong></td>
+<td>Sub-entidad</td>
+<td>id, fromStatus, toStatus, changedAt, changedBy, reason</td>
+<td>Registro inmutable de cada transicion de estado.</td>
+</tr>
+<tr>
+<td><strong>OrderIncidentRecord</strong></td>
+<td>Sub-entidad</td>
+<td>id, incidentCatalogId, severity, freeDescription</td>
+<td>Incidencia registrada durante el servicio.</td>
+</tr>
+<tr>
+<td><strong>DeviationReason</strong></td>
+<td>Value Object</td>
+<td>type, description, impact</td>
+<td>Motivo de desviacion respecto al plan original.</td>
+</tr>
+<tr>
+<td><strong>ManualEntryData</strong></td>
+<td>Value Object</td>
+<td>entryType, reason, observation, evidence</td>
+<td>Datos de registro manual de hito (sin GPS).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="campos-clave-de-order-resumen">Campos clave de Order (resumen)</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Obligatorio</th>
+<th>Descripcion rapida</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>UUID</td>
+<td>Si</td>
+<td>PK, auto-generado</td>
+</tr>
+<tr>
+<td>orderNumber</td>
+<td>String</td>
+<td>Si</td>
+<td>Formato: <code>ORD-YYYY-NNNNN</code> (14 chars, 5 digitos), unico e inmutable</td>
+</tr>
+<tr>
+<td>customerId</td>
+<td>UUID FK</td>
+<td>Si</td>
+<td>Cliente que solicita el servicio</td>
+</tr>
+<tr>
+<td>vehicleId</td>
+<td>UUID FK</td>
+<td>No</td>
+<td>Vehiculo asignado (se asigna al transicionar a assigned)</td>
+</tr>
+<tr>
+<td>driverId</td>
+<td>UUID FK</td>
+<td>No</td>
+<td>Conductor asignado (junto con vehicleId)</td>
+</tr>
+<tr>
+<td>serviceType</td>
+<td>Enum</td>
+<td>Si</td>
+<td>9 valores: distribucion, importacion, exportacion, minero, residuos, interprovincial, mudanza, courier, otro</td>
+</tr>
+<tr>
+<td>priority</td>
+<td>Enum</td>
+<td>Si</td>
+<td>low, normal, high, urgent</td>
+</tr>
+<tr>
+<td>status</td>
+<td>Enum</td>
+<td>Si</td>
+<td>9 estados (ver seccion 4). Default: draft</td>
+</tr>
+<tr>
+<td>syncStatus</td>
+<td>Enum</td>
+<td>Si</td>
+<td>6 estados: not_sent, pending, sending, sent, error, retry</td>
+</tr>
+<tr>
+<td>completionPercentage</td>
+<td>Integer</td>
+<td>Si</td>
+<td>0-100, auto-calculado: (hitos_completed + hitos_skipped) / total x 100</td>
+</tr>
+<tr>
+<td>scheduledStartDate</td>
+<td>DateTime</td>
+<td>No</td>
+<td>Debe ser anterior a scheduledEndDate</td>
+</tr>
+<tr>
+<td>scheduledEndDate</td>
+<td>DateTime</td>
+<td>No</td>
+<td>Fecha programada de fin</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h1 id="3-modelo-de-base-de-datos--postgresql">3. Modelo de Base de Datos — PostgreSQL</h1>
+<blockquote>
+<p>Esquema relacional para PostgreSQL + PostGIS. Todas las tablas usan <code>UUID</code> como PK y timestamps UTC.</p>
+</blockquote>
+<h3 id="diagrama-entidad-relacion">Diagrama Entidad-Relacion</h3>
+<pre><code class="language-mermaid"><div class="mermaid">erDiagram
+    orders ||--|{ order_milestones : "tiene 2..*"
+    orders ||--o| order_cargo : "tiene 0..1"
+    orders ||--o| order_closure_data : "tiene 0..1"
+    orders ||--|{ order_status_history : "tiene 1..*"
+    order_closure_data ||--o{ order_incidents : "tiene 0..*"
+    order_closure_data ||--o{ order_deviations : "tiene 0..*"
+    order_milestones ||--o| milestone_manual_entry : "tiene 0..1"
+
+    orders {
+        UUID id PK
+        VARCHAR_14 order_number UK
+        UUID customer_id FK
+        UUID vehicle_id FK
+        UUID driver_id FK
+        UUID carrier_id FK
+        UUID gps_operator_id FK
+        UUID workflow_id FK
+        VARCHAR_25 service_type
+        VARCHAR_6 priority
+        VARCHAR_12 status
+        VARCHAR_8 sync_status
+        TIMESTAMP scheduled_start_date
+        TIMESTAMP scheduled_end_date
+        TIMESTAMP actual_start_date
+        TIMESTAMP actual_end_date
+        INTEGER completion_percentage
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        VARCHAR_100 created_by
+        VARCHAR_100 updated_by
+        TIMESTAMP deleted_at
+        VARCHAR_100 deleted_by
+    }
+
+    order_milestones {
+        UUID id PK
+        UUID order_id FK
+        VARCHAR_200 name
+        VARCHAR_20 type
+        INTEGER sequence
+        VARCHAR_500 address
+        DECIMAL_9_6 lat
+        DECIMAL_9_6 lng
+        UUID geofence_id FK
+        VARCHAR_12 status
+        TIMESTAMP estimated_arrival
+        TIMESTAMP actual_arrival
+        TIMESTAMP actual_departure
+        INTEGER dwell_time_min
+        INTEGER delay_minutes
+        BOOLEAN is_manual
+    }
+
+    order_cargo {
+        UUID id PK
+        UUID order_id FK
+        VARCHAR_20 type
+        VARCHAR_500 description
+        DECIMAL_10_2 weight_kg
+        DECIMAL_8_2 volume_m3
+        INTEGER quantity
+        DECIMAL_12_2 declared_value
+        BOOLEAN requires_refrigeration
+        DECIMAL_5_2 temp_min
+        DECIMAL_5_2 temp_max
+        VARCHAR_3 hazardous_class
+    }
+
+    order_closure_data {
+        UUID id PK
+        UUID order_id FK
+        TEXT observations
+        TIMESTAMP closed_at
+        VARCHAR_100 closed_by
+        VARCHAR_200 closed_by_name
+        INTEGER completed_milestones
+        INTEGER total_milestones
+        DECIMAL_10_2 total_distance_km
+        INTEGER total_duration_min
+        INTEGER customer_rating
+        DECIMAL_8_2 fuel_consumed
+        DECIMAL_8_2 tolls_cost
+    }
+
+    order_status_history {
+        UUID id PK
+        UUID order_id FK
+        VARCHAR_12 from_status
+        VARCHAR_12 to_status
+        TIMESTAMP changed_at
+        VARCHAR_100 changed_by
+        VARCHAR_200 changed_by_name
+        TEXT reason
+    }
+
+    order_incidents {
+        UUID id PK
+        UUID closure_id FK
+        UUID incident_catalog_id FK
+        VARCHAR_200 incident_name
+        TEXT free_description
+        VARCHAR_8 severity
+        TIMESTAMP occurred_at
+        UUID milestone_id FK
+        TEXT action_taken
+    }
+
+    order_deviations {
+        UUID id PK
+        UUID closure_id FK
+        VARCHAR_20 type
+        TEXT description
+        DECIMAL_10_2 impact_value
+        VARCHAR_10 impact_unit
+    }
+
+    milestone_manual_entry {
+        UUID id PK
+        UUID milestone_id FK
+        VARCHAR_10 entry_type
+        VARCHAR_30 reason
+        TEXT observation
+        TIMESTAMP registered_at
+        VARCHAR_100 registered_by
+    }
+</div></code></pre>
+<h3 id="tablas-columnas-y-tipos-de-dato">Tablas, Columnas y Tipos de Dato</h3>
+<h4 id="tabla-orders-entidad-raiz">Tabla: <code>orders</code> (Entidad raiz)</h4>
+<blockquote>
+<p><strong>Nota sobre <code>order_number</code></strong>: No se genera via DEFAULT de PostgreSQL. Lo genera la <strong>capa de aplicacion</strong> (servicio <code>OrderService.generateOrderNumber()</code>) con formato <code>ORD-YYYY-NNNNN</code> usando una tabla auxiliar <code>order_number_sequence</code> con lock <code>SELECT FOR UPDATE</code> para garantizar unicidad sin gaps. La columna tiene constraint <code>UNIQUE</code> como red de seguridad.</p>
+<pre class="hljs"><code><div><span class="hljs-comment">-- Tabla auxiliar (fuera del schema de orders, compartida por el sistema)</span>
+<span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> order_number_sequence (
+  <span class="hljs-keyword">year</span>     <span class="hljs-built_in">INTEGER</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,
+  last_seq <span class="hljs-built_in">INTEGER</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">0</span>,
+  PRIMARY <span class="hljs-keyword">KEY</span> (<span class="hljs-keyword">year</span>)
+);
+<span class="hljs-comment">-- Uso: SELECT last_seq FROM order_number_sequence WHERE year = 2026 FOR UPDATE;</span>
+<span class="hljs-comment">--       UPDATE order_number_sequence SET last_seq = last_seq + 1 WHERE year = 2026;</span>
+</div></code></pre>
+<p><strong>Nota sobre <code>created_by</code> / <code>updated_by</code></strong>: Se almacena el claim <code>sub</code> del JWT como string (<code>VARCHAR(100)</code>). <strong>No tiene FK a <code>users</code></strong> por diseno — permite auditar acciones incluso si el usuario es eliminado, y desacopla el modulo orders del modulo de autenticacion. Debe ser consistente con el campo <code>sub</code> del JWT en todo el sistema.</p>
+<p><strong>Nota sobre <code>metadata</code></strong>: PostgreSQL no tiene CHECK nativo para tamano de JSONB. Se usa <code>CHECK (octet_length(metadata::text) &lt;= 10240)</code> como constraint de base de datos <strong>mas</strong> validacion en capa de aplicacion. El CHECK tiene costo marginal en writes pero protege contra abusos directos a BD.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Columna</th>
+<th>Tipo PostgreSQL</th>
+<th>Nullable</th>
+<th>Default</th>
+<th>Constraint</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td><code>gen_random_uuid()</code></td>
+<td><strong>PK</strong></td>
+<td>Identificador unico</td>
+</tr>
+<tr>
+<td>order_number</td>
+<td><code>VARCHAR(14)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td><strong>UNIQUE</strong></td>
+<td>Formato ORD-YYYY-NNNNN. Generado por app (ver nota)</td>
+</tr>
+<tr>
+<td>external_reference</td>
+<td><code>VARCHAR(100)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Referencia del sistema externo</td>
+</tr>
+<tr>
+<td>customer_id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; customers(id)</td>
+<td>Cliente que solicita</td>
+</tr>
+<tr>
+<td>customer_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Desnormalizado de customers</td>
+</tr>
+<tr>
+<td>carrier_id</td>
+<td><code>UUID</code></td>
+<td>NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; operators(id)</td>
+<td>Transportista tercero</td>
+</tr>
+<tr>
+<td>carrier_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Desnormalizado</td>
+</tr>
+<tr>
+<td>vehicle_id</td>
+<td><code>UUID</code></td>
+<td>NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; vehicles(id)</td>
+<td>Vehiculo asignado</td>
+</tr>
+<tr>
+<td>vehicle_plate</td>
+<td><code>VARCHAR(8)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Desnormalizado, formato ABC-1234</td>
+</tr>
+<tr>
+<td>driver_id</td>
+<td><code>UUID</code></td>
+<td>NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; drivers(id)</td>
+<td>Conductor asignado</td>
+</tr>
+<tr>
+<td>driver_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Desnormalizado</td>
+</tr>
+<tr>
+<td>gps_operator_id</td>
+<td><code>UUID</code></td>
+<td>NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; operators(id)</td>
+<td>Operador GPS</td>
+</tr>
+<tr>
+<td>gps_operator_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Desnormalizado</td>
+</tr>
+<tr>
+<td>service_type</td>
+<td><code>VARCHAR(25)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK (9 valores)</td>
+<td>distribucion, importacion, exportacion, minero, residuos, interprovincial, mudanza, courier, otro</td>
+</tr>
+<tr>
+<td>priority</td>
+<td><code>VARCHAR(6)</code></td>
+<td>NOT NULL</td>
+<td><code>'normal'</code></td>
+<td>CHECK (4 valores)</td>
+<td>low, normal, high, urgent</td>
+</tr>
+<tr>
+<td>status</td>
+<td><code>VARCHAR(12)</code></td>
+<td>NOT NULL</td>
+<td><code>'draft'</code></td>
+<td>CHECK (9 valores)</td>
+<td>draft, pending, assigned, in_transit, at_milestone, delayed, completed, closed, cancelled</td>
+</tr>
+<tr>
+<td>sync_status</td>
+<td><code>VARCHAR(8)</code></td>
+<td>NOT NULL</td>
+<td><code>'not_sent'</code></td>
+<td>CHECK (6 valores)</td>
+<td>not_sent, pending, sending, sent, error, retry</td>
+</tr>
+<tr>
+<td>sync_error_message</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Mensaje de error GPS</td>
+</tr>
+<tr>
+<td>last_sync_attempt</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Ultimo intento de sync</td>
+</tr>
+<tr>
+<td>workflow_id</td>
+<td><code>UUID</code></td>
+<td>NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; workflows(id)</td>
+<td>Workflow asignado</td>
+</tr>
+<tr>
+<td>workflow_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Desnormalizado</td>
+</tr>
+<tr>
+<td>scheduled_start_date</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK (scheduled_start_date IS NULL OR scheduled_end_date IS NULL OR scheduled_start_date &lt; scheduled_end_date)</td>
+<td>Permite ambos NULL, uno NULL, o start &lt; end</td>
+</tr>
+<tr>
+<td>scheduled_end_date</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK (ver scheduled_start_date)</td>
+<td>Fecha programada fin</td>
+</tr>
+<tr>
+<td>actual_start_date</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Se llena al pasar a in_transit</td>
+</tr>
+<tr>
+<td>actual_end_date</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Se llena al pasar a completed</td>
+</tr>
+<tr>
+<td>estimated_distance</td>
+<td><code>DECIMAL(10,2)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 0</td>
+<td>Distancia estimada (km)</td>
+</tr>
+<tr>
+<td>actual_distance</td>
+<td><code>DECIMAL(10,2)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 0</td>
+<td>Distancia real (km)</td>
+</tr>
+<tr>
+<td>completion_percentage</td>
+<td><code>INTEGER</code></td>
+<td>NOT NULL</td>
+<td><code>0</code></td>
+<td>CHECK 0..100</td>
+<td>Auto-calculado</td>
+</tr>
+<tr>
+<td>cancellation_reason</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK (status != 'cancelled' OR cancellation_reason IS NOT NULL)</td>
+<td>Obligatorio si status=cancelled</td>
+</tr>
+<tr>
+<td>cancelled_at</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Timestamp de cancelacion</td>
+</tr>
+<tr>
+<td>cancelled_by</td>
+<td><code>VARCHAR(100)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Usuario que cancelo</td>
+</tr>
+<tr>
+<td>notes</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK char_length &lt;= 1000</td>
+<td>Notas generales</td>
+</tr>
+<tr>
+<td>reference</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Bill of Lading, guia, etc.</td>
+</tr>
+<tr>
+<td>tags</td>
+<td><code>JSONB</code></td>
+<td>NOT NULL</td>
+<td><code>'[]'</code></td>
+<td>—</td>
+<td>Array de strings</td>
+</tr>
+<tr>
+<td>metadata</td>
+<td><code>JSONB</code></td>
+<td>NOT NULL</td>
+<td><code>'{}'</code></td>
+<td>CHECK octet_length &lt;= 10240</td>
+<td>Campos custom extensibles (ver nota)</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NOT NULL</td>
+<td><code>NOW()</code></td>
+<td>—</td>
+<td>Inmutable</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NOT NULL</td>
+<td><code>NOW()</code></td>
+<td>—</td>
+<td>Se actualiza en cada write via trigger</td>
+</tr>
+<tr>
+<td>created_by</td>
+<td><code>VARCHAR(100)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>JWT <code>sub</code> claim. Sin FK a users (ver nota)</td>
+</tr>
+<tr>
+<td>updated_by</td>
+<td><code>VARCHAR(100)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>JWT <code>sub</code> del ultimo usuario que modifico</td>
+</tr>
+<tr>
+<td>deleted_at</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Soft delete. NULL = activa. Solo se llena si status=draft al eliminar</td>
+</tr>
+<tr>
+<td>deleted_by</td>
+<td><code>VARCHAR(100)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Usuario que elimino (JWT <code>sub</code>)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tabla-ordermilestones-hitos-de-ruta">Tabla: <code>order_milestones</code> (Hitos de ruta)</h4>
+<table>
+<thead>
+<tr>
+<th>Columna</th>
+<th>Tipo PostgreSQL</th>
+<th>Nullable</th>
+<th>Default</th>
+<th>Constraint</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td><code>gen_random_uuid()</code></td>
+<td><strong>PK</strong></td>
+<td>ID del hito</td>
+</tr>
+<tr>
+<td>order_id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; orders(id) ON DELETE CASCADE</td>
+<td>Orden padre</td>
+</tr>
+<tr>
+<td>name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Nombre del punto</td>
+</tr>
+<tr>
+<td>type</td>
+<td><code>VARCHAR(20)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK: origin, waypoint, destination</td>
+<td>Tipo de hito</td>
+</tr>
+<tr>
+<td>sequence</td>
+<td><code>INTEGER</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 1</td>
+<td>Posicion en ruta. origin=1, destination=ultimo</td>
+</tr>
+<tr>
+<td>address</td>
+<td><code>VARCHAR(500)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Direccion legible</td>
+</tr>
+<tr>
+<td>lat</td>
+<td><code>DECIMAL(9,6)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK -90..90</td>
+<td>Latitud (WGS 84)</td>
+</tr>
+<tr>
+<td>lng</td>
+<td><code>DECIMAL(9,6)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK -180..180</td>
+<td>Longitud (WGS 84)</td>
+</tr>
+<tr>
+<td>geofence_id</td>
+<td><code>UUID</code></td>
+<td>NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; geofences(id)</td>
+<td>Para deteccion GPS automatica</td>
+</tr>
+<tr>
+<td>geofence_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Desnormalizado</td>
+</tr>
+<tr>
+<td>status</td>
+<td><code>VARCHAR(12)</code></td>
+<td>NOT NULL</td>
+<td><code>'pending'</code></td>
+<td>CHECK (7 valores)</td>
+<td>pending, approaching, arrived, in_progress, completed, skipped, delayed</td>
+</tr>
+<tr>
+<td>estimated_arrival</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>ETA</td>
+</tr>
+<tr>
+<td>estimated_departure</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Hora estimada salida</td>
+</tr>
+<tr>
+<td>actual_arrival</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Hora real de llegada</td>
+</tr>
+<tr>
+<td>actual_departure</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Hora real de salida</td>
+</tr>
+<tr>
+<td>dwell_time_min</td>
+<td><code>INTEGER</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 0</td>
+<td>departure - arrival en minutos</td>
+</tr>
+<tr>
+<td>delay_minutes</td>
+<td><code>INTEGER</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Positivo=retraso, negativo=adelanto</td>
+</tr>
+<tr>
+<td>contact_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Contacto en el punto</td>
+</tr>
+<tr>
+<td>contact_phone</td>
+<td><code>VARCHAR(20)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Telefono del contacto</td>
+</tr>
+<tr>
+<td>notes</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Notas del hito</td>
+</tr>
+<tr>
+<td>is_manual</td>
+<td><code>BOOLEAN</code></td>
+<td>NOT NULL</td>
+<td><code>false</code></td>
+<td>—</td>
+<td>true si registro manual</td>
+</tr>
+<tr>
+<td>UNIQUE</td>
+<td></td>
+<td></td>
+<td></td>
+<td>(order_id, sequence)</td>
+<td>No duplicar secuencia por orden</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tabla-ordercargo-datos-de-carga">Tabla: <code>order_cargo</code> (Datos de carga)</h4>
+<table>
+<thead>
+<tr>
+<th>Columna</th>
+<th>Tipo PostgreSQL</th>
+<th>Nullable</th>
+<th>Default</th>
+<th>Constraint</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td><code>gen_random_uuid()</code></td>
+<td><strong>PK</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>order_id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; orders(id) ON DELETE CASCADE, <strong>UNIQUE</strong></td>
+<td>1:1 con orders</td>
+</tr>
+<tr>
+<td>type</td>
+<td><code>VARCHAR(20)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK: general, perishable, hazardous, fragile, bulk, liquid, refrigerated</td>
+<td>Tipo carga</td>
+</tr>
+<tr>
+<td>description</td>
+<td><code>VARCHAR(500)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK (char_length(description) &gt;= 3)</td>
+<td>Descripcion de mercancia</td>
+</tr>
+<tr>
+<td>weight_kg</td>
+<td><code>DECIMAL(10,2)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK 0.01..100000</td>
+<td>Peso en kg</td>
+</tr>
+<tr>
+<td>volume_m3</td>
+<td><code>DECIMAL(8,2)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK 0.01..1000</td>
+<td>Volumen metros cubicos</td>
+</tr>
+<tr>
+<td>quantity</td>
+<td><code>INTEGER</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK 1..99999</td>
+<td>Cantidad de bultos</td>
+</tr>
+<tr>
+<td>declared_value</td>
+<td><code>DECIMAL(12,2)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 0</td>
+<td>Valor declarado USD</td>
+</tr>
+<tr>
+<td>requires_refrigeration</td>
+<td><code>BOOLEAN</code></td>
+<td>NOT NULL</td>
+<td><code>false</code></td>
+<td>—</td>
+<td>Necesita cadena de frio</td>
+</tr>
+<tr>
+<td>temp_min</td>
+<td><code>DECIMAL(5,2)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK (requires_refrigeration = false OR temp_min IS NOT NULL)</td>
+<td>Obligatorio si requires_refrigeration</td>
+</tr>
+<tr>
+<td>temp_max</td>
+<td><code>DECIMAL(5,2)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK (requires_refrigeration = false OR temp_max IS NOT NULL), CHECK (temp_min IS NULL OR temp_max IS NULL OR temp_min &lt; temp_max)</td>
+<td>Obligatorio si requires_refrigeration</td>
+</tr>
+<tr>
+<td>hazardous_class</td>
+<td><code>VARCHAR(3)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK (type != 'hazardous' OR hazardous_class IS NOT NULL), CHECK 1..9</td>
+<td>Obligatorio si type=hazardous</td>
+</tr>
+<tr>
+<td>special_instructions</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK char_length &lt;= 2000</td>
+<td>Instrucciones de manejo</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tabla-orderclosuredata-cierre-administrativo">Tabla: <code>order_closure_data</code> (Cierre administrativo)</h4>
+<table>
+<thead>
+<tr>
+<th>Columna</th>
+<th>Tipo PostgreSQL</th>
+<th>Nullable</th>
+<th>Default</th>
+<th>Constraint</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td><code>gen_random_uuid()</code></td>
+<td><strong>PK</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>order_id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; orders(id), <strong>UNIQUE</strong></td>
+<td>1:1 con orders</td>
+</tr>
+<tr>
+<td>observations</td>
+<td><code>TEXT</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK (char_length(observations) BETWEEN 1 AND 5000)</td>
+<td>Obligatorio</td>
+</tr>
+<tr>
+<td>closed_at</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NOT NULL</td>
+<td><code>NOW()</code></td>
+<td>—</td>
+<td>Generado por backend</td>
+</tr>
+<tr>
+<td>closed_by</td>
+<td><code>VARCHAR(100)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>ID del usuario</td>
+</tr>
+<tr>
+<td>closed_by_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Nombre del usuario</td>
+</tr>
+<tr>
+<td>completed_milestones</td>
+<td><code>INTEGER</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 0</td>
+<td>Calculado por backend</td>
+</tr>
+<tr>
+<td>total_milestones</td>
+<td><code>INTEGER</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 2</td>
+<td>Calculado por backend</td>
+</tr>
+<tr>
+<td>total_distance_km</td>
+<td><code>DECIMAL(10,2)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 0</td>
+<td>Distancia recorrida</td>
+</tr>
+<tr>
+<td>total_duration_min</td>
+<td><code>INTEGER</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 0</td>
+<td>Duracion en minutos</td>
+</tr>
+<tr>
+<td>customer_signature</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK (customer_signature IS NULL OR octet_length(customer_signature) &lt;= 512000)</td>
+<td>Firma digital base64 (max 500KB)</td>
+</tr>
+<tr>
+<td>delivery_photos</td>
+<td><code>JSONB</code></td>
+<td>NOT NULL</td>
+<td><code>'[]'</code></td>
+<td>CHECK jsonb_array_length &lt;= 20</td>
+<td>Array de URLs de fotos</td>
+</tr>
+<tr>
+<td>customer_rating</td>
+<td><code>INTEGER</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK 1..5</td>
+<td>Escala Likert</td>
+</tr>
+<tr>
+<td>fuel_consumed</td>
+<td><code>DECIMAL(8,2)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 0</td>
+<td>Litros</td>
+</tr>
+<tr>
+<td>tolls_cost</td>
+<td><code>DECIMAL(8,2)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK &gt;= 0</td>
+<td>USD</td>
+</tr>
+<tr>
+<td>attachments</td>
+<td><code>JSONB</code></td>
+<td>NOT NULL</td>
+<td><code>'[]'</code></td>
+<td>CHECK jsonb_array_length &lt;= 50</td>
+<td>Documentos adjuntos</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tabla-orderstatushistory-historial-de-transiciones--inmutable">Tabla: <code>order_status_history</code> (Historial de transiciones — inmutable)</h4>
+<table>
+<thead>
+<tr>
+<th>Columna</th>
+<th>Tipo PostgreSQL</th>
+<th>Nullable</th>
+<th>Default</th>
+<th>Constraint</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td><code>gen_random_uuid()</code></td>
+<td><strong>PK</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>order_id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; orders(id) ON DELETE CASCADE</td>
+<td>Orden padre</td>
+</tr>
+<tr>
+<td>from_status</td>
+<td><code>VARCHAR(12)</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK (from_status IS NULL OR from_status IN ('draft','pending','assigned','in_transit','at_milestone','delayed','completed','closed','cancelled'))</td>
+<td>Estado origen. NULL = entrada inicial (creacion)</td>
+</tr>
+<tr>
+<td>to_status</td>
+<td><code>VARCHAR(12)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK (9 valores)</td>
+<td>Estado destino</td>
+</tr>
+<tr>
+<td>changed_at</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NOT NULL</td>
+<td><code>NOW()</code></td>
+<td>—</td>
+<td>Timestamp del cambio</td>
+</tr>
+<tr>
+<td>changed_by</td>
+<td><code>VARCHAR(100)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>ID del usuario/sistema</td>
+</tr>
+<tr>
+<td>changed_by_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Nombre legible</td>
+</tr>
+<tr>
+<td>reason</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>CHECK char_length &lt;= 1000</td>
+<td>Motivo (obligatorio para cancelled, via trigger)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tabla-orderincidents-incidencias-del-cierre">Tabla: <code>order_incidents</code> (Incidencias del cierre)</h4>
+<table>
+<thead>
+<tr>
+<th>Columna</th>
+<th>Tipo PostgreSQL</th>
+<th>Nullable</th>
+<th>Default</th>
+<th>Constraint</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td><code>gen_random_uuid()</code></td>
+<td><strong>PK</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>closure_id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; order_closure_data(id) ON DELETE CASCADE</td>
+<td>Cierre padre</td>
+</tr>
+<tr>
+<td>incident_catalog_id</td>
+<td><code>UUID</code></td>
+<td>NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; incident_catalog(id)</td>
+<td>Si null = incidencia libre</td>
+</tr>
+<tr>
+<td>incident_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Nombre descriptivo</td>
+</tr>
+<tr>
+<td>free_description</td>
+<td><code>TEXT</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK (char_length(free_description) &gt;= 1)</td>
+<td>Descripcion detallada</td>
+</tr>
+<tr>
+<td>severity</td>
+<td><code>VARCHAR(8)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK: low, medium, high, critical</td>
+<td>Severidad</td>
+</tr>
+<tr>
+<td>occurred_at</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Cuando ocurrio</td>
+</tr>
+<tr>
+<td>milestone_id</td>
+<td><code>UUID</code></td>
+<td>NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; order_milestones(id)</td>
+<td>Donde ocurrio (null = en transito)</td>
+</tr>
+<tr>
+<td>action_taken</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Accion correctiva</td>
+</tr>
+<tr>
+<td>evidence</td>
+<td><code>JSONB</code></td>
+<td>NOT NULL</td>
+<td><code>'[]'</code></td>
+<td>CHECK jsonb_array_length &lt;= 10</td>
+<td>Fotos/documentos</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tabla-orderdeviations-desviaciones-del-cierre">Tabla: <code>order_deviations</code> (Desviaciones del cierre)</h4>
+<table>
+<thead>
+<tr>
+<th>Columna</th>
+<th>Tipo PostgreSQL</th>
+<th>Nullable</th>
+<th>Default</th>
+<th>Constraint</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td><code>gen_random_uuid()</code></td>
+<td><strong>PK</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>closure_id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; order_closure_data(id) ON DELETE CASCADE</td>
+<td>Cierre padre</td>
+</tr>
+<tr>
+<td>type</td>
+<td><code>VARCHAR(20)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK: route, time, cargo, other</td>
+<td>Tipo desviacion</td>
+</tr>
+<tr>
+<td>description</td>
+<td><code>TEXT</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK (char_length(description) &gt;= 1)</td>
+<td>Descripcion</td>
+</tr>
+<tr>
+<td>impact_value</td>
+<td><code>DECIMAL(10,2)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK &gt; 0</td>
+<td>Cuantificacion</td>
+</tr>
+<tr>
+<td>impact_unit</td>
+<td><code>VARCHAR(10)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK: minutes, hours, kilometers</td>
+<td>Unidad del impacto</td>
+</tr>
+<tr>
+<td>documentation</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Referencia documental</td>
+</tr>
+</tbody>
+</table>
+<h4 id="tabla-milestonemanualentry-registro-manual-de-hito">Tabla: <code>milestone_manual_entry</code> (Registro manual de hito)</h4>
+<table>
+<thead>
+<tr>
+<th>Columna</th>
+<th>Tipo PostgreSQL</th>
+<th>Nullable</th>
+<th>Default</th>
+<th>Constraint</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td><code>gen_random_uuid()</code></td>
+<td><strong>PK</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>milestone_id</td>
+<td><code>UUID</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td><strong>FK</strong> -&gt; order_milestones(id) ON DELETE CASCADE</td>
+<td>Hito padre</td>
+</tr>
+<tr>
+<td>entry_type</td>
+<td><code>VARCHAR(10)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK: arrival, departure</td>
+<td>Tipo de registro</td>
+</tr>
+<tr>
+<td>UNIQUE</td>
+<td></td>
+<td></td>
+<td></td>
+<td>(milestone_id, entry_type)</td>
+<td>Permite 1 arrival + 1 departure por hito</td>
+</tr>
+<tr>
+<td>reason</td>
+<td><code>VARCHAR(30)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>CHECK: gps_failure, no_signal, geofence_error, manual_override, other</td>
+<td>Motivo</td>
+</tr>
+<tr>
+<td>observation</td>
+<td><code>TEXT</code></td>
+<td>NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Detalle adicional</td>
+</tr>
+<tr>
+<td>registered_at</td>
+<td><code>TIMESTAMPTZ</code></td>
+<td>NOT NULL</td>
+<td><code>NOW()</code></td>
+<td>—</td>
+<td>Cuando se registro</td>
+</tr>
+<tr>
+<td>registered_by</td>
+<td><code>VARCHAR(100)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>ID del operador</td>
+</tr>
+<tr>
+<td>registered_by_name</td>
+<td><code>VARCHAR(200)</code></td>
+<td>NOT NULL</td>
+<td>—</td>
+<td>—</td>
+<td>Nombre del operador</td>
+</tr>
+<tr>
+<td>evidence_urls</td>
+<td><code>JSONB</code></td>
+<td>NOT NULL</td>
+<td><code>'[]'</code></td>
+<td>CHECK jsonb_array_length &lt;= 10</td>
+<td>Evidencias adjuntas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="indices-recomendados">Indices Recomendados</h3>
+<table>
+<thead>
+<tr>
+<th>Tabla</th>
+<th>Indice</th>
+<th>Columnas</th>
+<th>Tipo</th>
+<th>Justificacion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>orders</td>
+<td>idx_orders_status</td>
+<td>status</td>
+<td>B-tree</td>
+<td>Filtro principal en listado. <strong>Parcial:</strong> <code>WHERE deleted_at IS NULL</code></td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_orders_customer</td>
+<td>customer_id</td>
+<td>B-tree</td>
+<td>FK mas consultada. <strong>Parcial:</strong> <code>WHERE deleted_at IS NULL</code></td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_orders_vehicle</td>
+<td>vehicle_id</td>
+<td>B-tree</td>
+<td>Deteccion de conflictos. <strong>Parcial:</strong> <code>WHERE deleted_at IS NULL</code></td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_orders_driver</td>
+<td>driver_id</td>
+<td>B-tree</td>
+<td>Deteccion de conflictos. <strong>Parcial:</strong> <code>WHERE deleted_at IS NULL</code></td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_orders_dates</td>
+<td>scheduled_start_date, scheduled_end_date</td>
+<td>B-tree</td>
+<td>Filtro por rango de fechas. <strong>Parcial:</strong> <code>WHERE deleted_at IS NULL</code></td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_orders_created</td>
+<td>created_at DESC</td>
+<td>B-tree</td>
+<td>Ordenamiento por defecto. <strong>Parcial:</strong> <code>WHERE deleted_at IS NULL</code></td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_orders_number</td>
+<td>order_number</td>
+<td>B-tree UNIQUE</td>
+<td>Busqueda por numero</td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_search_number</td>
+<td>order_number</td>
+<td>GIN (gin_trgm_ops)</td>
+<td>Busqueda por numero de orden</td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_search_customer</td>
+<td>customer_name</td>
+<td>GIN (gin_trgm_ops)</td>
+<td>Busqueda por nombre de cliente</td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_search_extref</td>
+<td>external_reference</td>
+<td>GIN (gin_trgm_ops)</td>
+<td>Busqueda por referencia externa</td>
+</tr>
+<tr>
+<td>order_milestones</td>
+<td>idx_milestones_order</td>
+<td>order_id, sequence</td>
+<td>B-tree UNIQUE</td>
+<td>Lookup + orden secuencial</td>
+</tr>
+<tr>
+<td>order_milestones</td>
+<td>idx_milestones_geofence</td>
+<td>geofence_id</td>
+<td>B-tree</td>
+<td>Deteccion GPS de geocerca</td>
+</tr>
+<tr>
+<td>order_status_history</td>
+<td>idx_history_order</td>
+<td>order_id, changed_at DESC</td>
+<td>B-tree</td>
+<td>Timeline de transiciones</td>
+</tr>
+<tr>
+<td>order_closure_data</td>
+<td>idx_closure_order</td>
+<td>order_id</td>
+<td>B-tree UNIQUE</td>
+<td>1:1 lookup rapido</td>
+</tr>
+<tr>
+<td>orders</td>
+<td>idx_orders_sync</td>
+<td>sync_status</td>
+<td>B-tree</td>
+<td>Job de re-envio GPS (filtra pending/retry/error). <strong>Parcial:</strong> <code>WHERE deleted_at IS NULL</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="relaciones-con-tablas-de-otros-modulos-fk-externas">Relaciones con Tablas de Otros Modulos (FK externas)</h3>
+<pre><code class="language-mermaid"><div class="mermaid">erDiagram
+    customers ||--o{ orders : "1 genera 0..*"
+    vehicles |o--o{ orders : "0..1 asignado a 0..*"
+    drivers |o--o{ orders : "0..1 asignado a 0..*"
+    operators |o--o{ orders : "0..1 transportista / GPS"
+    workflows |o--o{ orders : "0..1 asignado a 0..*"
+    geofences |o--o{ order_milestones : "0..1 asociada a 0..*"
+    incident_catalog |o--o{ order_incidents : "0..1 tipifica 0..*"
+
+    customers {
+        UUID id PK
+        VARCHAR name
+        VARCHAR code
+        BOOLEAN is_active
+    }
+    vehicles {
+        UUID id PK
+        VARCHAR plate
+        VARCHAR brand
+        DECIMAL max_payload_kg
+    }
+    drivers {
+        UUID id PK
+        VARCHAR full_name
+        VARCHAR license_number
+        DATE license_expiry
+    }
+    geofences {
+        UUID id PK
+        VARCHAR name
+        GEOMETRY coordinates
+        INTEGER radius_m
+    }
+    workflows {
+        UUID id PK
+        VARCHAR name
+        BOOLEAN is_active
+    }
+    operators {
+        UUID id PK
+        VARCHAR name
+        VARCHAR type
+    }
+    incident_catalog {
+        UUID id PK
+        VARCHAR name
+        VARCHAR category
+    }
+</div></code></pre>
+<hr>
+<h1 id="4-maquina-de-estados--orderstatus">4. Maquina de Estados — OrderStatus</h1>
+<p><strong>9 estados, 18 transiciones, 2 estados terminales (closed, cancelled)</strong></p>
+<pre><code class="language-mermaid"><div class="mermaid">stateDiagram-v2
+    [*] --> draft : Crear orden
+
+    draft --> pending : Confirmar datos
+    draft --> cancelled : Cancelar
+
+    pending --> assigned : Asignar vehiculo + conductor
+    pending --> cancelled : Cancelar
+
+    assigned --> in_transit : Vehiculo parte
+    assigned --> cancelled : Cancelar
+
+    in_transit --> at_milestone : Entrada a geocerca
+    in_transit --> delayed : Retraso detectado
+    in_transit --> completed : Todos hitos completados
+    in_transit --> cancelled : Cancelar emergencia
+
+    at_milestone --> in_transit : Salida de geocerca
+    at_milestone --> delayed : Excede tiempo maximo
+    at_milestone --> completed : Ultimo hito completado
+
+    delayed --> in_transit : Retraso resuelto
+    delayed --> at_milestone : Llega al hito
+    delayed --> completed : Hitos completados
+    delayed --> cancelled : Cancelar
+
+    completed --> closed : Cierre administrativo
+
+    closed --> [*]
+    cancelled --> [*]
+</div></code></pre>
+<h3 id="tabla-de-estados-con-colores">Tabla de estados con colores</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Estado</th>
+<th>Etiqueta</th>
+<th>Color</th>
+<th>Icono</th>
+<th>Terminal</th>
+<th>Transiciones de salida</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>draft</td>
+<td>Borrador</td>
+<td>#6B7280 gris</td>
+<td>FileEdit</td>
+<td>No</td>
+<td>pending, cancelled</td>
+</tr>
+<tr>
+<td>2</td>
+<td>pending</td>
+<td>Pendiente</td>
+<td>#F59E0B ambar</td>
+<td>Clock</td>
+<td>No</td>
+<td>assigned, cancelled</td>
+</tr>
+<tr>
+<td>3</td>
+<td>assigned</td>
+<td>Asignada</td>
+<td>#3B82F6 azul</td>
+<td>UserCheck</td>
+<td>No</td>
+<td>in_transit, cancelled</td>
+</tr>
+<tr>
+<td>4</td>
+<td>in_transit</td>
+<td>En Transito</td>
+<td>#8B5CF6 violeta</td>
+<td>Truck</td>
+<td>No</td>
+<td>at_milestone, delayed, completed, cancelled</td>
+</tr>
+<tr>
+<td>5</td>
+<td>at_milestone</td>
+<td>En Hito</td>
+<td>#06B6D4 cian</td>
+<td>MapPin</td>
+<td>No</td>
+<td>in_transit, delayed, completed</td>
+</tr>
+<tr>
+<td>6</td>
+<td>delayed</td>
+<td>Retrasado</td>
+<td>#EF4444 rojo</td>
+<td>AlertTriangle</td>
+<td>No</td>
+<td>in_transit, at_milestone, completed, cancelled</td>
+</tr>
+<tr>
+<td>7</td>
+<td>completed</td>
+<td>Completada</td>
+<td>#10B981 verde</td>
+<td>CheckCircle</td>
+<td>No*</td>
+<td>closed</td>
+</tr>
+<tr>
+<td>8</td>
+<td>closed</td>
+<td>Cerrada</td>
+<td>#1F2937 gris oscuro</td>
+<td>Lock</td>
+<td>Si</td>
+<td>ninguna</td>
+</tr>
+<tr>
+<td>9</td>
+<td>cancelled</td>
+<td>Cancelada</td>
+<td>#DC2626 rojo oscuro</td>
+<td>XCircle</td>
+<td>Si</td>
+<td>ninguna</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h1 id="5-maquina-de-estados--milestonestatus">5. Maquina de Estados — MilestoneStatus</h1>
+<p><strong>7 estados para hitos de ruta</strong></p>
+<pre><code class="language-mermaid"><div class="mermaid">stateDiagram-v2
+    [*] --> pending : Hito creado
+
+    pending --> approaching : Vehiculo en radio de proximidad
+    pending --> skipped : Autorizacion de salto
+
+    approaching --> arrived : Entrada a geocerca
+    approaching --> pending : Vehiculo se aleja
+
+    arrived --> in_progress : Se inicia operacion en punto
+
+    in_progress --> completed : Operacion completada, salida geocerca
+    in_progress --> delayed : Excede tiempo estimado
+
+    delayed --> completed : Se completa con retraso
+    delayed --> skipped : Se decide saltar
+
+    completed --> [*]
+    skipped --> [*]
+</div></code></pre>
+<hr>
+<h1 id="6-maquina-de-estados--ordersyncstatus">6. Maquina de Estados — OrderSyncStatus</h1>
+<p><strong>6 estados para sincronizacion GPS</strong></p>
+<pre><code class="language-mermaid"><div class="mermaid">stateDiagram-v2
+    [*] --> not_sent : Orden creada
+
+    not_sent --> pending : Se solicita envio
+    not_sent --> sending : Envio inmediato
+
+    pending --> sending : Turno en cola
+
+    sending --> sent : Exito
+    sending --> error : Fallo
+
+    error --> retry : Politica de reintentos activa
+    error --> not_sent : Reset manual
+
+    retry --> sending : Reintento automatico
+    retry --> error : Fallo persistente
+
+    sent --> pending : Re-envio solicitado
+</div></code></pre>
+<hr>
+<h1 id="7-tabla-de-referencia-operativa-de-transiciones">7. Tabla de Referencia Operativa de Transiciones</h1>
+<blockquote>
+<p>Tabla unificada que cruza: estado origen/destino, endpoint, payload, validaciones, actor, evento emitido e idempotencia.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>From</th>
+<th>To</th>
+<th>Endpoint</th>
+<th>Payload</th>
+<th>Validaciones</th>
+<th>Actor</th>
+<th>Evento</th>
+<th>Idempotente</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T-01</td>
+<td>draft</td>
+<td>pending</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;pending&quot; }</code></td>
+<td>customerId != null, milestones &gt;= 2 (1 origin + 1 destination)</td>
+<td>Operador</td>
+<td>order.status_changed</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-02</td>
+<td>draft</td>
+<td>cancelled</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;cancelled&quot;, reason: &quot;...&quot; }</code></td>
+<td>reason.length &gt;= 1</td>
+<td>Usuario Maestro / Subusuario (orders:cancel)</td>
+<td>order.status_changed, order.cancelled</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-03</td>
+<td>pending</td>
+<td>assigned</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;assigned&quot;, vehicleId: &quot;...&quot;, driverId: &quot;...&quot; }</code></td>
+<td>vehicleId != null, driverId != null, sin conflicto de horario, licencia vigente</td>
+<td>Usuario Maestro / Subusuario (orders:edit)</td>
+<td>order.status_changed, order.assigned</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-04</td>
+<td>pending</td>
+<td>cancelled</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;cancelled&quot;, reason: &quot;...&quot; }</code></td>
+<td>reason.length &gt;= 1</td>
+<td>Usuario Maestro / Subusuario (orders:cancel)</td>
+<td>order.status_changed, order.cancelled</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-05</td>
+<td>assigned</td>
+<td>in_transit</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;in_transit&quot; }</code></td>
+<td>vehicleId != null AND driverId != null (ya asignados)</td>
+<td>Operador / Sistema GPS</td>
+<td>order.status_changed</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-06</td>
+<td>assigned</td>
+<td>cancelled</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;cancelled&quot;, reason: &quot;...&quot; }</code></td>
+<td>reason.length &gt;= 1; libera vehiculo y conductor</td>
+<td>Usuario Maestro / Subusuario (orders:cancel)</td>
+<td>order.status_changed, order.cancelled</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-07</td>
+<td>in_transit</td>
+<td>at_milestone</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;at_milestone&quot; }</code></td>
+<td>Vehiculo dentro de geocerca de un hito pendiente</td>
+<td>Sistema GPS / Operador manual</td>
+<td>order.status_changed, order.milestone_updated</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-08</td>
+<td>in_transit</td>
+<td>delayed</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;delayed&quot; }</code></td>
+<td>delayMinutes &gt; umbral (default: 30 min)</td>
+<td>Sistema GPS</td>
+<td>order.status_changed</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-09</td>
+<td>in_transit</td>
+<td>completed</td>
+<td>AUTO</td>
+<td>none</td>
+<td>Todos los milestones en status completed o skipped</td>
+<td>Sistema (automatico)</td>
+<td>order.status_changed, order.completed</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-10</td>
+<td>in_transit</td>
+<td>cancelled</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;cancelled&quot;, reason: &quot;...&quot; }</code></td>
+<td>reason.length &gt;= 1; cancelacion de emergencia</td>
+<td>Owner / Usuario Maestro</td>
+<td>order.status_changed, order.cancelled</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-11</td>
+<td>at_milestone</td>
+<td>in_transit</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;in_transit&quot; }</code></td>
+<td>Vehiculo sale de la geocerca del hito</td>
+<td>Sistema GPS / Operador manual</td>
+<td>order.status_changed, order.milestone_updated</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-12</td>
+<td>at_milestone</td>
+<td>delayed</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;delayed&quot; }</code></td>
+<td>Excede maxDurationMinutes del workflow step</td>
+<td>Sistema</td>
+<td>order.status_changed</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-13</td>
+<td>at_milestone</td>
+<td>completed</td>
+<td>AUTO</td>
+<td>none</td>
+<td>Era el ultimo hito y se marca completado</td>
+<td>Sistema / Operador</td>
+<td>order.status_changed, order.completed</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-14</td>
+<td>delayed</td>
+<td>in_transit</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;in_transit&quot; }</code></td>
+<td>El retraso se resuelve, vehiculo continua</td>
+<td>Sistema GPS</td>
+<td>order.status_changed</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-15</td>
+<td>delayed</td>
+<td>at_milestone</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;at_milestone&quot; }</code></td>
+<td>Llega al hito aunque retrasado</td>
+<td>Sistema GPS</td>
+<td>order.status_changed, order.milestone_updated</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-16</td>
+<td>delayed</td>
+<td>completed</td>
+<td>AUTO</td>
+<td>none</td>
+<td>Todos los milestones completados o skipped</td>
+<td>Sistema</td>
+<td>order.status_changed, order.completed</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-17</td>
+<td>delayed</td>
+<td>cancelled</td>
+<td>PATCH /:id/status</td>
+<td><code>{ status: &quot;cancelled&quot;, reason: &quot;...&quot; }</code></td>
+<td>reason.length &gt;= 1</td>
+<td>Owner / Usuario Maestro</td>
+<td>order.status_changed, order.cancelled</td>
+<td>Si</td>
+</tr>
+<tr>
+<td>T-18</td>
+<td>completed</td>
+<td>closed</td>
+<td>POST /:id/close</td>
+<td><code>OrderClosureDTO { observations, incidents[], deliveryPhotos[], customerSignature, customerRating }</code></td>
+<td>closureData == null (aun no existe), status == completed, todos los hitos completed/skipped</td>
+<td>Usuario Maestro / Subusuario (orders:close)</td>
+<td>order.status_changed, order.closed</td>
+<td>Si</td>
+</tr>
+</tbody>
+</table>
+<h3 id="diagrama-de-flujo-de-transiciones-con-endpoints">Diagrama de flujo de transiciones con endpoints</h3>
+<pre><code class="language-mermaid"><div class="mermaid">graph LR
+    subgraph "Fase Planificacion"
+        A[draft] -->|PATCH status=pending| B[pending]
+        B -->|PATCH status=assigned<br/>+ vehicleId + driverId| C[assigned]
+    end
+
+    subgraph "Fase Ejecucion"
+        C -->|PATCH status=in_transit| D[in_transit]
+        D -->|AUTO: entrada geocerca| E[at_milestone]
+        E -->|AUTO: salida geocerca| D
+        D -->|AUTO: delay > umbral| F[delayed]
+        E -->|excede tiempo| F
+        F -->|resuelto| D
+        F -->|llega a hito| E
+    end
+
+    subgraph "Fase Cierre"
+        D -->|AUTO: todos hitos OK| G[completed]
+        E -->|AUTO: ultimo hito OK| G
+        F -->|AUTO: todos hitos OK| G
+        G -->|POST /:id/close| H[closed]
+    end
+
+    subgraph "Cancelacion"
+        A -->|PATCH status=cancelled| X[cancelled]
+        B -->|PATCH status=cancelled| X
+        C -->|PATCH status=cancelled| X
+        D -->|PATCH status=cancelled| X
+        F -->|PATCH status=cancelled| X
+    end
+
+    style H fill:#1F2937,color:#fff
+    style X fill:#DC2626,color:#fff
+    style G fill:#10B981,color:#fff
+</div></code></pre>
+<hr>
+<h1 id="8-casos-de-uso--referencia-backend">8. Casos de Uso — Referencia Backend</h1>
+<blockquote>
+<p><strong>7 Casos de Uso UML</strong> con precondiciones, flujo principal, excepciones y postcondiciones. Cada CU indica quien ejecuta, que endpoint consume, que debe validar el backend y que debe devolver.</p>
+</blockquote>
+<h3 id="matriz-actor-x-caso-de-uso">Matriz Actor x Caso de Uso</h3>
+<table>
+<thead>
+<tr>
+<th>Caso de Uso</th>
+<th style="text-align:center">Owner</th>
+<th style="text-align:center">Usuario Maestro</th>
+<th style="text-align:center">Subusuario (permiso)</th>
+<th style="text-align:center">Sistema GPS</th>
+<th style="text-align:center">Motor Workflows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CU-01</strong> Crear Orden</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center"><code>orders:create</code></td>
+<td style="text-align:center">—</td>
+<td style="text-align:center">Auto-asigna workflow</td>
+</tr>
+<tr>
+<td><strong>CU-02</strong> Transicionar Estado</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center"><code>orders:edit</code></td>
+<td style="text-align:center">Si (automatico)</td>
+<td style="text-align:center">—</td>
+</tr>
+<tr>
+<td><strong>CU-03</strong> Cierre Administrativo</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center"><code>orders:close</code></td>
+<td style="text-align:center">—</td>
+<td style="text-align:center">—</td>
+</tr>
+<tr>
+<td><strong>CU-04</strong> Cancelar Orden</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center"><code>orders:cancel</code></td>
+<td style="text-align:center">—</td>
+<td style="text-align:center">—</td>
+</tr>
+<tr>
+<td><strong>CU-05</strong> Enviar a GPS</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center"><code>orders:sync_gps</code></td>
+<td style="text-align:center">—</td>
+<td style="text-align:center">—</td>
+</tr>
+<tr>
+<td><strong>CU-06</strong> Importar desde Excel/CSV</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center"><code>orders:import</code></td>
+<td style="text-align:center">—</td>
+<td style="text-align:center">—</td>
+</tr>
+<tr>
+<td><strong>CU-07</strong> Registro Manual de Hito</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center">Si</td>
+<td style="text-align:center"><code>milestones:manual_entry</code></td>
+<td style="text-align:center">—</td>
+<td style="text-align:center">—</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Restriccion especial CU-04:</strong> Si la orden esta en <code>in_transit</code>, solo <code>owner</code> y <code>usuario_maestro</code> pueden cancelar. Subusuarios NO pueden cancelar ordenes en transito.</p>
+</blockquote>
+<hr>
+<h2 id="cu-01-crear-orden-de-transporte">CU-01: Crear Orden de Transporte</h2>
+<table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Endpoint</strong></td>
+<td><code>POST /api/v1/orders</code></td>
+</tr>
+<tr>
+<td><strong>Actor Principal</strong></td>
+<td>Operador (<code>usuario_maestro</code> o <code>subusuario</code> con <code>orders:create</code>)</td>
+</tr>
+<tr>
+<td><strong>Actor Secundario</strong></td>
+<td>Motor de Workflows (auto-asigna), Validacion Zod</td>
+</tr>
+<tr>
+<td><strong>Trigger</strong></td>
+<td>El operador envia <code>CreateOrderDTO</code> al backend</td>
+</tr>
+<tr>
+<td><strong>Frecuencia</strong></td>
+<td>10-50 veces/dia</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precondiciones (backend DEBE validar)</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Precondicion</th>
+<th>Si no se cumple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRE-01</td>
+<td>Token JWT valido y no expirado</td>
+<td>HTTP <code>401 UNAUTHORIZED</code></td>
+</tr>
+<tr>
+<td>PRE-02</td>
+<td>Usuario tiene permiso <code>orders:create</code></td>
+<td>HTTP <code>403 FORBIDDEN</code></td>
+</tr>
+<tr>
+<td>PRE-03</td>
+<td><code>customerId</code> existe y esta activo en BD</td>
+<td>HTTP <code>404 CUSTOMER_NOT_FOUND</code></td>
+</tr>
+<tr>
+<td>PRE-04</td>
+<td>Milestones &gt;= 2, con exactamente 1 <code>type=origin</code> (seq=1) y 1 <code>type=destination</code> (seq=ultimo)</td>
+<td>HTTP <code>400 VALIDATION_ERROR</code></td>
+</tr>
+<tr>
+<td>PRE-05</td>
+<td><code>scheduledStartDate &lt; scheduledEndDate</code></td>
+<td>HTTP <code>400 VALIDATION_ERROR</code></td>
+</tr>
+<tr>
+<td>PRE-06</td>
+<td><code>cargo.weight</code> en rango 0.01 - 100,000 kg</td>
+<td>HTTP <code>400 VALIDATION_ERROR</code></td>
+</tr>
+<tr>
+<td>PRE-07</td>
+<td>Si <code>cargo.type=hazardous</code> entonces <code>hazardousClass</code> obligatorio</td>
+<td>HTTP <code>400 VALIDATION_ERROR</code></td>
+</tr>
+<tr>
+<td>PRE-08</td>
+<td>Si <code>requiresRefrigeration=true</code> entonces <code>temperatureRange.min</code> y <code>.max</code> obligatorios</td>
+<td>HTTP <code>400 VALIDATION_ERROR</code></td>
+</tr>
+<tr>
+<td>PRE-09</td>
+<td>Si se asigna <code>vehicleId</code>/<code>driverId</code>, verificar conflicto de horario</td>
+<td>HTTP <code>409 VEHICLE_CONFLICT</code> / <code>DRIVER_CONFLICT</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Secuencia Backend (flujo principal)</strong></p>
+<table>
+<thead>
+<tr>
+<th>Paso</th>
+<th>Accion del backend</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Validar DTO completo con <code>createOrderSchema</code> (Zod)</td>
+<td>Validar todos los campos del request body</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Verificar que <code>customerId</code> existe y esta activo</td>
+<td><code>SELECT * FROM customers WHERE id = :customerId AND status = 'active'</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Si se envian <code>vehicleId</code>/<code>driverId</code>, verificar conflictos</td>
+<td>Buscar ordenes activas del vehiculo/conductor en rango de fechas</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Generar <code>id</code> (UUID v4)</td>
+<td>Auto-generado</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Generar <code>orderNumber</code> con formato <code>ORD-YYYY-NNNNN</code></td>
+<td>Secuencial unico (5 digitos), inmutable. Ej: <code>ORD-2026-00142</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Establecer <code>status = &quot;draft&quot;</code>, <code>syncStatus = &quot;not_sent&quot;</code>, <code>completionPercentage = 0</code></td>
+<td>Valores iniciales fijos</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Crear milestones con <code>status = &quot;pending&quot;</code> y secuencias consecutivas</td>
+<td>origin=1, waypoints consecutivos, destination=ultimo</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Crear <code>StatusHistoryEntry</code> inicial</td>
+<td><code>{ fromStatus: null, toStatus: &quot;draft&quot;, reason: &quot;Orden creada&quot;, changedBy: currentUser }</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Buscar workflow compatible por <code>serviceType</code> + <code>cargo.type</code></td>
+<td>Si existe, asignar <code>workflowId</code>. Si no, <code>workflowId = null</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Persistir en BD (INSERT order + milestones + history)</td>
+<td>Transaccion atomica</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Emitir evento <code>order.created</code> via Event Bus</td>
+<td>Payload: <code>{ orderId, orderNumber, customerId, serviceType, priority, createdBy }</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>Retornar HTTP <code>201 Created</code> con la orden completa</td>
+<td>Incluir milestones, cargo, statusHistory</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Postcondiciones (backend DEBE garantizar)</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Postcondicion</th>
+<th>Verificacion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST-01</td>
+<td>Orden existe en BD con <code>id</code> UUID y <code>orderNumber</code> unico</td>
+<td><code>GET /orders/:id</code> retorna 200</td>
+</tr>
+<tr>
+<td>POST-02</td>
+<td><code>status = &quot;draft&quot;</code>, <code>syncStatus = &quot;not_sent&quot;</code>, <code>completionPercentage = 0</code></td>
+<td>Campos en response</td>
+</tr>
+<tr>
+<td>POST-03</td>
+<td>Milestones tienen <code>status = &quot;pending&quot;</code> y <code>sequence</code> secuencial</td>
+<td>Verificar array</td>
+</tr>
+<tr>
+<td>POST-04</td>
+<td><code>statusHistory</code> tiene 1 entrada inicial (<code>null -&gt; draft</code>)</td>
+<td><code>statusHistory.length === 1</code></td>
+</tr>
+<tr>
+<td>POST-05</td>
+<td>Evento <code>order.created</code> publicado en Event Bus</td>
+<td>Log de auditoria</td>
+</tr>
+<tr>
+<td>POST-06</td>
+<td><code>createdAt</code> y <code>updatedAt</code> con timestamp UTC (ISO 8601)</td>
+<td>Formato con sufijo Z</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Excepciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th>Codigo</th>
+<th>Cuando</th>
+<th>Respuesta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>400</code></td>
+<td>VALIDATION_ERROR</td>
+<td>Campos invalidos</td>
+<td><code>{ error: { code, message, details: { campo: &quot;mensaje&quot; } } }</code></td>
+</tr>
+<tr>
+<td><code>404</code></td>
+<td>CUSTOMER_NOT_FOUND</td>
+<td>Cliente no existe o inactivo</td>
+<td><code>{ error: { code, message } }</code></td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>VEHICLE_CONFLICT</td>
+<td>Vehiculo con conflicto de horario</td>
+<td><code>{ error: { code, message, details: { conflictingOrder, dates } } }</code></td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>DRIVER_CONFLICT</td>
+<td>Conductor con conflicto</td>
+<td>Mismo formato que VEHICLE_CONFLICT</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-mermaid"><div class="mermaid">graph TD
+    A["POST /orders + CreateOrderDTO"] --> B{"Validar schema Zod"}
+    B -->|Falla| C["400 VALIDATION_ERROR"]
+    B -->|OK| D{"customerId existe?"}
+    D -->|No| E["404 CUSTOMER_NOT_FOUND"]
+    D -->|Si| F{"Conflicto de recursos?"}
+    F -->|Si| G["409 CONFLICT"]
+    F -->|No| H["Generar UUID + orderNumber"]
+    H --> I["INSERT orden + milestones"]
+    I --> J["Crear StatusHistoryEntry"]
+    J --> K["Auto-asignar workflow"]
+    K --> L["Emitir order.created"]
+    L --> M["201 Created + Order"]
+</div></code></pre>
+<hr>
+<h2 id="cu-02-transicionar-estado-de-orden">CU-02: Transicionar Estado de Orden</h2>
+<table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Endpoint</strong></td>
+<td><code>PATCH /api/v1/orders/:id/status</code></td>
+</tr>
+<tr>
+<td><strong>Actor Principal</strong></td>
+<td>Operador (<code>orders:edit</code>) / Sistema GPS (automatico)</td>
+</tr>
+<tr>
+<td><strong>Trigger</strong></td>
+<td>Solicitud de cambio de estado manual o evento GPS</td>
+</tr>
+<tr>
+<td><strong>Frecuencia</strong></td>
+<td>50-200 veces/dia</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Precondicion</th>
+<th>Si no se cumple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRE-01</td>
+<td>Orden con <code>id</code> existe en BD</td>
+<td>HTTP <code>404 ORDER_NOT_FOUND</code></td>
+</tr>
+<tr>
+<td>PRE-02</td>
+<td>Usuario tiene permiso <code>orders:edit</code></td>
+<td>HTTP <code>403 FORBIDDEN</code></td>
+</tr>
+<tr>
+<td>PRE-03</td>
+<td>Transicion <code>currentStatus -&gt; newStatus</code> esta en tabla de transiciones validas (seccion 7)</td>
+<td>HTTP <code>422 INVALID_STATE_TRANSITION</code> con <code>validTransitions[]</code></td>
+</tr>
+<tr>
+<td>PRE-04</td>
+<td>Precondiciones especificas de la transicion se cumplen</td>
+<td>HTTP <code>422 PRECONDITION_FAILED</code> con <code>missingConditions[]</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precondiciones especificas por transicion</strong></p>
+<table>
+<thead>
+<tr>
+<th>Transicion</th>
+<th>Validacion extra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pending -&gt; assigned</td>
+<td><code>vehicleId != null AND driverId != null</code>, sin conflicto horario, licencia vigente</td>
+</tr>
+<tr>
+<td>assigned -&gt; in_transit</td>
+<td><code>vehicleId AND driverId</code> ya asignados (no null)</td>
+</tr>
+<tr>
+<td>in_transit -&gt; at_milestone</td>
+<td>Vehiculo dentro de geocerca de un hito pendiente</td>
+</tr>
+<tr>
+<td>in_transit -&gt; delayed</td>
+<td><code>delayMinutes &gt; 30</code> (umbral configurable)</td>
+</tr>
+<tr>
+<td>in_transit/at_milestone/delayed -&gt; completed</td>
+<td>TODOS los milestones en <code>completed</code> o <code>skipped</code></td>
+</tr>
+<tr>
+<td>* -&gt; cancelled</td>
+<td><code>reason.length &gt;= 1</code> (motivo obligatorio)</td>
+</tr>
+<tr>
+<td>in_transit -&gt; cancelled</td>
+<td>Solo <code>owner</code> o <code>usuario_maestro</code> (emergencia)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Secuencia Backend</strong></p>
+<table>
+<thead>
+<tr>
+<th>Paso</th>
+<th>Accion</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Buscar orden por <code>id</code></td>
+<td>Si no existe -&gt; 404</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Validar <code>currentStatus -&gt; newStatus</code> en tabla de transiciones</td>
+<td>Si no es valida -&gt; 422 INVALID_STATE_TRANSITION</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Verificar precondiciones especificas</td>
+<td>Si fallan -&gt; 422 PRECONDITION_FAILED</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Actualizar <code>status = newStatus</code>, <code>updatedAt = NOW()</code></td>
+<td>UPDATE en BD</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Si <code>newStatus = &quot;in_transit&quot;</code>: registrar <code>actualStartDate = NOW()</code></td>
+<td>Campo de fecha real de inicio</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Si <code>newStatus = &quot;completed&quot;</code>: registrar <code>actualEndDate = NOW()</code></td>
+<td>Campo de fecha real de fin</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Si <code>newStatus = &quot;cancelled&quot;</code>: registrar <code>cancelledAt</code>, <code>cancelledBy</code>, <code>cancellationReason</code></td>
+<td>Liberar vehiculo/conductor</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Crear <code>StatusHistoryEntry</code></td>
+<td><code>{ fromStatus, toStatus, changedAt: NOW(), changedBy, reason }</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Recalcular <code>completionPercentage</code></td>
+<td><code>(hitos_completed + skipped) / total * 100</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Emitir <code>order.status_changed</code></td>
+<td>Siempre</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Si completed: emitir tambien <code>order.completed</code></td>
+<td>Evento adicional</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Si cancelled: emitir tambien <code>order.cancelled</code></td>
+<td>Evento adicional</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Retornar HTTP <code>200 OK</code> con orden actualizada</td>
+<td>Incluir statusHistory nuevo</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Postcondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Postcondicion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST-01</td>
+<td><code>order.status === newStatus</code></td>
+</tr>
+<tr>
+<td>POST-02</td>
+<td><code>statusHistory</code> tiene nuevo registro con la transicion</td>
+</tr>
+<tr>
+<td>POST-03</td>
+<td><code>completionPercentage</code> recalculado</td>
+</tr>
+<tr>
+<td>POST-04</td>
+<td>Evento <code>order.status_changed</code> publicado</td>
+</tr>
+<tr>
+<td>POST-05</td>
+<td>Si cancelled: recursos liberados, <code>cancellationReason</code> registrado</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Excepciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th>Codigo</th>
+<th>Cuando</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>404</code></td>
+<td>ORDER_NOT_FOUND</td>
+<td>Orden no existe</td>
+</tr>
+<tr>
+<td><code>422</code></td>
+<td>INVALID_STATE_TRANSITION</td>
+<td>Transicion no permitida. Respuesta incluye <code>validTransitions[]</code></td>
+</tr>
+<tr>
+<td><code>422</code></td>
+<td>PRECONDITION_FAILED</td>
+<td>Transicion valida pero faltan precondiciones. Respuesta incluye <code>missingConditions[]</code></td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>VEHICLE_CONFLICT</td>
+<td>Conflicto de horario al asignar</td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>DRIVER_CONFLICT</td>
+<td>Conflicto de conductor al asignar</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-mermaid"><div class="mermaid">graph TD
+    A["PATCH /:id/status"] --> B{"Orden existe?"}
+    B -->|No| C["404 NOT_FOUND"]
+    B -->|Si| D{"Transicion valida?"}
+    D -->|No| E["422 INVALID_STATE_TRANSITION<br/>+ validTransitions[]"]
+    D -->|Si| F{"Precondiciones OK?"}
+    F -->|No| G["422 PRECONDITION_FAILED<br/>+ missingConditions[]"]
+    F -->|Si| H["UPDATE status"]
+    H --> I["Crear StatusHistoryEntry"]
+    I --> J["Recalcular completionPercentage"]
+    J --> K["Emitir order.status_changed"]
+    K --> L{"Es completed?"}
+    L -->|Si| M["Emitir order.completed"]
+    L -->|No| N{"Es cancelled?"}
+    N -->|Si| O["Emitir order.cancelled"]
+    M --> P["200 OK + Order"]
+    N -->|No| P
+    O --> P
+</div></code></pre>
+<hr>
+<h2 id="cu-03-cierre-administrativo-de-orden">CU-03: Cierre Administrativo de Orden</h2>
+<table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Endpoint</strong></td>
+<td><code>POST /api/v1/orders/:id/close</code></td>
+</tr>
+<tr>
+<td><strong>Actor Principal</strong></td>
+<td>Supervisor (<code>usuario_maestro</code> o <code>subusuario</code> con <code>orders:close</code>)</td>
+</tr>
+<tr>
+<td><strong>Trigger</strong></td>
+<td>Supervisor envia <code>OrderClosureDTO</code> para cerrar orden completada</td>
+</tr>
+<tr>
+<td><strong>Frecuencia</strong></td>
+<td>5-20 veces/dia</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Precondicion</th>
+<th>Si no se cumple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRE-01</td>
+<td><code>order.status === &quot;completed&quot;</code></td>
+<td>HTTP <code>422 CANNOT_CLOSE_ORDER</code></td>
+</tr>
+<tr>
+<td>PRE-02</td>
+<td>TODOS los milestones en <code>completed</code> o <code>skipped</code></td>
+<td>HTTP <code>422 CANNOT_CLOSE_ORDER</code> con <code>pendingMilestones[]</code></td>
+</tr>
+<tr>
+<td>PRE-03</td>
+<td><code>order.closureData === null</code> (no cerrada previamente)</td>
+<td>HTTP <code>422</code>: &quot;La orden ya fue cerrada&quot;</td>
+</tr>
+<tr>
+<td>PRE-04</td>
+<td>Usuario tiene permiso <code>orders:close</code></td>
+<td>HTTP <code>403 FORBIDDEN</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Request Body — OrderClosureDTO</strong></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Obligatorio</th>
+<th>Validacion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>observations</td>
+<td>string</td>
+<td><strong>Si</strong></td>
+<td>min 1 char, max 5000 chars</td>
+</tr>
+<tr>
+<td>incidents</td>
+<td>array</td>
+<td>No</td>
+<td>Cada uno: { incidentCatalogId, severity, freeDescription }</td>
+</tr>
+<tr>
+<td>deviationReasons</td>
+<td>array</td>
+<td>No</td>
+<td>Cada uno: { type, description, impact }</td>
+</tr>
+<tr>
+<td>deliveryPhotos</td>
+<td>string[]</td>
+<td>No</td>
+<td>JPG/PNG base64, max 2MB c/u, max 20</td>
+</tr>
+<tr>
+<td>customerSignature</td>
+<td>string</td>
+<td>No</td>
+<td>PNG base64, max 500KB</td>
+</tr>
+<tr>
+<td>customerRating</td>
+<td>integer</td>
+<td>No</td>
+<td>1-5 (escala Likert)</td>
+</tr>
+<tr>
+<td>fuelConsumed</td>
+<td>float</td>
+<td>No</td>
+<td>&gt;= 0</td>
+</tr>
+<tr>
+<td>tollsCost</td>
+<td>float</td>
+<td>No</td>
+<td>&gt;= 0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Secuencia Backend</strong></p>
+<table>
+<thead>
+<tr>
+<th>Paso</th>
+<th>Accion</th>
+<th>Detalle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Verificar <code>status === &quot;completed&quot;</code></td>
+<td>Si no -&gt; 422</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Verificar todos los milestones en estado terminal</td>
+<td>Si hay pendientes -&gt; 422 con lista</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Verificar <code>closureData === null</code></td>
+<td>Si ya existe -&gt; 422</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Validar <code>OrderClosureDTO</code> con <code>orderClosureSchema</code> (Zod)</td>
+<td>Validar observations, rangos, formatos</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Generar <code>closedAt = NOW()</code>, <code>closedBy = currentUserId</code></td>
+<td>Timestamp UTC</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Calcular metricas: <code>completedMilestones</code>, <code>totalMilestones</code>, <code>totalDurationMinutes</code></td>
+<td><code>actualEndDate - actualStartDate</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Crear <code>closureData</code> con todos los campos</td>
+<td>Persistir</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Transicionar <code>completed -&gt; closed</code></td>
+<td>UPDATE status</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Crear <code>StatusHistoryEntry</code></td>
+<td><code>{ fromStatus: &quot;completed&quot;, toStatus: &quot;closed&quot; }</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Emitir <code>order.status_changed</code> + <code>order.closed</code></td>
+<td>Modulo Finanzas genera facturacion</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Retornar HTTP <code>200 OK</code> con orden cerrada</td>
+<td>Incluir closureData completo</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Postcondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Postcondicion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST-01</td>
+<td><code>status === &quot;closed&quot;</code> (estado terminal, <strong>inmutable</strong>)</td>
+</tr>
+<tr>
+<td>POST-02</td>
+<td><code>closureData</code> poblado con observations, closedBy, closedAt, metricas</td>
+</tr>
+<tr>
+<td>POST-03</td>
+<td>Recursos (vehiculo/conductor) liberados</td>
+</tr>
+<tr>
+<td>POST-04</td>
+<td>Eventos <code>order.status_changed</code> + <code>order.closed</code> emitidos</td>
+</tr>
+<tr>
+<td>POST-05</td>
+<td>La orden es <strong>read-only</strong> — no acepta mas modificaciones</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-mermaid"><div class="mermaid">graph TD
+    A["POST /:id/close + OrderClosureDTO"] --> B{"status = completed?"}
+    B -->|No| C["422 CANNOT_CLOSE_ORDER"]
+    B -->|Si| D{"Todos hitos terminales?"}
+    D -->|No| E["422 + pendingMilestones[]"]
+    D -->|Si| F{"closureData es null?"}
+    F -->|No| G["422: Ya fue cerrada"]
+    F -->|Si| H["Validar ClosureDTO con Zod"]
+    H -->|Falla| I["400 VALIDATION_ERROR"]
+    H -->|OK| J["Generar closedAt + metricas"]
+    J --> K["Transicion: completed -> closed"]
+    K --> L["StatusHistoryEntry + eventos"]
+    L --> M["200 OK + Order cerrada"]
+</div></code></pre>
+<hr>
+<h2 id="cu-04-cancelar-orden">CU-04: Cancelar Orden</h2>
+<table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Endpoint</strong></td>
+<td><code>PATCH /api/v1/orders/:id/status</code> con <code>{ status: &quot;cancelled&quot;, reason: &quot;...&quot; }</code></td>
+</tr>
+<tr>
+<td><strong>Actor Principal</strong></td>
+<td>Operador (<code>orders:cancel</code>) / Owner</td>
+</tr>
+<tr>
+<td><strong>Trigger</strong></td>
+<td>Solicitud del cliente, error, duplicado u otra razon operativa</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Precondicion</th>
+<th>Si no se cumple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRE-01</td>
+<td><code>status</code> es cancelable: <code>draft</code>, <code>pending</code>, <code>assigned</code>, <code>in_transit</code>, <code>delayed</code>. NO se puede cancelar desde <code>at_milestone</code>, <code>completed</code>, <code>closed</code>, <code>cancelled</code></td>
+<td>HTTP <code>422 INVALID_STATE_TRANSITION</code></td>
+</tr>
+<tr>
+<td>PRE-02</td>
+<td><code>cancellationReason</code> proporcionado (min 1 char)</td>
+<td>HTTP <code>400 VALIDATION_ERROR</code></td>
+</tr>
+<tr>
+<td>PRE-03</td>
+<td>Si <code>status = &quot;in_transit&quot;</code>: solo <code>owner</code> o <code>usuario_maestro</code></td>
+<td>HTTP <code>403 FORBIDDEN</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Secuencia Backend</strong></p>
+<table>
+<thead>
+<tr>
+<th>Paso</th>
+<th>Accion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Verificar que la orden NO esta en estado terminal</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Si esta en <code>in_transit</code>, verificar que el rol sea <code>owner</code> o <code>usuario_maestro</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Validar <code>cancellationReason</code> no vacio</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Registrar <code>cancelledAt = NOW()</code>, <code>cancelledBy = currentUserId</code>, <code>cancellationReason</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Si tenia <code>vehicleId</code>/<code>driverId</code>: <strong>liberar recursos</strong> (disponibles para otras ordenes)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Crear <code>StatusHistoryEntry</code> con la transicion</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Emitir <code>order.status_changed</code> + <code>order.cancelled</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Si <code>syncStatus = &quot;sent&quot;</code>: enviar cancelacion al proveedor GPS (best-effort)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Retornar HTTP <code>200 OK</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Postcondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Postcondicion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST-01</td>
+<td><code>status === &quot;cancelled&quot;</code> (terminal, inmutable)</td>
+</tr>
+<tr>
+<td>POST-02</td>
+<td><code>cancelledAt</code>, <code>cancelledBy</code>, <code>cancellationReason</code> registrados</td>
+</tr>
+<tr>
+<td>POST-03</td>
+<td>Recursos (vehiculo/conductor) liberados</td>
+</tr>
+<tr>
+<td>POST-04</td>
+<td>Evento <code>order.cancelled</code> emitido</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="cu-05-enviar-orden-a-sistema-gps">CU-05: Enviar Orden a Sistema GPS</h2>
+<table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Endpoint Individual</strong></td>
+<td><code>PATCH /api/v1/orders/:id/status</code> (sync) o endpoint dedicado</td>
+</tr>
+<tr>
+<td><strong>Endpoint Masivo</strong></td>
+<td><code>POST /api/v1/orders/bulk-send</code> con <code>{ orderIds[] }</code></td>
+</tr>
+<tr>
+<td><strong>Actor Principal</strong></td>
+<td>Operador (<code>orders:sync_gps</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Precondicion</th>
+<th>Si no se cumple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRE-01</td>
+<td>Orden(es) existen en BD</td>
+<td>HTTP <code>404 ORDER_NOT_FOUND</code></td>
+</tr>
+<tr>
+<td>PRE-02</td>
+<td><code>syncStatus != &quot;sending&quot;</code> (no hay envio en proceso)</td>
+<td>HTTP <code>409 SYNC_IN_PROGRESS</code></td>
+</tr>
+<tr>
+<td>PRE-03</td>
+<td>Conexion al API del proveedor GPS disponible</td>
+<td><code>syncStatus = &quot;error&quot;</code>, <code>syncErrorMessage</code> con detalle</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Secuencia Backend</strong></p>
+<table>
+<thead>
+<tr>
+<th>Paso</th>
+<th>Accion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Cambiar <code>syncStatus = &quot;sending&quot;</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Construir payload de sincronizacion (orden + milestones + geocercas)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Enviar a API del proveedor GPS (Wialon / Navitel Fleet)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Si exito: <code>syncStatus = &quot;sent&quot;</code>, <code>lastSyncAttempt = NOW()</code>, <code>syncErrorMessage = null</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Si fallo: <code>syncStatus = &quot;error&quot;</code>, <code>syncErrorMessage = &lt;detalle&gt;</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Si fallo: programar reintentos con backoff exponencial (5s, 15s, 45s). Max 3 intentos</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Emitir evento <code>order.sync_updated</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Envio masivo:</strong> Procesar ordenes secuencialmente (no paralelo para no saturar API GPS). <strong>Maximo 50 orderIds por llamada</strong> (validar en endpoint; si &gt; 50 retornar HTTP <code>400 VALIDATION_ERROR</code>). Para volumenes mayores, usar cola de trabajo (queue) asincrona. Retornar <code>{ results: [{ orderId, success, error? }] }</code>.</p>
+<p><strong>Postcondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Postcondicion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST-01</td>
+<td><code>syncStatus</code> actualizado (sent/error/retry)</td>
+</tr>
+<tr>
+<td>POST-02</td>
+<td><code>lastSyncAttempt</code> registrado</td>
+</tr>
+<tr>
+<td>POST-03</td>
+<td>Evento <code>order.sync_updated</code> emitido</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="cu-06-importar-ordenes-desde-excelcsv">CU-06: Importar Ordenes desde Excel/CSV</h2>
+<table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Endpoint</strong></td>
+<td><code>POST /api/v1/orders/import</code> (multipart/form-data)</td>
+</tr>
+<tr>
+<td><strong>Actor Principal</strong></td>
+<td>Operador (<code>orders:import</code>)</td>
+</tr>
+<tr>
+<td><strong>Trigger</strong></td>
+<td>El operador sube un archivo .xlsx, .xls o .csv</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Precondicion</th>
+<th>Si no se cumple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRE-01</td>
+<td>Archivo con extension <code>.xlsx</code>, <code>.xls</code> o <code>.csv</code></td>
+<td>HTTP <code>422 INVALID_FILE_FORMAT</code></td>
+</tr>
+<tr>
+<td>PRE-02</td>
+<td>Archivo &lt;= 10 MB</td>
+<td>HTTP <code>413 PAYLOAD_TOO_LARGE</code></td>
+</tr>
+<tr>
+<td>PRE-03</td>
+<td>&lt;= 1000 filas de datos</td>
+<td>HTTP <code>422</code>: &quot;Maximo 1000 filas por importacion&quot;</td>
+</tr>
+<tr>
+<td>PRE-04</td>
+<td>Encoding: UTF-8 (con/sin BOM) o Latin-1. Deteccion automatica</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Secuencia Backend</strong></p>
+<table>
+<thead>
+<tr>
+<th>Paso</th>
+<th>Accion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Validar formato y tamano del archivo</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Parsear archivo fila por fila</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Validar cada fila contra <code>createOrderSchema</code> (mismas reglas que CU-01)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Verificar que <code>customerId</code> de cada fila exista</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Verificar que geocercas referenciadas existan</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Clasificar filas: valida (verde), warning (amarillo), invalida (rojo)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Retornar preview: <code>{ rows: [{ rowNumber, status, data, errors[], warnings[] }] }</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Cuando el frontend confirma &quot;Importar validas&quot;: crear 1 orden por fila valida via <code>OrderService.createOrder()</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Retornar resumen: <code>{ created: N, errors: N, warnings: N }</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Validaciones por fila (mismas que CreateOrderDTO)</strong></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Validacion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>customerId</td>
+<td>Debe existir como cliente activo</td>
+</tr>
+<tr>
+<td>milestones</td>
+<td>Min 2 (origin + destination)</td>
+</tr>
+<tr>
+<td>cargo.weight</td>
+<td>0.01 - 100,000</td>
+</tr>
+<tr>
+<td>scheduledStartDate</td>
+<td>&lt; scheduledEndDate</td>
+</tr>
+<tr>
+<td>Formatos de fecha</td>
+<td>ISO 8601, DD/MM/YYYY HH:mm, o epoch</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Postcondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Postcondicion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST-01</td>
+<td>N ordenes creadas en estado <code>draft</code> (una por fila valida)</td>
+</tr>
+<tr>
+<td>POST-02</td>
+<td>Filas invalidas NO generaron ordenes</td>
+</tr>
+<tr>
+<td>POST-03</td>
+<td>Cada orden tiene <code>orderNumber</code> auto-generado</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="cu-07-registro-manual-de-hito">CU-07: Registro Manual de Hito</h2>
+<table>
+<thead>
+<tr>
+<th>Atributo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Endpoint</strong></td>
+<td><code>PATCH /api/v1/orders/:id/milestones/:milestoneId</code> o endpoint dedicado</td>
+</tr>
+<tr>
+<td><strong>Actor Principal</strong></td>
+<td>Operador de monitoreo (<code>milestones:manual_entry</code>)</td>
+</tr>
+<tr>
+<td><strong>Trigger</strong></td>
+<td>GPS no detecto entrada/salida y el operador registra manualmente</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Precondicion</th>
+<th>Si no se cumple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRE-01</td>
+<td><code>order.status</code> es <code>in_transit</code>, <code>at_milestone</code> o <code>delayed</code></td>
+<td>Operacion rechazada</td>
+</tr>
+<tr>
+<td>PRE-02</td>
+<td>El hito pertenece a la orden</td>
+<td>HTTP <code>404 MILESTONE_NOT_FOUND</code></td>
+</tr>
+<tr>
+<td>PRE-03</td>
+<td>El hito NO esta en estado terminal (<code>completed</code>/<code>skipped</code>)</td>
+<td>Ignorar — no doble registro</td>
+</tr>
+<tr>
+<td>PRE-04</td>
+<td><code>manualEntryData.reason</code> proporcionado (obligatorio)</td>
+<td>HTTP <code>400 VALIDATION_ERROR</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Request Body</strong></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Obligatorio</th>
+<th>Valores</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>entryType</td>
+<td>enum</td>
+<td>Si</td>
+<td><code>arrival</code> o <code>departure</code></td>
+</tr>
+<tr>
+<td>reason</td>
+<td>enum</td>
+<td>Si</td>
+<td><code>gps_failure</code>, <code>no_signal</code>, <code>geofence_error</code>, <code>manual_override</code>, <code>other</code></td>
+</tr>
+<tr>
+<td>observation</td>
+<td>string</td>
+<td>No (recomendado)</td>
+<td>Texto libre</td>
+</tr>
+<tr>
+<td>evidence</td>
+<td>string</td>
+<td>No</td>
+<td>Base64 de foto/documento</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Secuencia Backend</strong></p>
+<table>
+<thead>
+<tr>
+<th>Paso</th>
+<th>Accion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Verificar que la orden esta en estado activo (in_transit/at_milestone/delayed)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Verificar que el hito pertenece a la orden y no esta en estado terminal</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Si <code>entryType = &quot;arrival&quot;</code>: registrar <code>actualArrival = NOW()</code>, <code>status = &quot;in_progress&quot;</code>, <code>isManual = true</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Si <code>entryType = &quot;departure&quot;</code>: registrar <code>actualDeparture = NOW()</code>, <code>status = &quot;completed&quot;</code>, calcular <code>dwellTime</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Guardar <code>manualEntryData = { reason, observation, evidence, registeredBy }</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Recalcular <code>completionPercentage</code> de la orden</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Evaluar si el status de la orden debe cambiar (ej: todos hitos completed -&gt; orden completed)</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Emitir evento <code>order.milestone_updated</code> con <code>{ orderId, milestoneId, newStatus, isManual: true }</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Postcondiciones</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Postcondicion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST-01</td>
+<td>Hito tiene <code>actualArrival</code> y/o <code>actualDeparture</code> con timestamp UTC</td>
+</tr>
+<tr>
+<td>POST-02</td>
+<td><code>isManual = true</code> y <code>manualEntryData</code> poblado</td>
+</tr>
+<tr>
+<td>POST-03</td>
+<td><code>completionPercentage</code> recalculado</td>
+</tr>
+<tr>
+<td>POST-04</td>
+<td>Si fue ultimo hito: <code>order.status = &quot;completed&quot;</code> automaticamente</td>
+</tr>
+<tr>
+<td>POST-05</td>
+<td>Evento <code>order.milestone_updated</code> emitido</td>
+</tr>
+</tbody>
+</table>
+<h3 id="diagrama-general-de-interaccion-cu">Diagrama general de interaccion CU</h3>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant FE as Frontend
+    participant API as API Backend
+    participant VAL as Validador Zod
+    participant SM as State Machine
+    participant DB as PostgreSQL
+    participant EVT as Event Bus
+    participant GPS as Proveedor GPS
+
+    Note over FE,GPS: CU-01: Crear Orden
+    FE->>API: POST /orders (CreateOrderDTO)
+    API->>VAL: Validar schema
+    VAL-->>API: OK
+    API->>DB: INSERT order + milestones
+    API->>EVT: order.created
+    API-->>FE: 201 Created
+
+    Note over FE,GPS: CU-02: Transicionar Estado
+    FE->>API: PATCH /:id/status
+    API->>SM: Validar transicion
+    SM-->>API: OK + precondiciones
+    API->>DB: UPDATE status + INSERT history
+    API->>EVT: order.status_changed
+    API-->>FE: 200 OK
+
+    Note over FE,GPS: CU-03: Cierre Administrativo
+    FE->>API: POST /:id/close (ClosureDTO)
+    API->>VAL: Validar schema
+    API->>DB: UPDATE status=closed + INSERT closureData
+    API->>EVT: order.closed
+    API-->>FE: 200 OK
+
+    Note over FE,GPS: CU-05: Enviar a GPS
+    FE->>API: POST /bulk-send
+    API->>GPS: HTTP sync por cada orden
+    GPS-->>API: OK / Error
+    API->>DB: UPDATE syncStatus
+    API->>EVT: order.sync_updated
+    API-->>FE: 200 OK + results[]
+</div></code></pre>
+<hr>
+<h1 id="9-endpoints-api-rest">9. Endpoints API REST</h1>
+<p><strong>Base path:</strong> <code>/api/v1/orders</code></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Metodo</th>
+<th>Endpoint</th>
+<th>Descripcion</th>
+<th>Permiso</th>
+<th>Request Body</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E-01</td>
+<td>GET</td>
+<td>/</td>
+<td>Listar ordenes con paginacion y filtros</td>
+<td>orders:view</td>
+<td>Query: page, limit, status, priority, serviceType, customerId, search, dateType, dateFrom, dateTo, sortBy, sortDir</td>
+<td><code>{ items[], total, page, totalPages, statusCounts }</code></td>
+</tr>
+<tr>
+<td>E-02</td>
+<td>GET</td>
+<td>/:id</td>
+<td>Obtener detalle completo</td>
+<td>orders:view</td>
+<td>—</td>
+<td>Order completa con milestones, cargo, closureData, statusHistory</td>
+</tr>
+<tr>
+<td>E-03</td>
+<td>POST</td>
+<td>/</td>
+<td>Crear nueva orden</td>
+<td>orders:create</td>
+<td>CreateOrderDTO</td>
+<td><code>201</code> Order creada con status=draft</td>
+</tr>
+<tr>
+<td>E-04</td>
+<td>PATCH</td>
+<td>/:id</td>
+<td>Actualizar orden existente (parcial)</td>
+<td>orders:edit</td>
+<td>UpdateOrderDTO (parcial)</td>
+<td>Order actualizada</td>
+</tr>
+<tr>
+<td>E-05</td>
+<td>DELETE</td>
+<td>/:id</td>
+<td>Eliminar orden (solo draft)</td>
+<td>orders:delete</td>
+<td>—</td>
+<td><code>204</code> No Content</td>
+</tr>
+<tr>
+<td>E-06</td>
+<td>PATCH</td>
+<td>/:id/status</td>
+<td>Transicionar estado</td>
+<td>orders:edit</td>
+<td><code>{ status, reason?, vehicleId?, driverId? }</code></td>
+<td>Order con nuevo estado</td>
+</tr>
+<tr>
+<td>E-07</td>
+<td>POST</td>
+<td>/:id/close</td>
+<td>Cerrar orden</td>
+<td>orders:close</td>
+<td>OrderClosureDTO</td>
+<td>Order con status=closed</td>
+</tr>
+<tr>
+<td>E-08</td>
+<td>POST</td>
+<td>/import</td>
+<td>Importacion masiva Excel/CSV</td>
+<td>orders:import</td>
+<td>multipart/form-data (archivo)</td>
+<td><code>{ created, errors[], warnings[] }</code></td>
+</tr>
+<tr>
+<td>E-09</td>
+<td>GET</td>
+<td>/export</td>
+<td>Exportar a Excel</td>
+<td>orders:export</td>
+<td>Query: filtros + columns[]</td>
+<td>Archivo .xlsx descargable</td>
+</tr>
+<tr>
+<td>E-10</td>
+<td>POST</td>
+<td>/bulk-send</td>
+<td>Envio masivo a GPS</td>
+<td>orders:sync_gps</td>
+<td><code>{ orderIds[] }</code></td>
+<td><code>{ results: [{orderId, success, error?}] }</code></td>
+</tr>
+<tr>
+<td>E-11</td>
+<td>GET</td>
+<td>/:id/workflow-progress</td>
+<td>Progreso del workflow</td>
+<td>orders:view</td>
+<td>—</td>
+<td><code>{ steps[], currentStep, completionPercentage }</code></td>
+</tr>
+<tr>
+<td>E-12</td>
+<td>PATCH</td>
+<td>/:id/milestones/:milestoneId</td>
+<td>Registro manual de hito</td>
+<td>milestones:manual_entry</td>
+<td><code>{ entryType, reason, observation?, evidence? }</code></td>
+<td>Milestone actualizado</td>
+</tr>
+</tbody>
+</table>
+<h3 id="diagrama-de-flujo-api">Diagrama de flujo API</h3>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant FE as Frontend
+    participant API as API REST
+    participant SVC as OrderService
+    participant VAL as Validators (Zod)
+    participant DB as PostgreSQL
+    participant EVT as Event Bus
+
+    FE->>API: POST /orders (CreateOrderDTO)
+    API->>VAL: Validar schema
+    VAL-->>API: OK / Error 400
+    API->>SVC: createOrder(dto)
+    SVC->>DB: INSERT order + milestones
+    DB-->>SVC: Order creada
+    SVC->>EVT: emit order.created
+    SVC-->>API: Order
+    API-->>FE: 201 Created
+
+    FE->>API: PATCH /:id/status
+    API->>SVC: transition(id, newStatus)
+    SVC->>SVC: Validar transicion (seccion 7)
+    SVC->>DB: UPDATE status + INSERT StatusHistoryEntry
+    SVC->>EVT: emit order.status_changed
+    SVC-->>API: Order actualizada
+    API-->>FE: 200 OK
+</div></code></pre>
+<hr>
+<h1 id="10-eventos-de-dominio">10. Eventos de Dominio</h1>
+<h3 id="catalogo">Catalogo</h3>
+<table>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Payload</th>
+<th>Se emite cuando</th>
+<th>Modulos suscriptores</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>order.created</td>
+<td>orderId, orderNumber, customerId, serviceType, priority, createdBy</td>
+<td>Se crea una nueva orden</td>
+<td>Dashboard, Notificaciones</td>
+</tr>
+<tr>
+<td>order.status_changed</td>
+<td>orderId, orderNumber, oldStatus, newStatus, changedBy, reason</td>
+<td>Cualquier transicion de estado</td>
+<td>Monitoreo, Programacion, Auditoria</td>
+</tr>
+<tr>
+<td>order.assigned</td>
+<td>orderId, orderNumber, vehicleId, vehiclePlate, driverId, driverName</td>
+<td>Se asignan vehiculo + conductor</td>
+<td>Monitoreo, Programacion</td>
+</tr>
+<tr>
+<td>order.milestone_updated</td>
+<td>orderId, milestoneId, milestoneName, milestoneStatus, actualArrival, actualDeparture</td>
+<td>Cambia estado de un hito</td>
+<td>Monitoreo, Notificaciones</td>
+</tr>
+<tr>
+<td>order.sync_updated</td>
+<td>orderId, syncStatus, gpsOperatorId, errorMessage</td>
+<td>Cambia estado de sincronizacion GPS</td>
+<td>Monitoreo</td>
+</tr>
+<tr>
+<td>order.completed</td>
+<td>orderId, orderNumber, totalDistanceKm, totalDurationMinutes, completionPercentage</td>
+<td>Orden alcanza completed (antes del cierre)</td>
+<td>Finanzas, Reportes</td>
+</tr>
+<tr>
+<td>order.cancelled</td>
+<td>orderId, orderNumber, reason, cancelledBy, previousStatus</td>
+<td>Orden es cancelada</td>
+<td>Programacion, Finanzas</td>
+</tr>
+<tr>
+<td>order.closed</td>
+<td>orderId, orderNumber, closedBy, closedAt, customerRating</td>
+<td>Orden alcanza closed</td>
+<td>Finanzas, Reportes</td>
+</tr>
+<tr>
+<td>order.location_update</td>
+<td>orderId, vehicleId, position (lat/lng), speed, heading, timestamp</td>
+<td>Actualizacion de posicion GPS</td>
+<td>Monitoreo (WebSocket)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="diagrama-de-propagacion">Diagrama de propagacion</h3>
+<pre><code class="language-mermaid"><div class="mermaid">graph LR
+    subgraph "Modulo Ordenes"
+        OS[OrderService]
+    end
+
+    OS -->|order.created| EB["Event Bus"]
+    OS -->|order.status_changed| EB
+    OS -->|order.assigned| EB
+    OS -->|order.milestone_updated| EB
+    OS -->|order.completed| EB
+    OS -->|order.cancelled| EB
+    OS -->|order.closed| EB
+    OS -->|order.sync_updated| EB
+    OS -->|order.location_update| EB
+
+    EB -->|status_changed| MON["Monitoreo"]
+    EB -->|assigned| SCHED["Programacion"]
+    EB -->|completed, closed| FIN["Finanzas"]
+    EB -->|milestone_updated| NOTIF["Notificaciones"]
+    EB -->|all events| AUDIT["Auditoria"]
+    EB -->|completed| REP["Reportes"]
+</div></code></pre>
+<hr>
+<h1 id="11-reglas-de-negocio-clave">11. Reglas de Negocio Clave</h1>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Regla</th>
+<th>Descripcion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R-01</td>
+<td>Estados terminales</td>
+<td>closed y cancelled no tienen transiciones de salida</td>
+</tr>
+<tr>
+<td>R-02</td>
+<td>Solo draft se elimina (soft delete)</td>
+<td>DELETE solo valido si status = draft. Marca <code>deleted_at = NOW()</code> + <code>deleted_by</code>. Todas las queries deben filtrar <code>WHERE deleted_at IS NULL</code>. HTTP 409 si status != draft</td>
+</tr>
+<tr>
+<td>R-03</td>
+<td>Asignacion requiere recursos</td>
+<td>pending a assigned requiere vehicleId + driverId</td>
+</tr>
+<tr>
+<td>R-04</td>
+<td>Inicio requiere asignacion</td>
+<td>assigned a in_transit requiere vehicleId AND driverId</td>
+</tr>
+<tr>
+<td>R-05</td>
+<td>Cierre requiere completitud</td>
+<td>completed a closed requiere todos los hitos en completed o skipped</td>
+</tr>
+<tr>
+<td>R-06</td>
+<td>Auto-status por hitos</td>
+<td>Al actualizar un hito, el status de la orden se recalcula</td>
+</tr>
+<tr>
+<td>R-07</td>
+<td>completionPercentage</td>
+<td>Se recalcula: (hitos_completed + hitos_skipped) / total_hitos x 100</td>
+</tr>
+<tr>
+<td>R-08</td>
+<td>Cancelacion con motivo</td>
+<td>cancellationReason es obligatorio al cancelar</td>
+</tr>
+<tr>
+<td>R-09</td>
+<td>Historial inmutable</td>
+<td>Cada transicion genera StatusHistoryEntry. NUNCA se modifica</td>
+</tr>
+<tr>
+<td>R-10</td>
+<td>orderNumber inmutable</td>
+<td>Formato <code>ORD-YYYY-NNNNN</code> (14 chars, 5 digitos), unico global, no editable</td>
+</tr>
+<tr>
+<td>R-11</td>
+<td>Min 2 hitos</td>
+<td>Toda orden requiere minimo 1 origin + 1 destination</td>
+</tr>
+<tr>
+<td>R-12</td>
+<td>Conflicto de recursos</td>
+<td>Vehiculo/conductor no puede tener superposicion de fechas con otra orden activa</td>
+</tr>
+<tr>
+<td>R-13</td>
+<td>Workflow auto-asignado</td>
+<td>Si existe workflow compatible con serviceType + cargoType, se asigna al crear</td>
+</tr>
+<tr>
+<td>R-14</td>
+<td>Fechas cruzadas</td>
+<td>scheduledStartDate debe ser anterior a scheduledEndDate</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h1 id="12-catalogo-de-errores-http">12. Catalogo de Errores HTTP</h1>
+<table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th>Codigo interno</th>
+<th>Cuando ocurre</th>
+<th>Resolucion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>400</td>
+<td>VALIDATION_ERROR</td>
+<td>Campos invalidos segun schema Zod</td>
+<td>Leer details: mapa {campo: mensaje}</td>
+</tr>
+<tr>
+<td>401</td>
+<td>UNAUTHORIZED</td>
+<td>Token JWT ausente o expirado</td>
+<td>Redirigir a /login</td>
+</tr>
+<tr>
+<td>403</td>
+<td>FORBIDDEN</td>
+<td>Sin permisos para la operacion</td>
+<td>Contactar al Usuario Maestro</td>
+</tr>
+<tr>
+<td>404</td>
+<td>ORDER_NOT_FOUND</td>
+<td>ID de orden no existe</td>
+<td>Verificar UUID</td>
+</tr>
+<tr>
+<td>404</td>
+<td>CUSTOMER_NOT_FOUND</td>
+<td>customerId no existe o inactivo</td>
+<td>Seleccionar otro cliente</td>
+</tr>
+<tr>
+<td>404</td>
+<td>VEHICLE_NOT_FOUND</td>
+<td>vehicleId no existe o inactivo</td>
+<td>Seleccionar otro vehiculo</td>
+</tr>
+<tr>
+<td>404</td>
+<td>DRIVER_NOT_FOUND</td>
+<td>driverId no existe o licencia vencida</td>
+<td>Seleccionar otro conductor</td>
+</tr>
+<tr>
+<td>404</td>
+<td>MILESTONE_NOT_FOUND</td>
+<td>milestoneId no existe o no pertenece a la orden</td>
+<td>Verificar UUID del hito y la orden</td>
+</tr>
+<tr>
+<td>409</td>
+<td>CANNOT_DELETE_NON_DRAFT</td>
+<td>DELETE con status != draft</td>
+<td>Cancelar en vez de eliminar</td>
+</tr>
+<tr>
+<td>409</td>
+<td>VEHICLE_CONFLICT</td>
+<td>Vehiculo en conflicto de horario</td>
+<td>Elegir otro vehiculo o ajustar fechas</td>
+</tr>
+<tr>
+<td>409</td>
+<td>DRIVER_CONFLICT</td>
+<td>Conductor en conflicto de horario</td>
+<td>Elegir otro conductor o ajustar fechas</td>
+</tr>
+<tr>
+<td>422</td>
+<td>INVALID_STATE_TRANSITION</td>
+<td>Transicion no permitida en maquina de estados</td>
+<td>Leer details.validTransitions</td>
+</tr>
+<tr>
+<td>422</td>
+<td>PRECONDITION_FAILED</td>
+<td>Transicion valida pero faltan precondiciones</td>
+<td>Leer details.missingConditions</td>
+</tr>
+<tr>
+<td>422</td>
+<td>CANNOT_CLOSE_ORDER</td>
+<td>Cierre con hitos pendientes o status != completed</td>
+<td>Completar/saltar hitos pendientes</td>
+</tr>
+<tr>
+<td>422</td>
+<td>INVALID_FILE_FORMAT</td>
+<td>Archivo de importacion no es xlsx/xls/csv</td>
+<td>Convertir formato</td>
+</tr>
+<tr>
+<td>413</td>
+<td>PAYLOAD_TOO_LARGE</td>
+<td>Archivo de importacion excede 10 MB</td>
+<td>Reducir tamano o dividir en lotes</td>
+</tr>
+<tr>
+<td>500</td>
+<td>INTERNAL_ERROR</td>
+<td>Error inesperado del servidor</td>
+<td>Reintentar; si persiste, contactar soporte</td>
+</tr>
+<tr>
+<td>409</td>
+<td>SYNC_IN_PROGRESS</td>
+<td>Ya hay un envio GPS en proceso para esta orden</td>
+<td>Esperar a que finalice el envio actual</td>
+</tr>
+<tr>
+<td>502</td>
+<td>GPS_SYNC_FAILED</td>
+<td>Proveedor GPS no respondio</td>
+<td>Verificar proveedor y reintentar</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h1 id="13-permisos-rbac">13. Permisos RBAC</h1>
+<p><strong>3 niveles: Owner &gt; Usuario Maestro &gt; Subusuario</strong></p>
+<table>
+<thead>
+<tr>
+<th>Permiso</th>
+<th>Descripcion</th>
+<th>Owner</th>
+<th>Usuario Maestro</th>
+<th>Subusuario</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>orders:view</td>
+<td>Ver listado y detalle de ordenes</td>
+<td>Si</td>
+<td>Si</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td>orders:create</td>
+<td>Crear nuevas ordenes</td>
+<td>Si</td>
+<td>Si</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td>orders:edit</td>
+<td>Editar ordenes y transicionar estados</td>
+<td>Si</td>
+<td>Si</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td>orders:delete</td>
+<td>Eliminar ordenes en borrador</td>
+<td>Si</td>
+<td>Si</td>
+<td>No</td>
+</tr>
+<tr>
+<td>orders:cancel</td>
+<td>Cancelar ordenes</td>
+<td>Si</td>
+<td>Si</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td>orders:close</td>
+<td>Cierre administrativo</td>
+<td>Si</td>
+<td>Si</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td>orders:import</td>
+<td>Importacion masiva</td>
+<td>Si</td>
+<td>Si</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td>orders:export</td>
+<td>Exportacion a Excel</td>
+<td>Si</td>
+<td>Si</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td>orders:sync_gps</td>
+<td>Envio a proveedor GPS</td>
+<td>Si</td>
+<td>Si</td>
+<td>Configurable</td>
+</tr>
+<tr>
+<td>milestones:manual_entry</td>
+<td>Registro manual de hito (sin GPS)</td>
+<td>Si</td>
+<td>Si</td>
+<td>Configurable</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h1 id="14-diagrama-de-componentes">14. Diagrama de Componentes</h1>
+<pre><code class="language-mermaid"><div class="mermaid">graph TB
+    subgraph "Modulo de Ordenes"
+        subgraph "Capa Presentacion - Next.js 15"
+            UI_LIST["OrderListPage<br/>Lista + Filtros + KPIs"]
+            UI_NEW["NewOrderPage<br/>Wizard 6 pasos"]
+            UI_DETAIL["OrderDetailPage<br/>Detalle + Timeline"]
+            UI_IMPORT["ImportDrawer<br/>Importacion masiva"]
+        end
+
+        subgraph "Capa Logica - React Hooks"
+            H_ORDERS["useOrders<br/>CRUD + listado"]
+            H_IMPORT["useOrderImportExport<br/>Import/Export"]
+            H_MONITOR["useMonitoring<br/>Tracking tiempo real"]
+            H_CONFLICTS["useResourceConflicts<br/>Deteccion conflictos"]
+        end
+
+        subgraph "Capa Servicios"
+            SVC_ORDER["OrderService<br/>Gestion ordenes"]
+            SVC_GPS["GPSSyncService<br/>Sincronizacion GPS"]
+            SVC_IMPORT["ImportService<br/>Parseo Excel/CSV"]
+            SVC_EXPORT["ExportService<br/>Generacion Excel"]
+            SVC_CONNECTOR["ModuleConnectorService<br/>Bridge cross-module"]
+        end
+
+        subgraph "Capa Validacion"
+            VAL["Schemas Zod<br/>createOrderSchema<br/>updateOrderSchema<br/>closureSchema<br/>importRowSchema"]
+        end
+
+        subgraph "Infraestructura"
+            EVT["tmsEventBus<br/>Event Bus"]
+            STORE["State Management<br/>React Context + SWR"]
+        end
+    end
+
+    UI_LIST --> H_ORDERS
+    UI_NEW --> H_ORDERS
+    UI_NEW --> H_CONFLICTS
+    UI_DETAIL --> H_ORDERS
+    UI_DETAIL --> H_MONITOR
+    UI_IMPORT --> H_IMPORT
+
+    H_ORDERS --> SVC_ORDER
+    H_ORDERS --> VAL
+    H_IMPORT --> SVC_IMPORT
+    H_IMPORT --> SVC_EXPORT
+
+    SVC_ORDER --> EVT
+    SVC_GPS --> EVT
+    SVC_CONNECTOR --> SVC_ORDER
+</div></code></pre>
+<hr>
+<h1 id="15-diagrama-de-despliegue">15. Diagrama de Despliegue</h1>
+<pre><code class="language-mermaid"><div class="mermaid">graph TB
+    subgraph "Nodo: Cloud Server - Vercel"
+        FE["Next.js 15 Frontend<br/>App Router + SSR<br/>React 19"]
+    end
+
+    subgraph "Nodo: API Backend"
+        API["REST API<br/>Node.js"]
+        WS["WebSocket Server<br/>Eventos tiempo real"]
+    end
+
+    subgraph "Nodo: Base de Datos"
+        DB["PostgreSQL<br/>+ PostGIS"]
+    end
+
+    subgraph "Nodo: Almacenamiento"
+        S3["S3 / GCS<br/>Fotos, firmas, adjuntos"]
+    end
+
+    subgraph "Nodo: Servicios Externos"
+        GPS_W["Wialon API"]
+        GPS_N["Navitel Fleet API"]
+    end
+
+    subgraph "Nodo: Message Broker"
+        EVT["tmsEventBus<br/>Redis Pub/Sub"]
+    end
+
+    FE -->|HTTPS REST| API
+    FE -->|WSS| WS
+    API -->|SQL| DB
+    API -->|presigned URLs| S3
+    API -->|HTTP sync| GPS_W
+    API -->|HTTP sync| GPS_N
+    API -->|publish| EVT
+    EVT -->|notify| WS
+    WS -->|subscribe| EVT
+</div></code></pre>
+<hr>
+<blockquote>
+<p><strong>Nota:</strong> Este documento es una referencia operativa para desarrollo frontend y backend. Incluye los 7 Casos de Uso con precondiciones, secuencia, postcondiciones y excepciones. Para detalles completos (12 historias de usuario con criterios de aceptacion, conversaciones de equipo, escenarios narrativos con actores nombrados, payloads exactos con ejemplos JSON, y validaciones con justificacion WHY), consultar <strong>ORDERS_SYSTEM_DESIGN4.md</strong>.</p>
+</blockquote>
+
+</body>
+</html>
