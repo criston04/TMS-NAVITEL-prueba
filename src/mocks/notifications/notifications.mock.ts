@@ -1,0 +1,172 @@
+/**
+ * Mock data para el módulo de Notificaciones
+ * Datos de prueba: notificaciones del sistema, plantillas y preferencias
+ */
+import type {
+  SystemNotification,
+  NotificationPreferences,
+  NotificationTemplate,
+} from "@/types/notification";
+
+// ── NOTIFICACIONES DEL SISTEMA ───────────
+export const mockNotifications: SystemNotification[] = [
+  {
+    id: "notif-001",
+    title: "Orden completada",
+    message: "La orden ORD-2026-00001 ha sido completada exitosamente.",
+    category: "order",
+    priority: "medium",
+    channel: "in_app",
+    status: "delivered",
+    userId: "user-001",
+    relatedEntity: {
+      type: "order",
+      id: "ord-00001",
+      name: "ORD-2026-00001",
+    },
+    actionUrl: "/orders/ord-00001",
+    actionLabel: "Ver orden",
+    createdAt: "2026-02-02T10:00:00Z",
+    sentAt: "2026-02-02T10:00:05Z",
+  },
+  {
+    id: "notif-002",
+    title: "Documento por vencer",
+    message: "La licencia del conductor Juan Carlos Pérez López vence en 15 días.",
+    category: "document",
+    priority: "high",
+    channel: "in_app",
+    status: "delivered",
+    userId: "user-001",
+    relatedEntity: {
+      type: "driver",
+      id: "drv-001",
+      name: "Juan Carlos Pérez López",
+    },
+    actionUrl: "/master/drivers/drv-001",
+    actionLabel: "Ver conductor",
+    createdAt: "2026-02-01T09:00:00Z",
+    sentAt: "2026-02-01T09:00:02Z",
+  },
+  {
+    id: "notif-003",
+    title: "Mantenimiento programado",
+    message: "El vehículo ABC-123 tiene mantenimiento programado para mañana.",
+    category: "maintenance",
+    priority: "medium",
+    channel: "in_app",
+    status: "read",
+    userId: "user-001",
+    relatedEntity: {
+      type: "vehicle",
+      id: "veh-001",
+      name: "ABC-123",
+    },
+    actionUrl: "/master/vehicles/veh-001/maintenance",
+    actionLabel: "Ver mantenimiento",
+    createdAt: "2026-02-01T08:00:00Z",
+    sentAt: "2026-02-01T08:00:03Z",
+    readAt: "2026-02-01T08:30:00Z",
+  },
+  {
+    id: "notif-004",
+    title: "Alerta de geocerca",
+    message: "El vehículo XYZ-789 ha salido de la geocerca 'Almacén Central'.",
+    category: "geofence",
+    priority: "urgent",
+    channel: "in_app",
+    status: "delivered",
+    userId: "user-001",
+    relatedEntity: {
+      type: "vehicle",
+      id: "veh-002",
+      name: "XYZ-789",
+    },
+    actionUrl: "/monitoring/tracking",
+    actionLabel: "Ver en mapa",
+    createdAt: "2026-02-02T11:30:00Z",
+    sentAt: "2026-02-02T11:30:01Z",
+  },
+  {
+    id: "notif-005",
+    title: "Nuevo conductor registrado",
+    message: "Se ha registrado un nuevo conductor: Pedro Ramírez García.",
+    category: "driver",
+    priority: "low",
+    channel: "in_app",
+    status: "read",
+    userId: "user-001",
+    relatedEntity: {
+      type: "driver",
+      id: "drv-002",
+      name: "Pedro Ramírez García",
+    },
+    actionUrl: "/master/drivers/drv-002",
+    actionLabel: "Ver perfil",
+    createdAt: "2026-01-30T14:00:00Z",
+    sentAt: "2026-01-30T14:00:02Z",
+    readAt: "2026-01-30T15:00:00Z",
+  },
+];
+
+// ── PLANTILLAS DE NOTIFICACIÓN ───────────
+export const mockNotificationTemplates: NotificationTemplate[] = [
+  {
+    id: "tmpl-001",
+    name: "Orden Completada",
+    category: "order",
+    channel: "email",
+    subject: "Orden {{orderNumber}} completada",
+    body: "Estimado usuario,\n\nLa orden {{orderNumber}} ha sido completada exitosamente.\n\nDetalles:\n- Cliente: {{customerName}}\n- Fecha: {{completionDate}}\n\nSaludos,\nTMS Navitel",
+    variables: ["orderNumber", "customerName", "completionDate"],
+    isActive: true,
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T00:00:00Z",
+  },
+  {
+    id: "tmpl-002",
+    name: "Documento por Vencer",
+    category: "document",
+    channel: "in_app",
+    body: "El documento {{documentType}} de {{entityName}} vence en {{daysRemaining}} días.",
+    variables: ["documentType", "entityName", "daysRemaining", "expiryDate"],
+    isActive: true,
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T00:00:00Z",
+  },
+  {
+    id: "tmpl-003",
+    name: "Alerta de Geocerca",
+    category: "geofence",
+    channel: "push",
+    body: "{{vehiclePlate}} ha {{eventType}} la geocerca {{geofenceName}}.",
+    variables: ["vehiclePlate", "eventType", "geofenceName", "timestamp"],
+    isActive: true,
+    createdAt: "2026-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T00:00:00Z",
+  },
+];
+
+// ── PREFERENCIAS POR DEFECTO ─────────────
+export const defaultPreferences: NotificationPreferences = {
+  userId: "user-001",
+  channels: {
+    order: ["in_app", "email"],
+    driver: ["in_app"],
+    vehicle: ["in_app"],
+    maintenance: ["in_app", "email"],
+    document: ["in_app", "email", "push"],
+    geofence: ["in_app", "push"],
+    alert: ["in_app", "push", "email"],
+    system: ["in_app"],
+  },
+  quietHours: {
+    enabled: false,
+    startTime: "22:00",
+    endTime: "07:00",
+  },
+  dailyDigest: true,
+  digestEmail: "usuario@ejemplo.com",
+  soundEnabled: true,
+  vibrationEnabled: true,
+};

@@ -1,0 +1,19 @@
+export { SchedulingLayout } from './scheduling-layout';
+export { SchedulingSidebar } from './scheduling-sidebar';
+export { SchedulingCalendar } from './scheduling-calendar';
+export { SchedulingDayCell } from './scheduling-day-cell';
+export { SchedulingOrderCard } from './scheduling-order-card';
+export { SchedulingTimeline } from './scheduling-timeline';
+export { SchedulingListView } from './scheduling-list-view';
+export { SchedulingKPIBar, SchedulingKPICompact } from './scheduling-kpi-bar';
+export { AssignmentModal } from './assignment-modal';
+// ═══ New Feature Components ═══
+export { SchedulingBulkAssignment } from './scheduling-bulk-assignment';
+export { SchedulingOrderDetail } from './scheduling-order-detail';
+export { SchedulingCalendarFilters } from './scheduling-calendar-filters';
+export { SchedulingExport } from './scheduling-export';
+export { SchedulingNotifications } from './scheduling-notifications';
+export { SchedulingAutoAssign } from './scheduling-auto-assign';
+export { SchedulingGantt } from './scheduling-gantt';
+export { SchedulingAuditLog } from './scheduling-audit-log';
+export { SchedulingBlockDay } from './scheduling-block-day';
