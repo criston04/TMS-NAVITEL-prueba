@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import type {
   AuthUser,
@@ -204,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canManageModulesFlag = useMemo(() => !!currentRole && canManageModules(currentRole), [currentRole]);
   const canTransferVehiclesFlag = useMemo(() => !!currentRole && canTransferVehicles(currentRole), [currentRole]);
 
-  const login = (userData: AuthUser | PlatformUser) => {
+  const login = useCallback((userData: AuthUser | PlatformUser) => {
     if (isPlatformUser(userData)) {
       setPlatformUser(userData);
       setUser(null);
@@ -213,27 +213,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPlatformUser(null);
     }
     localStorage.setItem("tms_user", JSON.stringify(userData));
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setPlatformUser(null);
     localStorage.removeItem("tms_user");
     localStorage.removeItem("tms_access_token");
     localStorage.removeItem("tms_refresh_token");
     router.push("/login");
-  };
+  }, [router]);
 
-  const updateUser = (data: Partial<AuthUser>) => {
+  const updateUser = useCallback((data: Partial<AuthUser>) => {
     if (user) {
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
       localStorage.setItem("tms_user", JSON.stringify(updatedUser));
     }
-  };
+  }, [user]);
 
   /** Verifica si el usuario tiene permiso sobre un recurso + acción */
-  const can = (resource: PermissionResource, action: PermissionAction): boolean => {
+  const can = useCallback((resource: PermissionResource, action: PermissionAction): boolean => {
     if (!currentRole) return false;
     // Los usuarios de plataforma usan sus propios permisos
     if (platformUser) {
@@ -243,28 +243,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return hasPermission(user.role, resource, action, user.permissions);
     }
     return false;
-  };
+  }, [currentRole, platformUser, user]);
 
   /** Verifica si el usuario tiene alguno de los roles especificados */
-  const hasRoleFn = (...roles: AnyRole[]): boolean => {
+  const hasRoleFn = useCallback((...roles: AnyRole[]): boolean => {
     if (!currentRole) return false;
     return roles.includes(currentRole);
-  };
+  }, [currentRole]);
 
   /** Verifica si el usuario pertenece a un grupo de roles */
-  const inGroupFn = (group: keyof typeof ROLE_GROUPS): boolean => {
+  const inGroupFn = useCallback((group: keyof typeof ROLE_GROUPS): boolean => {
     if (!currentRole) return false;
     return isInGroup(currentRole, group);
-  };
+  }, [currentRole]);
 
   /** Verifica si un módulo está habilitado para el tenant */
-  const hasModuleEnabledFn = (module: SystemModuleCode): boolean => {
+  const hasModuleEnabledFn = useCallback((module: SystemModuleCode): boolean => {
     // Los usuarios de plataforma siempre ven todo
     if (isPlatformFlag) return true;
-    // Si no hay lista de módulos, asumir que todos están habilitados (desarrollo)
-    if (enabledModules.length === 0) return true;
+    // Si no hay lista de módulos, es restrictivo por defecto
+    if (enabledModules.length === 0) return false;
     return enabledModules.includes(module);
-  };
+  }, [isPlatformFlag, enabledModules]);
 
   // forcePasswordChange
   const requiresPasswordChange = useMemo(() => {
@@ -273,39 +273,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return "forcePasswordChange" in currentUser && !!currentUser.forcePasswordChange;
   }, [user, platformUser]);
 
+  const contextValue = useMemo<AuthContextType>(() => ({
+    user,
+    platformUser,
+    isLoading,
+    isAuthenticated: !!(user || platformUser),
+    login,
+    logout,
+    updateUser,
+    // Permisos
+    can,
+    hasRole: hasRoleFn,
+    inGroup: inGroupFn,
+    // Jerarquía
+    tier: currentTier,
+    isPlatform: isPlatformFlag,
+    isMasterUser: isMasterUserFlag,
+    isSubUser: isSubUserFlag,
+    // Capacidades
+    canCreateUsers: canCreateUsersFlag,
+    canModifyConfig: canModifyConfigFlag,
+    canManageModules: canManageModulesFlag,
+    canTransferVehicles: canTransferVehiclesFlag,
+    // Módulos y Scope
+    hasModuleEnabled: hasModuleEnabledFn,
+    enabledModules,
+    scope: currentScope,
+    restrictions,
+    // Password
+    requiresPasswordChange,
+  }), [
+    user, platformUser, isLoading, login, logout, updateUser,
+    can, hasRoleFn, inGroupFn,
+    currentTier, isPlatformFlag, isMasterUserFlag, isSubUserFlag,
+    canCreateUsersFlag, canModifyConfigFlag, canManageModulesFlag, canTransferVehiclesFlag,
+    hasModuleEnabledFn, enabledModules, currentScope, restrictions, requiresPasswordChange,
+  ]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        platformUser,
-        isLoading,
-        isAuthenticated: !!(user || platformUser),
-        login,
-        logout,
-        updateUser,
-        // Permisos
-        can,
-        hasRole: hasRoleFn,
-        inGroup: inGroupFn,
-        // Jerarquía
-        tier: currentTier,
-        isPlatform: isPlatformFlag,
-        isMasterUser: isMasterUserFlag,
-        isSubUser: isSubUserFlag,
-        // Capacidades
-        canCreateUsers: canCreateUsersFlag,
-        canModifyConfig: canModifyConfigFlag,
-        canManageModules: canManageModulesFlag,
-        canTransferVehicles: canTransferVehiclesFlag,
-        // Módulos y Scope
-        hasModuleEnabled: hasModuleEnabledFn,
-        enabledModules,
-        scope: currentScope,
-        restrictions,
-        // Password
-        requiresPasswordChange,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
