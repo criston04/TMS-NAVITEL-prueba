@@ -6,7 +6,7 @@
    Supports: select → configure → results → assign
    ============================================ */
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo, type ReactNode } from "react";
 import type {
   TransportOrder,
   Route,
@@ -324,59 +324,61 @@ export function RoutePlannerProvider({ children }: { children: ReactNode }) {
      Recalculates metrics, ETAs, and fetches new OSRM polyline
      ============================================ */
   const reorderStops = useCallback((stops: RouteStop[]) => {
-    if (!currentRoute) return;
+    setCurrentRoute((prev) => {
+      if (!prev) return prev;
 
-    const reorderedStops = stops.map((stop, index) => ({
-      ...stop,
-      sequence: index + 1,
-    }));
+      const reorderedStops = stops.map((stop, index) => ({
+        ...stop,
+        sequence: index + 1,
+      }));
 
-    // Recalcular ETAs
-    const stopsWithETA = calculateEstimatedArrivals(reorderedStops, "08:00", {
-      priority: configuration.priority,
-      considerTraffic: configuration.considerTraffic,
-    });
-
-    const totalDistance = calculateTotalDistance(stopsWithETA);
-    const estimatedDurationValue = estimateDuration(totalDistance, stopsWithETA.length, {
-      priority: configuration.priority,
-      considerTraffic: configuration.considerTraffic,
-    });
-    const fuelConsumption = selectedVehicle?.fuelConsumption || 10;
-    const costs = estimateCost(totalDistance, fuelConsumption, !configuration.avoidTolls, configuration.priority);
-
-    setCurrentRoute({
-      ...currentRoute,
-      stops: stopsWithETA,
-      metrics: {
-        ...currentRoute.metrics,
-        totalDistance,
-        estimatedDuration: estimatedDurationValue,
-        estimatedCost: costs.total,
-        fuelCost: costs.fuel,
-        tollsCost: costs.tolls,
-      },
-      polyline: generateRoutePolyline(stopsWithETA),
-      updatedAt: new Date().toISOString(),
-    });
-
-    // Actualizar polyline con OSRM async
-    const coords = stopsWithETA.map((s) => s.coordinates);
-    routingService.calculateRoute(coords).then((result) => {
-      if (!isMountedRef.current) return;
-      setCurrentRoute((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          polyline: result.polyline,
-          metrics: {
-            ...prev.metrics,
-            totalDistance: result.totalDistance,
-          },
-        };
+      // Recalcular ETAs
+      const stopsWithETA = calculateEstimatedArrivals(reorderedStops, "08:00", {
+        priority: configuration.priority,
+        considerTraffic: configuration.considerTraffic,
       });
-    }).catch(() => { /* fallback ya aplicado */ });
-  }, [currentRoute, selectedVehicle, configuration]);
+
+      const totalDistance = calculateTotalDistance(stopsWithETA);
+      const estimatedDurationValue = estimateDuration(totalDistance, stopsWithETA.length, {
+        priority: configuration.priority,
+        considerTraffic: configuration.considerTraffic,
+      });
+      const fuelConsumption = selectedVehicle?.fuelConsumption || 10;
+      const costs = estimateCost(totalDistance, fuelConsumption, !configuration.avoidTolls, configuration.priority);
+
+      // Actualizar polyline con OSRM async (después de que el estado síncrono se aplique)
+      const coords = stopsWithETA.map((s) => s.coordinates);
+      routingService.calculateRoute(coords).then((result) => {
+        if (!isMountedRef.current) return;
+        setCurrentRoute((latest) => {
+          if (!latest) return latest;
+          return {
+            ...latest,
+            polyline: result.polyline,
+            metrics: {
+              ...latest.metrics,
+              totalDistance: result.totalDistance,
+            },
+          };
+        });
+      }).catch(() => { /* fallback ya aplicado */ });
+
+      return {
+        ...prev,
+        stops: stopsWithETA,
+        metrics: {
+          ...prev.metrics,
+          totalDistance,
+          estimatedDuration: estimatedDurationValue,
+          estimatedCost: costs.total,
+          fuelCost: costs.fuel,
+          tollsCost: costs.tolls,
+        },
+        polyline: generateRoutePolyline(stopsWithETA),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }, [selectedVehicle, configuration]);
 
   /* ============================================
      SELECT VEHICLE
@@ -617,10 +619,12 @@ export function RoutePlannerProvider({ children }: { children: ReactNode }) {
   /* ============================================
      COMPUTED VALUES
      ============================================ */
-  const allRoutesAssigned = routeAssignments.length > 0 &&
-    routeAssignments.every((a) => a.vehicle && a.driver);
+  const allRoutesAssigned = useMemo(
+    () => routeAssignments.length > 0 && routeAssignments.every((a) => a.vehicle && a.driver),
+    [routeAssignments]
+  );
 
-  const value: RoutePlannerContextValue = {
+  const value = useMemo<RoutePlannerContextValue>(() => ({
     plannerStep,
     setPlannerStep,
     selectedOrders,
@@ -657,7 +661,44 @@ export function RoutePlannerProvider({ children }: { children: ReactNode }) {
     error,
     isSuccess,
     clearError,
-  };
+  }), [
+    plannerStep,
+    setPlannerStep,
+    selectedOrders,
+    addOrder,
+    removeOrder,
+    clearOrders,
+    optimizationParams,
+    updateOptimizationParams,
+    currentRoute,
+    generateRoute,
+    reorderStops,
+    generatedRoutes,
+    generateOptimizedRoutes,
+    isOptimizing,
+    routeAssignments,
+    assignVehicleToRoute,
+    assignDriverToRoute,
+    unassignVehicleFromRoute,
+    unassignDriverFromRoute,
+    selectedVehicle,
+    selectedDriver,
+    selectVehicle,
+    selectDriver,
+    configuration,
+    updateConfiguration,
+    confirmRoute,
+    confirmAllRoutes,
+    resetRoute,
+    resetAll,
+    selectedRouteId,
+    setSelectedRouteId,
+    allRoutesAssigned,
+    isGenerating,
+    error,
+    isSuccess,
+    clearError,
+  ]);
 
   return (
     <RoutePlannerContext.Provider value={value}>
