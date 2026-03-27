@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, type ReactNode } from "react";
 import {
   CUSTOMER_CATEGORIES as DEFAULT_CATEGORIES,
   type CustomerCategoryConfig,
@@ -116,20 +116,23 @@ export function CustomerCategoriesProvider({ children }: { children: ReactNode }
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  const derived = buildDerivedMaps(categories);
+  const derived = useMemo(() => buildDerivedMaps(categories), [categories]);
+
+  const contextValue = useMemo<CustomerCategoriesContextValue>(
+    () => ({
+      categories,
+      ...derived,
+      addCategory,
+      updateCategory,
+      removeCategory,
+      reorderCategories,
+      resetToDefaults,
+    }),
+    [categories, derived, addCategory, updateCategory, removeCategory, reorderCategories, resetToDefaults]
+  );
 
   return (
-    <CustomerCategoriesContext.Provider
-      value={{
-        categories,
-        ...derived,
-        addCategory,
-        updateCategory,
-        removeCategory,
-        reorderCategories,
-        resetToDefaults,
-      }}
-    >
+    <CustomerCategoriesContext.Provider value={contextValue}>
       {children}
     </CustomerCategoriesContext.Provider>
   );
