@@ -41,3 +41,5 @@ yarn-error.log*
 next-env.d.ts
 AUDIT_REPORT.md
 RFC_BACKEND_TMS_NAVITEL.md
+temp_auto_push.bat
+temp_interactive_push.bat
