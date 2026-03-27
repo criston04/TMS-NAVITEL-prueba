@@ -2,12 +2,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FleetMap } from "@/components/shared/fleet/fleet-map"; // Assuming this is reusable
-import { Vehicle } from "@/types/fleet";
+import { FleetVehicle } from "@/types/fleet";
 import { Maximize2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-const mockVehicles: Vehicle[] = [
+const mockVehicles: FleetVehicle[] = [
   {
     id: "1",
     code: "V-001",

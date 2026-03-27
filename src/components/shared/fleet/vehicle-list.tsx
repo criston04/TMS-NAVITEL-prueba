@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Vehicle } from "@/types/fleet";
+import { FleetVehicle } from "@/types/fleet";
 import { VehicleCard } from "./vehicle-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -11,11 +11,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
  */
 interface VehicleListProps {
   /** Lista de vehículos a mostrar */
-  readonly vehicles: Vehicle[];
+  readonly vehicles: FleetVehicle[];
   /** Vehículo actualmente seleccionado */
-  readonly selectedVehicle: Vehicle | null;
+  readonly selectedVehicle: FleetVehicle | null;
   /** Callback cuando se selecciona un vehículo */
-  readonly onSelectVehicle: (vehicle: Vehicle) => void;
+  readonly onSelectVehicle: (vehicle: FleetVehicle) => void;
 }
 
 export function VehicleList({

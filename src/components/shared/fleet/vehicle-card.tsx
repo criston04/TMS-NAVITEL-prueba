@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Vehicle, TrackingEvent, TrackingEventStatus } from "@/types/fleet";
+import { FleetVehicle, TrackingEvent, TrackingEventStatus } from "@/types/fleet";
 import { Truck, ChevronRight, CheckCircle2, Circle, MapPin } from "lucide-react";
 
 /**
@@ -10,7 +10,7 @@ import { Truck, ChevronRight, CheckCircle2, Circle, MapPin } from "lucide-react"
  */
 interface VehicleCardProps {
   /** Datos del vehículo */
-  vehicle: Vehicle;
+  vehicle: FleetVehicle;
   /** Si la tarjeta está seleccionada */
   isSelected: boolean;
   /** Si la tarjeta está expandida mostrando el timeline */

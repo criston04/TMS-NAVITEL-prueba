@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Vehicle } from "@/types/fleet";
+import { FleetVehicle } from "@/types/fleet";
 import { cn } from "@/lib/utils";
 
 // Colores del mapa según estado
 
 interface FleetMapProps {
-  readonly vehicles: Vehicle[];
-  readonly selectedVehicle: Vehicle | null;
-  readonly onSelectVehicle: (vehicle: Vehicle) => void;
+  readonly vehicles: FleetVehicle[];
+  readonly selectedVehicle: FleetVehicle | null;
+  readonly onSelectVehicle: (vehicle: FleetVehicle) => void;
   readonly className?: string;
 }
 

@@ -36,9 +36,9 @@ export interface TrackingEvent {
 
 /**
  * Información completa de un vehículo de la flota
- * @interface Vehicle
+ * @interface FleetVehicle
  */
-export interface Vehicle {
+export interface FleetVehicle {
   /** Identificador único del vehículo */
   id: string;
   /** Código de identificación (ej: "TRK-001") */
@@ -60,3 +60,6 @@ export interface Vehicle {
   /** Lista de eventos de tracking */
   tracking: TrackingEvent[];
 }
+
+/** @deprecated Use FleetVehicle instead */
+export type Vehicle = FleetVehicle;
