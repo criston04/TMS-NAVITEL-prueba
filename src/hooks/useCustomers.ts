@@ -418,21 +418,13 @@ export function useCustomers(options: UseCustomersOptions = {}): UseCustomersRet
     }
   }, []);
 
-  // Cargar datos inicial
   useEffect(() => {
     if (autoLoad) {
       loadCustomers();
       loadStats();
       loadCities();
     }
-  }, [autoLoad, loadCustomers, loadStats, loadCities]);
-
-  // Recargar cuando cambian filtros o página
-  useEffect(() => {
-    if (autoLoad) {
-      loadCustomers();
-    }
-  }, [filters, page, pageSize, autoLoad, loadCustomers]);
+  }, [filters, page, pageSize, autoLoad, loadCustomers, loadStats, loadCities]);
 
   return {
     customers,

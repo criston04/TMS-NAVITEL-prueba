@@ -484,18 +484,11 @@ export function useVehicles(options: UseVehiclesOptions = {}): UseVehiclesReturn
     );
   }, []);
 
-  // Auto-fetch al montar
   React.useEffect(() => {
     if (autoFetch) {
       fetchVehicles();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoFetch]); // Solo en mount, no incluir fetchVehicles para evitar re-ejecuciÃ³n
-
-  // Refetch cuando cambian filtros, pÃ¡gina o pageSize
-  React.useEffect(() => {
-    fetchVehicles();
-  }, [filters, state.currentPage, state.pageSize, fetchVehicles]);
+  }, [filters, state.currentPage, state.pageSize, autoFetch, fetchVehicles]);
 
   return {
     ...state,

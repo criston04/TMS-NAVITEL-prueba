@@ -407,18 +407,11 @@ export function useDrivers(options: UseDriversOptions = {}): UseDriversReturn {
     );
   }, []);
 
-  // Auto-fetch al montar
   React.useEffect(() => {
     if (autoFetch) {
       fetchDrivers();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoFetch]); // Solo en mount, no incluir fetchDrivers para evitar re-ejecuciÃ³n
-
-  // Refetch cuando cambian filtros, pÃ¡gina o pageSize
-  React.useEffect(() => {
-    fetchDrivers();
-  }, [filters, state.currentPage, state.pageSize, fetchDrivers]);
+  }, [filters, state.currentPage, state.pageSize, autoFetch, fetchDrivers]);
 
   return {
     ...state,
