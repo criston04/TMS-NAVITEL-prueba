@@ -261,9 +261,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasModuleEnabledFn = useCallback((module: SystemModuleCode): boolean => {
     // Los usuarios de plataforma siempre ven todo
     if (isPlatformFlag) return true;
-    // Si no hay lista de módulos, es restrictivo por defecto
-    if (enabledModules.length === 0) return false;
-    return enabledModules.includes(module);
+    // Si no hay lista de módulos, asumir que todos están habilitados (desarrollo)
+    if (enabledModules.length === 0) return true;
+    // Check directo primero
+    if (enabledModules.includes(module)) return true;
+    // Si el module es un código de grupo, verificar si algún módulo hijo está habilitado
+    const GROUP_CHILDREN: Partial<Record<SystemModuleCode, SystemModuleCode[]>> = {
+      operations: ["orders", "scheduling", "workflows", "bitacora", "route_planner"],
+      finance: ["invoicing", "payments", "costs", "rates", "settlements"],
+      master_data: ["customers", "drivers", "vehicles", "geofences", "operators", "products"],
+    };
+    const children = GROUP_CHILDREN[module];
+    if (children) return children.some((child) => enabledModules.includes(child));
+    return false;
   }, [isPlatformFlag, enabledModules]);
 
   // forcePasswordChange

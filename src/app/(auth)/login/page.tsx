@@ -25,7 +25,7 @@ const DEMO_ACCOUNTS: {
 }[] = [
   {
     label: "Platform Owner",
-    description: "Administrador de la plataforma TMS — gestiona todos los clientes",
+    description: "Gestión global de la plataforma TMS",
     icon: Shield,
     email: "admin@tms-navitel.com",
     user: {
@@ -39,7 +39,7 @@ const DEMO_ACCOUNTS: {
   },
   {
     label: "Usuario Maestro",
-    description: "Administrador de Transportes del Norte S.A. — gestiona su empresa",
+    description: "Admin de Transportes del Norte S.A.",
     icon: Building2,
     email: "cperez@transportesnorte.com",
     user: {
@@ -61,7 +61,7 @@ const DEMO_ACCOUNTS: {
   },
   {
     label: "Subusuario (Operador)",
-    description: "Despachador de Transportes del Norte — acceso limitado",
+    description: "Despachador — acceso limitado",
     icon: Users,
     email: "jlopez@transportesnorte.com",
     user: {
@@ -297,8 +297,8 @@ export default function LoginPage() {
                   <Icon className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{account.label}</p>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-sm font-medium">{account.label}</p>
+                  <p className="text-xs text-muted-foreground">
                     {account.description}
                   </p>
                 </div>

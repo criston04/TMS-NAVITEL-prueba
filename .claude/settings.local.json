@@ -9,7 +9,26 @@
       "Bash(node scripts/generate-word-all.mjs:*)",
       "Bash(python3:*)",
       "Bash(node -e:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run:*)",
+      "Bash(cat 'c:/Users/CRISTON/Desktop/Nueva carpeta \\(3\\)/TMS-NAVITEL-prueba/node_modules/tw-animate-css/dist/tw-animate.css')",
+      "Bash(node -e \"console.log\\(require\\(''path''\\).resolve\\(''node_modules/tw-animate-css/dist/tw-animate.css''\\)\\)\")",
+      "Bash(npx next:*)",
+      "Bash(npx vitest:*)",
+      "Bash(stat \"/c/Users/CRISTON/Desktop/Nueva carpeta \\(3\\)/TMS-NAVITEL-prueba/node_modules/tw-animate-css/dist/tw-animate.css\")",
+      "Bash(grep '\"\"build\"\"' package.json)",
+      "Bash(rm -f .next/dev/lock)",
+      "Bash(timeout 25 bash -c 'npx next dev --port 3098 &:*)",
+      "Bash(timeout 25 bash -c 'npx next dev --port 3097 &:*)",
+      "Bash(timeout 20 bash -c 'npx next dev --port 3096 &:*)",
+      "Bash(ls \"/c/Users/CRISTON/Desktop/Nueva carpeta \\(3\\)/TMS-NAVITEL-prueba/postcss.config\"*)",
+      "Bash(ls \"/c/Users/CRISTON/Desktop/Nueva carpeta \\(3\\)/TMS-NAVITEL-prueba/postcss\"*)",
+      "Bash(cat \"/c/Users/CRISTON/Desktop/Nueva carpeta \\(3\\)/TMS-NAVITEL-prueba/package.json\")",
+      "Bash(rm -rf .next)",
+      "Bash(timeout 25 bash -c 'npx next dev --port 3095 &:*)",
+      "Bash(timeout 25 bash -c \"npx next dev --webpack --port 3094 &:*)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3094/)"
     ]
   }
 }
