@@ -174,7 +174,10 @@ const HOSIndicator: FC<Readonly<HOSIndicatorProps>> = memo(function HOSIndicator
       ) : (
         <AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400 shrink-0" />
       )}
-      <div className="flex-1 font-medium text-green-700 dark:text-green-300">
+      <div className={cn(
+        "flex-1 font-medium",
+        isValid ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"
+      )}>
         {isValid ? 'HOS Válido' : 'Violación HOS'}
       </div>
       <div className="flex items-center gap-3 opacity-80">

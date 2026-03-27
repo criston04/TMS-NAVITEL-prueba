@@ -13,6 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import 'leaflet/dist/leaflet.css';
 
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // Fix para los tiles de Leaflet en Next.js
 const leafletStyles = `
   .leaflet-container {
@@ -258,7 +264,7 @@ function RoutePreviewMapComponent({
         .addTo(map)
         .bindPopup(`
           <div style="min-width: 120px;">
-            <strong>${point.name}</strong>
+            <strong>${escapeHtml(point.name)}</strong>
             <br/>
             <span style="color: #666; font-size: 12px;">
               ${point.type === 'origin' ? '📍 Origen' : 

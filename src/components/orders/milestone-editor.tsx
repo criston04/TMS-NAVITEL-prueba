@@ -479,7 +479,7 @@ function MilestoneEditorComponent({
           </div>
         ) : (
           <div className="space-y-2">
-            {milestones
+            {[...milestones]
               .sort((a, b) => a.sequence - b.sequence)
               .map((milestone, index) => (
                 <MilestoneItem

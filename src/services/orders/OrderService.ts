@@ -52,14 +52,6 @@ const simulateDelay = (ms: number = 300): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-/**
- * Genera un nuevo ID de orden
- * @returns ID único de orden
- */
-const generateOrderId = (): string => {
-  const sequence = mockOrders.length + 1;
-  return `ord-${String(sequence).padStart(5, '0')}`;
-};
 
 /**
  * Genera número de orden visible
@@ -79,6 +71,14 @@ class OrderService {
   private readonly config: OrderServiceConfig;
   private orders: Order[] = [...mockOrders];
   private readonly eventListeners: Map<string, Set<(event: OrderRealtimeEvent) => void>> = new Map();
+
+  /**
+   * Genera un nuevo ID de orden usando la longitud del array en memoria
+   */
+  private generateOrderId(): string {
+    const sequence = this.orders.length + 1;
+    return `ord-${String(sequence).padStart(5, '0')}`;
+  }
 
   /**
    * Crea una instancia del servicio de órdenes
@@ -383,7 +383,7 @@ class OrderService {
         console.info('[OrderService] Advertencias:', validationWarnings);
       }
 
-      const id = generateOrderId();
+      const id = this.generateOrderId();
       const orderNumber = generateOrderNumber(this.orders.length + 1);
       const now = new Date().toISOString();
 

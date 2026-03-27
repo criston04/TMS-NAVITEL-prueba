@@ -43,6 +43,9 @@ function StatItem({ icon, label, value, subValue }: StatItemProps) {
   );
 }
 
+const safePercent = (part: number, total: number) =>
+  total > 0 ? (part / total) * 100 : 0;
+
 /**
  * Panel con estadísticas de la ruta histórica
  */
@@ -112,14 +115,14 @@ export function RouteStatsPanel({
           <div
             className="bg-emerald-500 transition-all"
             style={{
-              width: `${(stats.movingTimeSeconds / stats.totalTimeSeconds) * 100}%`,
+              width: `${safePercent(stats.movingTimeSeconds, stats.totalTimeSeconds)}%`,
             }}
             title={`En movimiento: ${formatDuration(stats.movingTimeSeconds, "compact")}`}
           />
           <div
             className="bg-amber-500 transition-all"
             style={{
-              width: `${(stats.stoppedTimeSeconds / stats.totalTimeSeconds) * 100}%`,
+              width: `${safePercent(stats.stoppedTimeSeconds, stats.totalTimeSeconds)}%`,
             }}
             title={`Detenido: ${formatDuration(stats.stoppedTimeSeconds, "compact")}`}
           />
