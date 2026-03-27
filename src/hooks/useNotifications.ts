@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { notificationService } from "@/services/notification.service";
 import type {
   SystemNotification,
@@ -106,6 +106,8 @@ export function useNotifications(
 
   const [filters, setFilters] = useState<NotificationFilters>({ userId });
   const [page, setPage] = useState(1);
+  const pageRef = useRef(page);
+  pageRef.current = page;
   const pageSize = 20;
 
   /**
@@ -208,15 +210,25 @@ export function useNotifications(
     await loadStats();
   }, [loadNotifications, loadStats]);
 
+  // Trigger load when page increments (avoids stale page in loadMore)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    loadNotifications(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
   /**
    * Cargar más notificaciones
    */
   const loadMore = useCallback(async () => {
     if (state.notifications.length >= state.total) return;
-    
-    setPage(prev => prev + 1);
-    await loadNotifications(false);
-  }, [state.notifications.length, state.total, loadNotifications]);
+    const nextPage = pageRef.current + 1;
+    setPage(nextPage);
+  }, [state.notifications.length, state.total]);
 
   /**
    * Aplicar filtros

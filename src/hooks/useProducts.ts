@@ -22,7 +22,7 @@ export function useProducts() {
     execute: refreshProducts,
   } = useService<Product[]>(
     () => productsService.getAll({ search }),
-    { immediate: true }
+    { immediate: true, deps: [search] }
   );
 
   // Cargar estadísticas

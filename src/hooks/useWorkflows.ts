@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Workflow, WorkflowProgress } from '@/types/workflow';
 import type { Order } from '@/types/order';
 import { unifiedWorkflowService } from '@/services/workflow.service';
@@ -231,7 +231,7 @@ export function useWorkflowEscalation(order: Order | null): UseWorkflowEscalatio
   const [activeEscalations, setActiveEscalations] = useState<
     UseWorkflowEscalationResult['activeEscalations']
   >([]);
-  const isInitializedRef = useRef(false);
+
 
   /**
    * Verifica escalaciones usando servicio unificado
@@ -286,15 +286,12 @@ export function useWorkflowEscalation(order: Order | null): UseWorkflowEscalatio
     await checkEscalations();
   }, [checkEscalations]);
 
-  // Verifica al cambiar la orden (solo una vez al inicializar)
+  // Verifica al cambiar la orden
   useEffect(() => {
-    if (!isInitializedRef.current && order?.workflowId) {
-      isInitializedRef.current = true;
-      // Defer para evitar cascading renders
-      queueMicrotask(() => {
-        void checkEscalations();
-      });
-    }
+    if (!order?.workflowId) return;
+    queueMicrotask(() => {
+      void checkEscalations();
+    });
   }, [order?.workflowId, checkEscalations]);
 
   return {

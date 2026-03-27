@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { moduleConnectorService } from '@/services/integration';
 import type { 
   WorkflowAssignmentResult, 
@@ -240,6 +240,10 @@ export function useOrderWorkflowInfo(workflowId: string | undefined) {
       setIsLoading(false);
     }
   }, [workflowId]);
+
+  useEffect(() => {
+    loadInfo();
+  }, [loadInfo]);
 
   return { workflowInfo, isLoading, refresh: loadInfo };
 }
