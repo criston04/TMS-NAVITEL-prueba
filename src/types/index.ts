@@ -25,7 +25,8 @@ export * from "./finance";
 export * from "./report";
 export * from "./settings";
 
-// Tipos de módulos específicos (fleet, maintenance, route-planner, technician)
-// Se importan directamente desde su archivo para evitar colisiones de nombres.
-// Ejemplo: import type { Vehicle } from '@/types/fleet';
-// Ejemplo: import type { WorkOrder } from '@/types/maintenance';
+// Tipos de módulos específicos con nombres que podrían colisionar.
+// Importar directamente desde su archivo:
+//   import type { FleetVehicle } from '@/types/fleet';
+//   import type { MaintenanceVehicle } from '@/types/maintenance';
+//   import type { RoutePlannerVehicle, RoutePlannerDriver } from '@/types/route-planner';
