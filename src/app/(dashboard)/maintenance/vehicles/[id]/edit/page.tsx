@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Truck, ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import { AlertModal } from '@/components/ui/alert-modal';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { Vehicle } from '@/types/maintenance';
+import type { MaintenanceVehicle } from '@/types/maintenance';
 import Link from 'next/link';
 
 export default function EditVehiclePage() {
@@ -33,19 +33,19 @@ export default function EditVehiclePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [updateErrorAlert, setUpdateErrorAlert] = useState(false);
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [vehicle, setVehicle] = useState<MaintenanceVehicle | null>(null);
   const [formData, setFormData] = useState({
     plate: '',
-    type: 'truck' as Vehicle['type'],
+    type: 'truck' as MaintenanceVehicle['type'],
     brand: '',
     model: '',
     year: new Date().getFullYear(),
     vin: '',
     currentMileage: 0,
-    fuelType: 'diesel' as Vehicle['fuelType'],
+    fuelType: 'diesel' as MaintenanceVehicle['fuelType'],
     capacityKg: 0,
     capacityM3: 0,
-    status: 'active' as Vehicle['status'],
+    status: 'active' as MaintenanceVehicle['status'],
     notes: '',
   });
 
@@ -90,7 +90,7 @@ export default function EditVehiclePage() {
     setSaving(true);
 
     try {
-      const updatedVehicle: Partial<Vehicle> = {
+      const updatedVehicle: Partial<MaintenanceVehicle> = {
         ...formData,
         id: vehicleId,
         lastMileageUpdate: new Date().toISOString(),

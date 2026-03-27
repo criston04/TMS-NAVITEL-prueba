@@ -2,9 +2,9 @@
  * @fileoverview Mock data para vehículos del módulo de mantenimiento
  */
 
-import type { Vehicle } from '@/types/maintenance';
+import type { MaintenanceVehicle } from '@/types/maintenance';
 
-export const mockVehicles: Vehicle[] = [
+export const mockVehicles: MaintenanceVehicle[] = [
   {
     id: 'vehicle-1',
     plate: 'ABC-123',

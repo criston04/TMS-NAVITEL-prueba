@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { maintenanceService } from '@/services/maintenance';
 import type {
-  Vehicle,
+  MaintenanceVehicle,
   MaintenanceSchedule,
   WorkOrder,
   Workshop,
@@ -24,10 +24,10 @@ interface UseMaintenanceState {
 
 interface UseMaintenanceReturn extends UseMaintenanceState {
   // --- Vehículos ---
-  getVehicles: (filters?: { status?: string; type?: string; search?: string }) => Promise<Vehicle[]>;
-  getVehicleById: (id: string) => Promise<Vehicle | null>;
-  createVehicle: (data: Omit<Vehicle, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Vehicle>;
-  updateVehicle: (id: string, data: Partial<Vehicle>) => Promise<Vehicle>;
+  getVehicles: (filters?: { status?: string; type?: string; search?: string }) => Promise<MaintenanceVehicle[]>;
+  getVehicleById: (id: string) => Promise<MaintenanceVehicle | null>;
+  createVehicle: (data: Omit<MaintenanceVehicle,'id' | 'createdAt' | 'updatedAt'>) => Promise<MaintenanceVehicle>;
+  updateVehicle: (id: string, data: Partial<MaintenanceVehicle>) => Promise<MaintenanceVehicle>;
   deleteVehicle: (id: string) => Promise<void>;
 
   // --- Mantenimiento Preventivo ---
@@ -122,13 +122,13 @@ export function useMaintenance(): UseMaintenanceReturn {
   );
 
   const createVehicle = useCallback(
-    (data: Omit<Vehicle, 'id' | 'createdAt' | 'updatedAt'>) =>
+    (data: Omit<MaintenanceVehicle,'id' | 'createdAt' | 'updatedAt'>) =>
       withErrorHandling(() => maintenanceService.createVehicle(data)),
     [withErrorHandling]
   );
 
   const updateVehicle = useCallback(
-    (id: string, data: Partial<Vehicle>) =>
+    (id: string, data: Partial<MaintenanceVehicle>) =>
       withErrorHandling(() => maintenanceService.updateVehicle(id, data)),
     [withErrorHandling]
   );

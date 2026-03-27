@@ -33,7 +33,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { Inspection, Vehicle } from '@/types/maintenance';
+import type { Inspection, MaintenanceVehicle } from '@/types/maintenance';
 import Link from 'next/link';
 
 const statusConfig = {
@@ -72,7 +72,7 @@ export default function InspectionsPage() {
   const maintenance = useMaintenance();
   const [loading, setLoading] = useState(true);
   const [inspections, setInspections] = useState<Inspection[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<MaintenanceVehicle[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<Inspection['status'] | 'all'>('all');
 

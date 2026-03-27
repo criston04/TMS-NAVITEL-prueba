@@ -29,7 +29,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { MaintenanceSchedule, Vehicle } from '@/types/maintenance';
+import type { MaintenanceSchedule, MaintenanceVehicle } from '@/types/maintenance';
 import Link from 'next/link';
 
 const maintenanceTypeLabels: Record<string, string> = {
@@ -74,7 +74,7 @@ export default function PreventiveMaintenancePage() {
   const maintenance = useMaintenance();
   const [loading, setLoading] = useState(true);
   const [schedules, setSchedules] = useState<MaintenanceSchedule[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<MaintenanceVehicle[]>([]);
 
   useEffect(() => {
     loadData();

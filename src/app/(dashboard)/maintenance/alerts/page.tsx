@@ -27,7 +27,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { Alert, Vehicle } from '@/types/maintenance';
+import type { Alert, MaintenanceVehicle } from '@/types/maintenance';
 import Link from 'next/link';
 
 const severityConfig = {
@@ -80,7 +80,7 @@ export default function AlertsPage() {
   const maintenance = useMaintenance();
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<MaintenanceVehicle[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('active');
 
   useEffect(() => {

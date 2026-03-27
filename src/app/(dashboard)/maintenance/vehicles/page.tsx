@@ -42,7 +42,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { Vehicle } from '@/types/maintenance';
+import type { MaintenanceVehicle } from '@/types/maintenance';
 import Link from 'next/link';
 
 const statusConfig = {
@@ -79,8 +79,8 @@ const vehicleTypeLabels = {
 export default function VehiclesPage() {
   const maintenance = useMaintenance();
   const [loading, setLoading] = useState(true);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<MaintenanceVehicle[]>([]);
+  const [filteredVehicles, setFilteredVehicles] = useState<MaintenanceVehicle[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -179,7 +179,7 @@ export default function VehiclesPage() {
           try {
             await maintenance.createVehicle({
               plate: plate.trim(),
-              type: type.trim().toLowerCase() as Vehicle['type'],
+              type: type.trim().toLowerCase() as MaintenanceVehicle['type'],
               brand: brand.trim(),
               model: model.trim(),
               year: parseInt(year),

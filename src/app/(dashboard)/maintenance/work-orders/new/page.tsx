@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ClipboardList, ArrowLeft, Save, Truck } from 'lucide-react';
 import { AlertModal } from '@/components/ui/alert-modal';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { WorkOrder, Vehicle, Workshop } from '@/types/maintenance';
+import type { WorkOrder, MaintenanceVehicle, Workshop } from '@/types/maintenance';
 import Link from 'next/link';
 
 export default function NewWorkOrderPage() {
@@ -32,7 +32,7 @@ export default function NewWorkOrderPage() {
 
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<MaintenanceVehicle[]>([]);
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [vehicleAlert, setVehicleAlert] = useState(false);
   const [errorAlert, setErrorAlert] = useState(false);

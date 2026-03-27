@@ -22,7 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ClipboardCheck, ArrowLeft, Save } from 'lucide-react';
 import { AlertModal } from '@/components/ui/alert-modal';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { Vehicle, InspectionType } from '@/types/maintenance';
+import type { MaintenanceVehicle, InspectionType } from '@/types/maintenance';
 import Link from 'next/link';
 
 const inspectionTypeOptions = [
@@ -61,7 +61,7 @@ export default function NewInspectionPage() {
   const router = useRouter();
   const maintenance = useMaintenance();
   const [loading, setLoading] = useState(false);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<MaintenanceVehicle[]>([]);
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [errorAlert, setErrorAlert] = useState(false);
   const [formData, setFormData] = useState({

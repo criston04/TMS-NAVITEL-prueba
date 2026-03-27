@@ -4,7 +4,7 @@
  */
 
 import type {
-  Vehicle,
+  MaintenanceVehicle,
   MaintenanceSchedule,
   Breakdown,
   WorkOrder,
@@ -29,7 +29,7 @@ class MaintenanceService {
     status?: string;
     type?: string;
     search?: string;
-  }): Promise<Vehicle[]> {
+  }): Promise<MaintenanceVehicle[]> {
     // TODO: Reemplazar con llamada real al backend
     const { mockVehicles } = await import('@/mocks/maintenance/vehicles');
     let vehicles = [...mockVehicles];
@@ -52,14 +52,14 @@ class MaintenanceService {
     return vehicles;
   }
 
-  async getVehicleById(id: string): Promise<Vehicle | null> {
+  async getVehicleById(id: string): Promise<MaintenanceVehicle | null> {
     const { mockVehicles } = await import('@/mocks/maintenance/vehicles');
     return mockVehicles.find(v => v.id === id) || null;
   }
 
-  async createVehicle(data: Omit<Vehicle, 'id' | 'createdAt' | 'updatedAt'>): Promise<Vehicle> {
+  async createVehicle(data: Omit<MaintenanceVehicle, 'id' | 'createdAt' | 'updatedAt'>): Promise<MaintenanceVehicle> {
     // TODO: Implementar llamada al backend
-    const newVehicle: Vehicle = {
+    const newVehicle: MaintenanceVehicle = {
       ...data,
       id: `vehicle-${Date.now()}`,
       createdAt: new Date().toISOString(),
@@ -68,7 +68,7 @@ class MaintenanceService {
     return newVehicle;
   }
 
-  async updateVehicle(id: string, data: Partial<Vehicle>): Promise<Vehicle> {
+  async updateVehicle(id: string, data: Partial<MaintenanceVehicle>): Promise<MaintenanceVehicle> {
     // TODO: Implementar llamada al backend
     const vehicle = await this.getVehicleById(id);
     if (!vehicle) throw new Error('Vehicle not found');
@@ -85,7 +85,7 @@ class MaintenanceService {
     console.log('Deleting vehicle:', id);
   }
 
-  async updateVehicleMileage(id: string, mileage: number): Promise<Vehicle> {
+  async updateVehicleMileage(id: string, mileage: number): Promise<MaintenanceVehicle> {
     return this.updateVehicle(id, {
       currentMileage: mileage,
       lastMileageUpdate: new Date().toISOString(),

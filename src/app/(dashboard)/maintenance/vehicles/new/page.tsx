@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Truck, ArrowLeft, Save } from 'lucide-react';
 import { AlertModal } from '@/components/ui/alert-modal';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { Vehicle } from '@/types/maintenance';
+import type { MaintenanceVehicle } from '@/types/maintenance';
 import Link from 'next/link';
 
 export default function NewVehiclePage() {
@@ -31,19 +31,19 @@ export default function NewVehiclePage() {
   const [errorAlert, setErrorAlert] = useState(false);
   const [formData, setFormData] = useState({
     plate: '',
-    type: 'truck' as Vehicle['type'],
+    type: 'truck' as MaintenanceVehicle['type'],
     brand: '',
     model: '',
     year: new Date().getFullYear(),
     vin: '',
     currentMileage: 0,
-    fuelType: 'diesel' as Vehicle['fuelType'],
-    transmission: 'manual' as Vehicle['transmission'],
+    fuelType: 'diesel' as MaintenanceVehicle['fuelType'],
+    transmission: 'manual' as MaintenanceVehicle['transmission'],
     capacityKg: 0,
     capacityM3: 0,
     maintenanceKmInterval: 5000,
     maintenanceDaysInterval: 90,
-    status: 'active' as Vehicle['status'],
+    status: 'active' as MaintenanceVehicle['status'],
     notes: '',
   });
 
@@ -52,7 +52,7 @@ export default function NewVehiclePage() {
     setLoading(true);
 
     try {
-      const newVehicle: Omit<Vehicle, 'id' | 'createdAt' | 'updatedAt'> = {
+      const newVehicle: Omit<MaintenanceVehicle,'id' | 'createdAt' | 'updatedAt'> = {
         ...formData,
         lastMileageUpdate: new Date().toISOString(),
         vin: formData.vin || undefined,

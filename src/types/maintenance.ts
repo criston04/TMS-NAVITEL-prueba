@@ -5,14 +5,14 @@
 
 // ==================== VEHÍCULOS ====================
 
-export type VehicleStatus = 'active' | 'maintenance' | 'out_of_service' | 'reserved';
-export type VehicleType = 'truck' | 'van' | 'pickup' | 'trailer' | 'car';
+export type MaintenanceVehicleStatus = 'active' | 'maintenance' | 'out_of_service' | 'reserved';
+export type MaintenanceVehicleType = 'truck' | 'van' | 'pickup' | 'trailer' | 'car';
 export type FuelType = 'diesel' | 'gasoline' | 'electric' | 'hybrid' | 'cng';
 
-export interface Vehicle {
+export interface MaintenanceVehicle {
   id: string;
   plate: string;
-  type: VehicleType;
+  type: MaintenanceVehicleType;
   brand: string;
   model: string;
   year: number;
@@ -27,7 +27,7 @@ export interface Vehicle {
   lastMileageUpdate: string;
   
   // Estado operativo
-  status: VehicleStatus;
+  status: MaintenanceVehicleStatus;
   availableFrom?: string; // Si está en mantenimiento, cuándo estará disponible
   
   // Datos técnicos
@@ -61,6 +61,11 @@ export interface Vehicle {
   createdBy: string;
   notes?: string;
 }
+
+// Backward-compat aliases
+export type VehicleStatus = MaintenanceVehicleStatus;
+export type VehicleType = MaintenanceVehicleType;
+export type Vehicle = MaintenanceVehicle;
 
 // ==================== MANTENIMIENTO PREVENTIVO ====================
 
@@ -405,7 +410,7 @@ export interface InspectionChecklist {
   id: string;
   name: string;
   type: InspectionType;
-  vehicleTypes: VehicleType[];
+  vehicleTypes: MaintenanceVehicleType[];
   
   categories: InspectionChecklistCategory[];
   
@@ -513,7 +518,7 @@ export interface MonthlyMaintenanceTrend {
 
 export interface VehicleMaintenanceHistory {
   vehicleId: string;
-  vehicle: Vehicle;
+  vehicle: MaintenanceVehicle;
   
   summary: {
     totalWorkOrders: number;

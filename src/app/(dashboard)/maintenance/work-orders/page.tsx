@@ -35,7 +35,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { WorkOrder, Vehicle, Workshop } from '@/types/maintenance';
+import type { WorkOrder, MaintenanceVehicle, Workshop } from '@/types/maintenance';
 import Link from 'next/link';
 
 const statusConfig = {
@@ -87,7 +87,7 @@ export default function WorkOrdersPage() {
   const maintenance = useMaintenance();
   const [loading, setLoading] = useState(true);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<MaintenanceVehicle[]>([]);
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<WorkOrder['status'] | 'all'>('all');

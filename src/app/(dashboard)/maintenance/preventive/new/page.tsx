@@ -21,7 +21,7 @@ import {
 import { Calendar as CalendarIcon, ArrowLeft, Save } from 'lucide-react';
 import { AlertModal } from '@/components/ui/alert-modal';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { Vehicle, MaintenanceType } from '@/types/maintenance';
+import type { MaintenanceVehicle, MaintenanceType } from '@/types/maintenance';
 import Link from 'next/link';
 
 const maintenanceTypeOptions = [
@@ -43,7 +43,7 @@ export default function NewPreventiveMaintenancePage() {
   const router = useRouter();
   const maintenance = useMaintenance();
   const [loading, setLoading] = useState(false);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<MaintenanceVehicle[]>([]);
   const [errorAlert, setErrorAlert] = useState(false);
   const [formData, setFormData] = useState({
     vehicleId: '',

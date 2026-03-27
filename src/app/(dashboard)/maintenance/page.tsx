@@ -34,7 +34,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { Vehicle, WorkOrder, Alert, MaintenanceMetrics } from '@/types/maintenance';
+import type { MaintenanceVehicle, WorkOrder, Alert, MaintenanceMetrics } from '@/types/maintenance';
 import Link from 'next/link';
 
 // ============================================================================
@@ -165,7 +165,7 @@ const WorkOrderItem = ({
   vehicle,
 }: {
   order: WorkOrder;
-  vehicle?: Vehicle;
+  vehicle?: MaintenanceVehicle;
 }) => {
   const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700',
@@ -344,7 +344,7 @@ const MetricItem = ({
 export default function MaintenancePage() {
   const maintenance = useMaintenance();
   const [loading, setLoading] = useState(true);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<MaintenanceVehicle[]>([]);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [metrics, setMetrics] = useState<MaintenanceMetrics | null>(null);

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMaintenance } from '@/hooks/useMaintenance';
-import type { Vehicle } from '@/types/maintenance';
+import type { MaintenanceVehicle } from '@/types/maintenance';
 
 const statusConfig = {
   active: {
@@ -66,7 +66,7 @@ export default function VehicleDetailPage() {
   const vehicleId = params?.id as string;
   
   const [loading, setLoading] = useState(true);
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [vehicle, setVehicle] = useState<MaintenanceVehicle | null>(null);
 
   useEffect(() => {
     if (vehicleId) {
