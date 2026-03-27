@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "./tw-animate.css";
+@import "../../node_modules/tw-animate-css/dist/tw-animate.css";
 @import "leaflet/dist/leaflet.css";
 
 /* NOSONAR: @custom-variant is valid Tailwind CSS 4 syntax */
