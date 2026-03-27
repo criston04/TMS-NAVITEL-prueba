@@ -47,6 +47,7 @@ export function SearchForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!vehicleId) return;
+    if (new Date(startDateTime) >= new Date(endDateTime)) return;
     onSearch({
       vehicleId,
       startDateTime,
@@ -54,7 +55,8 @@ export function SearchForm({
     });
   };
 
-  const isFormValid = vehicleId && startDateTime && endDateTime;
+  const isFormValid = vehicleId && startDateTime && endDateTime &&
+    new Date(startDateTime) < new Date(endDateTime);
 
   return (
     <form onSubmit={handleSubmit} className={cn("space-y-4", className)}>

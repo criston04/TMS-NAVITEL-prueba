@@ -340,37 +340,39 @@ class PDFReportService {
    * Agrega header al PDF
    */
   private addHeader(doc: jsPDF, title: string, subtitle?: string): void {
+    const pageWidth = doc.internal.pageSize.getWidth();
+
     // Logo y título
     doc.setFillColor(59, 130, 246);
-    doc.rect(0, 0, 210, 40, 'F');
-    
+    doc.rect(0, 0, pageWidth, 40, 'F');
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text(this.logo, 20, 18);
-    
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.text('Sistema de Gestión de Transporte', 20, 28);
-    
+
     // Fecha
     doc.setFontSize(9);
-    doc.text(`Generado: ${new Date().toLocaleDateString('es-PE')}`, 150, 18);
-    doc.text(`Hora: ${new Date().toLocaleTimeString('es-PE')}`, 150, 25);
-    
+    doc.text(`Generado: ${new Date().toLocaleDateString('es-PE')}`, pageWidth - 60, 18);
+    doc.text(`Hora: ${new Date().toLocaleTimeString('es-PE')}`, pageWidth - 60, 25);
+
     // Reset color
     doc.setTextColor(0, 0, 0);
-    
+
     // Título del reporte
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text(title, 105, 50, { align: 'center' });
-    
+    doc.text(title, pageWidth / 2, 50, { align: 'center' });
+
     if (subtitle) {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 116, 139);
-      doc.text(subtitle, 105, 57, { align: 'center' });
+      doc.text(subtitle, pageWidth / 2, 57, { align: 'center' });
       doc.setTextColor(0, 0, 0);
     }
   }

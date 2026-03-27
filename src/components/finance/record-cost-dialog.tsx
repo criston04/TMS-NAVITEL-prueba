@@ -77,8 +77,8 @@ export function RecordCostDialog({ open, onOpenChange }: RecordCostDialogProps) 
       await recordCost({
         type,
         amount,
-        vehicleId: vehicleId || undefined,
-        orderId: orderId || undefined,
+        vehicleId: vehicleId && vehicleId !== "none" ? vehicleId : undefined,
+        orderId: orderId && orderId !== "none" ? orderId : undefined,
         date,
         description,
         receiptNumber: receiptNumber || undefined,
@@ -167,7 +167,7 @@ export function RecordCostDialog({ open, onOpenChange }: RecordCostDialogProps) 
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin asignar</SelectItem>
+                  <SelectItem value="none">Sin asignar</SelectItem>
                   {vehicles.map((v) => (
                     <SelectItem key={v.id} value={v.id}>
                       {v.plate}
@@ -183,7 +183,7 @@ export function RecordCostDialog({ open, onOpenChange }: RecordCostDialogProps) 
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin asignar</SelectItem>
+                  <SelectItem value="none">Sin asignar</SelectItem>
                   {orders.map((o) => (
                     <SelectItem key={o.id} value={o.id}>
                       {o.number}

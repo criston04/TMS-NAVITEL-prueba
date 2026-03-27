@@ -194,7 +194,7 @@ export const SchedulingGantt = memo(function SchedulingGantt({
   onCellClick,
   className,
 }: Readonly<SchedulingGanttProps>) {
-  const today = useMemo(() => new Date(), []);
+  const today = new Date();
 
   // Generar array de fechas
   const dateHeaders = useMemo(() => {

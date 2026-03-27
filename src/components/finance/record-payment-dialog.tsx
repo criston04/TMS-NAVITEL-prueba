@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreditCard, Search } from "lucide-react";
 import {
   Dialog,
@@ -49,6 +49,12 @@ export function RecordPaymentDialog({
 
   // Form state
   const [invoiceId, setInvoiceId] = useState(preselectedInvoiceId || "");
+
+  useEffect(() => {
+    if (preselectedInvoiceId) {
+      setInvoiceId(preselectedInvoiceId);
+    }
+  }, [preselectedInvoiceId]);
   const [amount, setAmount] = useState<number>(0);
   const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
   const [reference, setReference] = useState("");
