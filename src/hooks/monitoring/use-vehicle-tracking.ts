@@ -96,6 +96,10 @@ export function useVehicleTracking(
   const onPositionUpdateRef = useRef(onPositionUpdate);
   onPositionUpdateRef.current = onPositionUpdate;
 
+  // Ref para acceder al Map de vehículos sin añadirlo como dependencia del efecto WebSocket
+  const vehiclesRef = useRef(vehicles);
+  vehiclesRef.current = vehicles;
+
   /**
    * Carga inicial de vehículos
    */
@@ -225,28 +229,30 @@ export function useVehicleTracking(
     await loadVehicles(filters);
   }, [loadVehicles, filters]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const unsubscribeMessage = monitoringWebSocketService.onMessage(handleWebSocketMessage);
-    
-    const unsubscribeConnect = monitoringWebSocketService.onConnect(() => {
+    const unsubMessage = monitoringWebSocketService.onMessage((msg) => {
+      handleWebSocketMessage(msg); // This already updates state via setState
+    });
+
+    const unsubConnect = monitoringWebSocketService.onConnect(() => {
       setIsConnected(true);
-      // Suscribirse a todos los vehículos cargados
-      const ids = Array.from(vehicles.keys());
+      const ids = Array.from(vehiclesRef.current.keys());
       if (ids.length > 0) {
-        monitoringWebSocketService.subscribeToVehicles(ids);
+        subscribeToVehicles(ids);
       }
     });
-    
-    const unsubscribeDisconnect = monitoringWebSocketService.onDisconnect(() => {
+
+    const unsubDisconnect = monitoringWebSocketService.onDisconnect(() => {
       setIsConnected(false);
     });
 
     return () => {
-      unsubscribeMessage();
-      unsubscribeConnect();
-      unsubscribeDisconnect();
+      unsubMessage();
+      unsubConnect();
+      unsubDisconnect();
     };
-  }, [handleWebSocketMessage, vehicles]);
+  }, []); // Empty deps - handlers use refs for current state
 
   // Conectar automáticamente
   useEffect(() => {
