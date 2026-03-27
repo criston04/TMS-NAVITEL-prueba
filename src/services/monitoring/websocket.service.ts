@@ -38,6 +38,7 @@ export class MonitoringWebSocketService {
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private mockInterval: NodeJS.Timeout | null = null;
+  private connectionTimeout: ReturnType<typeof setTimeout> | null = null;
   
   // Handlers
   private messageHandlers: Set<MessageHandler> = new Set();
@@ -118,13 +119,14 @@ export class MonitoringWebSocketService {
    */
   private connectMock(): void {
     console.log("[WS Mock] Connecting...");
-    
+
     // Simular delay de conexión
-    setTimeout(() => {
+    this.connectionTimeout = setTimeout(() => {
       this.isConnected = true;
       console.log("[WS Mock] Connected");
+      this.connectionTimeout = null;
       this.connectHandlers.forEach(handler => handler());
-      
+
       // Iniciar simulación de posiciones
       this.startMockSimulation();
     }, 500);
@@ -235,6 +237,10 @@ export class MonitoringWebSocketService {
    * Limpia todos los timers
    */
   private clearTimers(): void {
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;

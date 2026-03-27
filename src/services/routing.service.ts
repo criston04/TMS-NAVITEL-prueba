@@ -50,17 +50,23 @@ class RoutingService {
   // Rate-limiting: máx 1 petición cada 1.1s para OSRM público
   private lastRequestTime = 0;
   private readonly MIN_REQUEST_INTERVAL = 1100; // ms
+  private rateLimitPromise: Promise<void> = Promise.resolve();
 
   /**
    * Espera si es necesario para respetar rate-limit de OSRM público
    */
   private async waitForRateLimit(): Promise<void> {
-    const now = Date.now();
-    const elapsed = now - this.lastRequestTime;
-    if (elapsed < this.MIN_REQUEST_INTERVAL) {
-      await new Promise((resolve) => setTimeout(resolve, this.MIN_REQUEST_INTERVAL - elapsed));
-    }
-    this.lastRequestTime = Date.now();
+    this.rateLimitPromise = this.rateLimitPromise.then(async () => {
+      const now = Date.now();
+      const elapsed = now - this.lastRequestTime;
+      if (elapsed < this.MIN_REQUEST_INTERVAL) {
+        await new Promise(resolve =>
+          setTimeout(resolve, this.MIN_REQUEST_INTERVAL - elapsed)
+        );
+      }
+      this.lastRequestTime = Date.now();
+    });
+    return this.rateLimitPromise;
   }
 
   /**

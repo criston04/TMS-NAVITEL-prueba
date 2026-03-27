@@ -23,7 +23,9 @@ class ReminderService {
   private checkInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.startMonitoring();
+    if (typeof window !== 'undefined') {
+      this.startMonitoring();
+    }
   }
 
   /**
@@ -177,6 +179,7 @@ class ReminderService {
    * Inicia el monitoreo de recordatorios
    */
   private startMonitoring(): void {
+    if (this.checkInterval) return; // Prevent duplicate intervals on HMR
     // Verificar cada minuto
     this.checkInterval = setInterval(() => {
       this.checkReminders();

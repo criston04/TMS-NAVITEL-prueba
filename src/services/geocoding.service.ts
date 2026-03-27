@@ -17,8 +17,10 @@ export interface GeocodingError {
 class GeocodingService {
   private nominatimUrl = "https://nominatim.openstreetmap.org/search";
   private cache = new Map<string, GeocodingResult>();
+  private readonly CACHE_MAX_SIZE = 200;
   private lastRequestTime = 0;
   private minRequestInterval = 1100; // Nominatim requiere 1 request/segundo
+  private rateLimitPromise: Promise<void> = Promise.resolve();
 
   /**
    * Geocodifica una dirección
@@ -32,21 +34,11 @@ class GeocodingService {
       return this.cache.get(cacheKey)!;
     }
 
-    // Rate limiting para Nominatim
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-    if (timeSinceLastRequest < this.minRequestInterval) {
-      await this.delay(this.minRequestInterval - timeSinceLastRequest);
-    }
+    await this.waitForRateLimit();
 
-    try {
-      const result = await this.geocodeWithNominatim(fullAddress);
-      this.cache.set(cacheKey, result);
-      this.lastRequestTime = Date.now();
-      return result;
-    } catch (error) {
-      throw error;
-    }
+    const result = await this.geocodeWithNominatim(fullAddress);
+    this.addToCache(cacheKey, result);
+    return result;
   }
 
   /**
@@ -95,12 +87,7 @@ class GeocodingService {
    * Geocodificación reversa (coordenadas a dirección)
    */
   async reverseGeocode(lat: number, lng: number): Promise<string> {
-    // Rate limiting
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-    if (timeSinceLastRequest < this.minRequestInterval) {
-      await this.delay(this.minRequestInterval - timeSinceLastRequest);
-    }
+    await this.waitForRateLimit();
 
     const params = new URLSearchParams({
       lat: lat.toString(),
@@ -157,12 +144,7 @@ class GeocodingService {
   }>> {
     if (query.length < 3) return [];
 
-    // Rate limiting
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-    if (timeSinceLastRequest < this.minRequestInterval) {
-      await this.delay(this.minRequestInterval - timeSinceLastRequest);
-    }
+    await this.waitForRateLimit();
 
     const params = new URLSearchParams({
       q: `${query}, ${country}`,
@@ -200,6 +182,30 @@ class GeocodingService {
    */
   clearCache(): void {
     this.cache.clear();
+  }
+
+  private addToCache(key: string, result: GeocodingResult): void {
+    if (this.cache.size >= this.CACHE_MAX_SIZE) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
+    }
+    this.cache.set(key, result);
+  }
+
+  private async waitForRateLimit(): Promise<void> {
+    this.rateLimitPromise = this.rateLimitPromise.then(async () => {
+      const now = Date.now();
+      const elapsed = now - this.lastRequestTime;
+      if (elapsed < this.minRequestInterval) {
+        await new Promise(resolve =>
+          setTimeout(resolve, this.minRequestInterval - elapsed)
+        );
+      }
+      this.lastRequestTime = Date.now();
+    });
+    return this.rateLimitPromise;
   }
 
   private delay(ms: number): Promise<void> {
