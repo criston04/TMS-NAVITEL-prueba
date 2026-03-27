@@ -129,6 +129,10 @@ export interface Tenant {
  * Cada módulo agrupa funcionalidades relacionadas.
  */
 export type SystemModuleCode =
+  // Grupos de módulos (usados en navegación)
+  | "operations"        // Grupo: Operaciones
+  | "finance"           // Grupo: Finanzas
+  | "master_data"       // Grupo: Datos Maestros
   // Operaciones
   | "orders"            // Gestión de Órdenes
   | "scheduling"        // Programación
