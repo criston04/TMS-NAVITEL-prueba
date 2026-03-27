@@ -1,6 +1,9 @@
 @import "tailwindcss";
-@import "../../node_modules/tw-animate-css/dist/tw-animate.css";
+@import "tw-animate-css";
 @import "leaflet/dist/leaflet.css";
+
+/* Tell Tailwind where to scan for class usage (needed for webpack/PostCSS mode) */
+@source "../../src/**/*.{ts,tsx}";
 
 /* NOSONAR: @custom-variant is valid Tailwind CSS 4 syntax */
 @custom-variant dark (&:is(.dark *));
