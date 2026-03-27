@@ -44,7 +44,7 @@ function mapStatus(status: OrderModuleStatus): PlannerOrderStatus {
       return 'in_transit';
     case 'completed':
     case 'closed':
-      return 'delivered';
+      return 'completed';
     case 'cancelled':
       return 'pending'; // cancelled no existe en Planner, se filtra antes
     default:

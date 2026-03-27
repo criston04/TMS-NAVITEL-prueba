@@ -3,7 +3,13 @@
    Transportation Management System
    ============================================ */
 
-export type OrderStatus = "pending" | "assigned" | "in_transit" | "delivered";
+import type { Vehicle as CanonicalVehicle } from './models/vehicle';
+import type { Driver as CanonicalDriver } from './models/driver';
+import type { OrderStatus as _OrderStatus } from './order';
+
+export type { OrderStatus } from './order';
+/** Local alias so OrderStatus can be referenced within this file */
+type OrderStatus = _OrderStatus;
 export type RouteStatus = "draft" | "generated" | "confirmed" | "dispatched";
 export type Priority = "speed" | "cost" | "balanced";
 
@@ -71,9 +77,9 @@ export interface RouteStop {
 /* ============================================
    VEHICLE
    ============================================ */
-export interface Vehicle {
-  id: string;
-  plate: string;
+
+/** Route-planner view of a vehicle: canonical identity + planner-specific fields */
+export type RoutePlannerVehicle = Pick<CanonicalVehicle, 'id' | 'plate'> & Partial<Pick<CanonicalVehicle, 'operationalStatus'>> & {
   brand: string;
   model: string;
   year: number;
@@ -83,28 +89,34 @@ export interface Vehicle {
   };
   fuelType: "diesel" | "gasoline" | "electric" | "hybrid";
   fuelConsumption: number; // km/L
+  /** Operational status alias used in route-planner UI */
   status: "available" | "in_route" | "maintenance" | "unavailable";
   currentLocation?: [number, number];
   features: string[];
-}
+};
+
+/** Backward-compat alias */
+export type Vehicle = RoutePlannerVehicle;
 
 /* ============================================
    DRIVER
    ============================================ */
-export interface Driver {
-  id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
+
+/** Route-planner view of a driver: canonical identity + planner-specific fields */
+export type RoutePlannerDriver = Pick<CanonicalDriver, 'id' | 'firstName' | 'lastName' | 'phone' | 'email'> & {
+  /** Required by route-planner UI (canonical field is optional) */
   licenseNumber: string;
   licenseExpiry: string;
-  rating: number; // 0-5
+  /** Planner availability status */
   status: "available" | "on_route" | "off_duty";
+  rating: number; // 0-5
   experience: number; // años
   specializations: string[];
   avatar?: string;
-}
+};
+
+/** Backward-compat alias */
+export type Driver = RoutePlannerDriver;
 
 /* ============================================
    ROUTE
