@@ -1,0 +1,21 @@
+meta {
+  name: Workshops
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/maintenance/workshops
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/workshops
+
+  Talleres de mantenimiento autorizados. Envelope `{data: []}`.
+}

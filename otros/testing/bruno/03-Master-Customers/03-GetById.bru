@@ -1,0 +1,22 @@
+meta {
+  name: Get customer by ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/master/customers/{{lastCustomerId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/customers/:id
+
+  Usa `lastCustomerId` (seteado por `02-Create`).
+  Verifica que TODOS los campos que creamos vuelvan con valor (no null como en Orders).
+}

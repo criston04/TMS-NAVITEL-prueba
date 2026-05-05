@@ -1,0 +1,62 @@
+meta {
+  name: Debug type + address
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/master/customers
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "code": "CUST-DEBUG-019",
+    "documentType": "RUC",
+    "documentNumber": "20111258323",
+    "name": "Debug Type Test",
+    "email": "debug-type@test.com",
+    "phone": "+51 999 111 000",
+    "status": "active",
+    "category": "standard",
+    "type": "company",
+    "customer_type": "empresa",
+    "company_type": "empresa",
+    "customerType": "empresa",
+    "address": "Av. Bruno 123, Lima",
+    "addresses": [
+      { "street": "Av. Bruno 123", "city": "Lima" }
+    ]
+  }
+}
+
+docs {
+  # Debug: encontrar los nombres correctos para `type` y `address`
+  
+  Mandamos MUCHAS variantes a la vez para ver cuál acepta:
+  - `type`: "empresa" (nuestro enum)
+  - `customer_type`: alternativa con snake_case
+  - `company_type`: alternativa más descriptiva
+  - `customerType`: camelCase
+  
+  Para address:
+  - `address`: string simple (lo que el response muestra)
+  - `addresses`: array (nuestro spec)
+  
+  ## Qué revisar en el response
+  
+  1. ¿Alguna variante de `type` quedó populada?
+  2. ¿`address` quedó con "Av. Bruno 123, Lima"?
+  3. ¿`addresses` existe como campo en el response?
+  
+  Con eso sabremos qué nombres usa realmente el backend.
+}

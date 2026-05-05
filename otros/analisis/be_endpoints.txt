@@ -1,0 +1,358 @@
+ |  | usuario: admin | contraseña: Admin1432!
+IP | https://api-service.gruponavitel.com/ |  | 
+Módulo | Método HTTP | Ruta (Endpoint) | Descripción (ES)
+Auth | POST | /auth/login | Login
+Auth | POST | /auth/logout | Logout
+Master | GET | /api/v1/master/customers | Listar clientes (paginado)
+Master | GET | /api/v1/master/customers/:id | Obtener cliente po ID
+Master | POST | /api/v1/master/customers | Crear cliente
+Master | PUT | /api/v1/master/customers/:id | Actualizar cliente
+Master | PATCH | /api/v1/master/customers/:id/status | Alternar cliente estado
+Master | DELETE | /api/v1/master/customers/:id | Eliminación lógica cliente
+Master | GET | /api/v1/master/drivers | Listar conductores (paginado)
+Master | GET | /api/v1/master/drivers/:id | Obtener conducto po ID con sub-entidades
+Master | POST | /api/v1/master/drivers | Crear conductor
+Master | PUT | /api/v1/master/drivers/:id | Actualizar conductor
+Master | PATCH | /api/v1/master/drivers/:id/status | Alternar conducto estado
+Master | GET | /api/v1/master/vehicles | Listar vehículos (paginado)
+Master | GET | /api/v1/master/vehicles/:id | Obtener vehículo po ID con sub-entidades
+Master | POST | /api/v1/master/vehicles | Crear vehículo
+Master | PUT | /api/v1/master/vehicles/:id | Actualizar vehículo
+Master | PATCH | /api/v1/master/vehicles/:id/status | Actualizar vehículo estado
+Master | POST | /api/v1/master/vehicles/:id/breakdowns | Reportar vehículo avería
+Master | GET | /api/v1/master/products | Listar productoos (paginado)
+Master | GET | /api/v1/master/products/:id | Obtener productoo po ID
+Master | POST | /api/v1/master/products | Crear productoo
+Master | PUT | /api/v1/master/products/:id | Actualizar productoo
+Master | PATCH | /api/v1/master/products/:id/status | Alternar productoo estado
+Master | POST | /api/v1/master/customers/bulk-delete | Masivo eliminación lógica clientes
+Master | POST | /api/v1/master/customers/:id/toggle-status | Alternar cliente activo/inactivo
+Master | GET | /api/v1/master/customers/stats | Obtener cliente estadísticas
+Master | GET | /api/v1/master/customers/find-by-document | Encontrar cliente by número de documento
+Master | POST | /api/v1/master/customers/import | Importar clientes desde arreglo
+Master | GET | /api/v1/master/customers/export/csv | Exportar clientes a CSV
+Master | GET | /api/v1/master/customers/cities | Obtener distintos cliente ciudades
+Master | DELETE | /api/v1/master/drivers/:id | Eliminación lógica conductor
+Master | POST | /api/v1/master/drivers/bulk-delete | Masivo eliminación lógica conductores
+Master | GET | /api/v1/master/drivers/stats | Obtener conducto estadísticas
+Master | GET | /api/v1/master/drivers/expiring-licenses | Obtener conductores con próximos a expirar licencias
+Master | DELETE | /api/v1/master/vehicles/:id | Eliminación lógica vehículo
+Master | POST | /api/v1/master/vehicles/bulk-delete | Masivo eliminación lógica vehículos
+Master | GET | /api/v1/master/vehicles/stats | Obtener vehículo estadísticas
+Master | GET | /api/v1/master/vehicles/expiring-documents | Obtener vehículos con próximos a expirar seguro
+Master | GET | /api/v1/master/vehicles/needing-maintenance | Obtener vehículos necesitando mantenimiento
+Master | DELETE | /api/v1/master/products/:id | Eliminación lógica productoo
+Master | POST | /api/v1/master/products/:id/duplicate | Duplicar productoo
+Master | GET | /api/v1/master/products/stats | Obtener productoo estadísticas
+Master | GET | /api/v1/master/operators | Listar operadores (paginado)
+Master | GET | /api/v1/master/operators/:id | Obtener operado po ID
+Master | POST | /api/v1/master/operators | Crear operador
+Master | PUT | /api/v1/master/operators/:id | Actualizar operador
+Master | DELETE | /api/v1/master/operators/:id | Eliminación lógica operador
+Master | GET | /api/v1/master/operators/stats | Obtener operado estadísticas
+Geofence | GET | /geofences | Listar geocercas (paginado con filtros)
+Geofence | GET | /geofences/:id | Obtener geocerca po ID
+Geofence | PUT | /geofences/:id | Actualizar geocerca metadatos y alerta configuraciones
+Geofence | DELETE | /geofences/:id | Eliminación lógica geocerca
+Geofence | POST | /geofences/bulk-delete | Masivo eliminación lógica geocercas
+Geofence | POST | /geofences/:id/duplicate | Duplicar geocerca y sincronizar copy a GPS proveedor
+Geofence | PATCH | /geofences/batch-color | Actualizar colo para múltiples geocercas
+Geofence | PATCH | /geofences/batch-category | Actualizar category para múltiples geocercas
+Geofence | POST | /geofences/toggle-estatus-batch | Alternar estado para múltiples geocercas
+Geofence | GET | /geofences/export/kml | Exportar geocercas a KML
+Geofence | POST | /geofences/import/kml | STUB — Importar geocercas desde KML (returns 501 Not Implemented)
+Geofence | GET | /geofences/stats | Obtener geocerca estadísticas
+Geofence | GET | /geofences/containing-point | Encontrar geocercas containing a geographic point
+Monitoring | GET | /api/v1/monitoring/alerts | Listar monitoring alertaas (filtros: severity, estado, alertaType, vehículoId)
+Monitoring | POST | /api/v1/monitoring/alerts | Crear monitoring alerta manualmente
+Monitoring | PATCH | /api/v1/monitoring/alerts/:id/acknowledge | Reconocer alertaa (active → acknowledged)
+Monitoring | PATCH | /api/v1/monitoring/alerts/:id/resolve | Resolver alertaa (active/acknowledged → resolved)
+Monitoring | PATCH | /api/v1/monitoring/alerts/read-all | Marcar todas las alertaas activas como acknowledged (bulk)
+Monitoring | GET | /api/v1/monitoring/stats | Monitoring KPI estadísticas (vehículos, alertaas activas, retransmisión)
+Monitoring | GET | /api/v1/monitoring/tracking | Listar tracked vehículos con filtros + KPIs de flota
+Monitoring | GET | /api/v1/monitoring/tracking/:vehicleId | Obtener single tracked vehículo con posición actual
+Monitoring | GET | /api/v1/monitoring/tracking/:vehicleId/position | Obtener actual GPS posición only
+Monitoring | GET | /api/v1/monitoring/tracking/:vehicleId/order | Obtener active orden de transporte + ETA dinámico del vehículo
+Monitoring | GET | /api/v1/monitoring/tracking/carriers | Listar unique carriers/operadores activos
+Monitoring | GET | /api/v1/monitoring/alert-rules | Listar reglas de alertaa del compañía (tenant)
+Monitoring | POST | /api/v1/monitoring/alert-rules | Crear nueva regla de alertaa
+Monitoring | PATCH | /api/v1/monitoring/alert-rules/:id | Actualizar regla de alertaa (parcial, enable/disable)
+Monitoring | DELETE | /api/v1/monitoring/alert-rules/:id | Eliminar regla de alertaa
+Monitoring | GET | /api/v1/monitoring/historical | Consultar ruta histórica (max 7 días, sampleInterval, includeEvents)
+Monitoring | GET | /api/v1/monitoring/historical/export | Exportar ruta histórica (CSV / JSON / GPX)
+Monitoring | GET | /api/v1/monitoring/historical/vehicles | Listar vehículos con datos históricos disponibles
+Monitoring | GET | /api/v1/monitoring/historical/vehicles/:vehicleId/date-range | Rango de fechas disponible para vehículo
+Monitoring | GET | /api/v1/monitoring/retransmission | Listar retransmission records con filtros
+Monitoring | GET | /api/v1/monitoring/retransmission/:id | Obtener registro individual de retransmisión
+Monitoring | GET | /api/v1/monitoring/retransmission/stats | Estadísticas de retransmisión po estado
+Monitoring | PATCH | /api/v1/monitoring/retransmission/:id/comment | Actualizar comentario del operador
+Monitoring | PATCH | /api/v1/monitoring/retransmission/bulk-comments | Actualizar comentarios masivo (`{ recordIds[], comment }`)
+Monitoring | GET | /api/v1/monitoring/retransmission/gps-companies | Listar proveedores GPS disponibles
+Monitoring | GET | /api/v1/monitoring/retransmission/companies | Listar operadores/transportistas únicos
+Monitoring | GET | /api/v1/monitoring/geofence-events | Listar eventos con filtros y paginación
+Monitoring | GET | /api/v1/monitoring/geofence-events/:id | Obtener evento individual de geocerca
+Monitoring | POST | /api/v1/monitoring/geofence-events | Registrar evento de geocerca (interno — sistema GPS)
+Monitoring | PATCH | /api/v1/monitoring/geofence-events/:id | Actualizar evento (completar, cancelar)
+Monitoring | POST | /api/v1/monitoring/geofence-events/record-exit | Registrar salida de vehículo de geocerca
+Monitoring | GET | /api/v1/monitoring/geofence-events/dwell-summary | Resumen de permanencia po geocerca/vehículo
+Monitoring | GET | /api/v1/monitoring/geofence-events/stats | Estadísticas de eventos de geocerca
+Monitoring | GET | /api/v1/monitoring/geofence-events/active | Eventos activos (vehículos actualmente dentro de geocercas)
+Monitoring | GET | /api/v1/monitoring/geofence-events/check/:vehicleId/:geofenceId | Verificar si vehículo está dentro de geocerca
+Monitoring | GET | /api/v1/monitoring/multi-window/panels | Listar paneles del usuario autenticado
+Monitoring | POST | /api/v1/monitoring/multi-window/panels | Agregar vehículo al panel (máx 10 po usuario)
+Monitoring | PATCH | /api/v1/monitoring/multi-window/panels/:id | Actualizar posición del panel en el grid
+Monitoring | DELETE | /api/v1/monitoring/multi-window/panels/:id | Eliminar vehículo del panel (soft delete)
+Monitoring | WS | /api/v1/monitoring/websocket?token=<JWT> | Canal WebSocket para posiciones en tiempo real, alertaas y cambios de estado de conexión GPS. Mensajes cliente: `subscribe`, `unsubscribe`, `ping`. Mensajes servidor: `posición_update`, `connection_estado`, `alerta`, `pong`. Heartbeat: ping cada 30s, timeout 60s.
+Maintenance | GET | /api/v1/maintenance/stats | Maintenance estadísticas: WO counts by estado, total costo, avg completion hours, overdue programaciones, active averías
+Maintenance | GET | /api/v1/maintenance/work-orders | Listar órdenes de trabajo (paginado, filtros: estado/type/vehículoId/priority)
+Maintenance | GET | /api/v1/maintenance/work-orders/:id | Obtener orden de trabajo detalle con repuestos list
+Maintenance | POST | /api/v1/maintenance/work-orders | Crear orden de trabajo + optional repuestos + set vehículo operational_estado=maintenance
+Maintenance | PUT | /api/v1/maintenance/work-orders/:id | Actualizar orden de trabajo (draft/pending only)
+Maintenance | PATCH | /api/v1/maintenance/work-orders/:id/status | Transition WO estado (6-state machine: draft→pending→in_progress→on_hold↔in_progress→completed/cancelled)
+Maintenance | PATCH | /api/v1/maintenance/work-orders/:id/complete | Completar orden de trabajo con resolution, actualCosto, next service info
+Maintenance | GET | /api/v1/maintenance/schedules | Listar maintenance programaciones (filter: vehículoId, isDue)
+Maintenance | POST | /api/v1/maintenance/schedules | Crear maintenance programación (intervalKm/intervalDays/nextDueDate)
+Maintenance | PUT | /api/v1/maintenance/schedules/:id | Actualizar maintenance programación — COALESCE fields (E-09)
+Maintenance | DELETE | /api/v1/maintenance/schedules/:id | Deactivate maintenance programación — sets is_active=0 (E-10)
+Maintenance | GET | /api/v1/maintenance/breakdowns | Listar vehículo averías (filter: vehículoId/estado)
+Maintenance | POST | /api/v1/maintenance/breakdowns | Reportar avería — critical severity sets vehículo out_of_service, emits event (E-12)
+Maintenance | PUT | /api/v1/maintenance/breakdowns/:id | Actualizar avería (diagnose/repair/resolve) — resolved sets vehículo available (E-13)
+Maintenance | PATCH | /api/v1/maintenance/breakdowns/:id/status | Quick-actualizar avería estado + optional workOrden de transporteId link
+Maintenance | GET | /api/v1/maintenance/vehicles | Listar vehículos con active orden de trabajo count
+Maintenance | POST | /api/v1/maintenance/vehicles | Crear vehículo — plate/brand/model/year required, Duplicar plate check (E-03)
+Maintenance | GET | /api/v1/maintenance/vehicles/:id | Obtener vehículo maintenance detalles
+Maintenance | PUT | /api/v1/maintenance/vehicles/:id | Actualizar vehículo data — COALESCE fields (E-04)
+Maintenance | DELETE | /api/v1/maintenance/vehicles/:id | Eliminación lógica vehículo — sets deleted_at (E-05)
+Maintenance | GET | /api/v1/maintenance/vehicles/:id/history | Obtener vehículo orden de trabajo historial
+Maintenance | PATCH | /api/v1/maintenance/vehicles/:id/mileage | Actualizar vehículo actual_mileage
+Maintenance | GET | /api/v1/maintenance/vehicles/:id/costs | Obtener vehículo maintenance costoos by month/year
+Maintenance | GET | /api/v1/maintenance/workshops | Listar talleres (internal + external)
+Maintenance | POST | /api/v1/maintenance/workshops | Crear taller
+Maintenance | PUT | /api/v1/maintenance/workshops/:id | Actualizar taller
+Maintenance | GET | /api/v1/maintenance/parts | Listar catálogo de repuestos aggregated desde work_orden de transporte_repuestos historial
+Maintenance | POST | /api/v1/maintenance/parts | Crear repuesto in repuestos_inventory
+Maintenance | PUT | /api/v1/maintenance/parts/:id | Actualizar repuesto (repuestoNumber/name/category/minStock/unitCosto)
+Maintenance | GET | /api/v1/maintenance/parts/:id/transactions | Listar stock transactions desde repuesto_transactions — paginated (E-25)
+Maintenance | POST | /api/v1/maintenance/parts/:id/transactions | Registrar repuesto transaction (in/out) — updates stock_quantity
+Maintenance | GET | /api/v1/maintenance/inspections | Listar vehículo inspecciones (last 100)
+Maintenance | POST | /api/v1/maintenance/inspections | Crear inspección con result (pass/fail/needs_attention)
+Maintenance | GET | /api/v1/maintenance/inspections/:id | Obtener inspección detalle
+Maintenance | GET | /api/v1/maintenance/inspections/:id/checklists | Obtener checklistar items desde inspección.detalles JSON column (E-28)
+Maintenance | GET | /api/v1/maintenance/alerts | Obtener maintenance alertaas (last 50, no leída first)
+Maintenance | PATCH | /api/v1/maintenance/alerts/:id/read | Marcar maintenance alerta as leída
+Maintenance | PATCH | /api/v1/maintenance/alerts/:id/dismiss | Dismiss maintenance alerta
+Maintenance | GET | /api/v1/maintenance/metrics | Consolidated métricas — MTBF, MTTR, totalCostoos, activeWorkÓrdenes de transporte, overdueProgramaciones, vehículosInMaintenance (E-32)
+Maintenance | GET | /api/v1/maintenance/metrics/costs | Maintenance costoos per month — last 12 months
+Maintenance | GET | /api/v1/maintenance/metrics/downtime | Fleet downtime métricas — avg hours/incident, total hours
+Maintenance | GET | /api/v1/maintenance/settings | Obtener maintenance configuraciones (compañía (tenant)_configuraciones category=maintenance)
+Maintenance | PUT | /api/v1/maintenance/settings | Upsert maintenance configuraciones per key (E-35)
+Settings | GET | /api/v1/settings | Obtener toda la configuración del compañía (tenant) agrupada po categoría
+Settings | GET | /api/v1/settings/:category | Obtener configuración de una categoría específica (general/operations/fleet/finance/notifications/security/localization/appearance)
+Settings | PUT | /api/v1/settings | Actualizar configuración de una categoría (body: `{ category, configuraciones: {...} }`)
+Settings | POST | /api/v1/settings/:category/reset | Restablecer categoría a valores po defecto
+Settings | GET | /api/v1/settings/export | Exportar toda la configuración como JSON
+Settings | POST | /api/v1/settings/import | Importar configuración desde JSON exportado
+Settings | GET | /api/v1/settings/overview | Resumen general: total configuraciones, rols, integraciones, auditoría últimas 24h
+Settings | POST | /api/v1/settings/bulk | Actualizar múltiples claves de configuración en lote
+Settings | GET | /api/v1/settings/:category/:key | Obtener valo de una clave específica
+Settings | PUT | /api/v1/settings/:category/:key | Crear o actualizar clave individual
+Settings | DELETE | /api/v1/settings/:category/:key | Eliminar clave de configuración
+Settings | POST | /api/v1/settings/load-defaults | Cargar valores po defecto del sistema (**STUB** — retorna mock)
+Settings | POST | /api/v1/settings/reset | Restablecer TODA la configuración a valores de fábrica (elimina todo excepto `category=system`)
+Settings | GET | /api/v1/settings/roles | Listar rols del compañía (tenant) (incluye rols globales `is_system`)
+Settings | GET | /api/v1/settings/roles/:id | Obtener detalle de rol con permisos
+Settings | POST | /api/v1/settings/roles | Crear nuevo rol personalizado (`isSystem=false`)
+Settings | PUT | /api/v1/settings/roles/:id | Actualizar rol (nombre, descripción, permisos)
+Settings | DELETE | /api/v1/settings/roles/:id | Eliminar rol — valida `is_system=false` y `usuario_count=0` (409 si falla)
+Settings | GET | /api/v1/settings/integrations | Listar integraciones del compañía (tenant)
+Settings | GET | /api/v1/settings/integrations/:id | Obtener detalle de integración
+Settings | POST | /api/v1/settings/integrations | Crear/configurar integración (estado inicial: `pending`, `isActive=false`)
+Settings | PUT | /api/v1/settings/integrations/:id | Actualizar configuración de integración
+Settings | DELETE | /api/v1/settings/integrations/:id | Eliminar integración
+Settings | PATCH | /api/v1/settings/integrations/:id/toggle | Activar/desactivar integración (`isActive` toggle)
+Settings | POST | /api/v1/settings/integrations/:id/test | Probar conexión — actualiza `estado` (`active`/`error`) según resultado
+Settings | POST | /api/v1/settings/integrations/:id/sync | Forzar sincronización con proveedo externo
+Settings | GET | /api/v1/settings/integrations/health | Estado de salud de todas las integraciones del compañía (tenant)
+Settings | GET | /api/v1/settings/audit | Consultar log de auditoría (paginado; filtros: usuarioId, action, resource, startDate, endDate, search)
+Settings | GET | /api/v1/settings/audit/export | Exportar log de auditoría (CSV; mismos filtros que `OBTENER /audit`)
+Scheduling | GET | /api/v1/operations/scheduling/orders | E-01: Listarar ordenes programables con filtros
+Scheduling | POST | /api/v1/operations/scheduling/assign | E-02: Programar orden: asignar fecha, vehiculo y conductor
+Scheduling | POST | /api/v1/operations/scheduling/unschedule | E-03: Desprogramar orden: liberar recursos
+Scheduling | POST | /api/v1/operations/scheduling/reassign | E-04: Reasignar vehiculo y/o conductor
+Scheduling | POST | /api/v1/operations/scheduling/bulk-assign | E-05: Asignacion masiva (max 50 ordenes)
+Scheduling | GET | /api/v1/operations/scheduling/calendar | E-06: Vista calendario mensual con ordenes po dia
+Scheduling | GET | /api/v1/operations/scheduling/timeline | E-07: Vista linea de tiempo de recursos po dia
+Scheduling | GET | /api/v1/operations/scheduling/conflicts | E-08: Listarar conflictos de programacion activos
+Scheduling | POST | /api/v1/operations/scheduling/resolve-conflict | E-09: Resolver un conflicto de programacion
+Scheduling | GET | /api/v1/operations/scheduling/suggestions/:orderId | E-10: Sugerencias de vehiculo y conducto para una orden
+Scheduling | POST | /api/v1/operations/scheduling/validate-hos | E-11: Validar horas de servicio FMCSA §395.3
+Scheduling | GET | /api/v1/operations/scheduling/kpis | E-12: KPIs del modulo de programacion
+Scheduling | POST | /api/v1/operations/scheduling/block-day | E-13: Bloquear un dia para programacion
+Scheduling | DELETE | /api/v1/operations/scheduling/block-day/:id | E-14: Desbloquear un dia bloqueado
+Scheduling | GET | /api/v1/operations/scheduling/blocked-days | E-15: Listarar dias bloqueados del compañía (tenant)
+Scheduling | POST | /api/v1/operations/scheduling/auto-schedule | E-16: Auto-programar ordenes pendientes (propuesta)
+Scheduling | GET | /api/v1/operations/scheduling/gantt | E-17: Vista Gantt de recursos multi-dia
+Scheduling | GET | /api/v1/operations/scheduling/audit-logs | E-18: Historial inmutable de cambios en programaciones
+Scheduling | GET | /api/v1/operations/scheduling/export | E-19: Exportarar programacion a CSV
+Scheduling | POST | /api/v1/operations/scheduling/detect-conflicts | E-20: Pre-validar conflictos sin guardar
+Scheduling | POST | /api/v1/operations/scheduling/reschedule | E-21: Reprogramar orden a otra fecha
+Scheduling | GET | /api/v1/operations/scheduling/notifications | E-22: Listarar notificaciones del modulo
+Reports | GET | /api/v1/reports/definitions | E-01: Listarar definiciones de reporte (filtros: type, category, search)
+Reports | GET | /api/v1/reports/definitions/:id | E-02: Obtener definición po ID
+Reports | POST | /api/v1/reports/definitions | E-03: Crear definición personalizada
+Reports | PUT | /api/v1/reports/definitions/:id | E-04: Actualizar definición personalizada
+Reports | DELETE | /api/v1/reports/definitions/:id | E-05: Eliminar definición personalizada
+Reports | GET | /api/v1/reports/definitions/categories | E-06: Listarar categorías disponibles
+Reports | GET | /api/v1/reports/templates | E-07: Listarar plantillas de reporte
+Reports | GET | /api/v1/reports/templates/:id | E-08: Obtener plantilla po ID
+Reports | POST | /api/v1/reports/generate | E-09: Generar reporte (sincronizar asincronizar=false → 200, asincronizar=true → 202)
+Reports | GET | /api/v1/reports/generated | E-10: Listarar reportes generados (paginado, filtros: type/estado/format/fechas)
+Reports | GET | /api/v1/reports/generated/:id | E-11: Obtener reporte generado po ID
+Reports | GET | /api/v1/reports/generated/:id/status | E-12: Consultar estado de reporte (polling para asincronizar)
+Reports | GET | /api/v1/reports/generated/:id/download | E-13: Descargar reporte (URL firmada, 409 si no completed, 410 si expirado)
+Reports | GET | /api/v1/reports/schedules | E-14: Listarar programaciones de reporte
+Reports | GET | /api/v1/reports/schedules/:id | E-15: Obtener programación po ID
+Reports | POST | /api/v1/reports/schedules | E-16: Crear programación de reporte
+Reports | PUT | /api/v1/reports/schedules/:id | E-17: Actualizar programación
+Reports | PATCH | /api/v1/reports/schedules/:id/toggle | E-18: Activar/desactivar programación (toggle)
+Reports | DELETE | /api/v1/reports/schedules/:id | E-19: Eliminar programación
+Reports | POST | /api/v1/reports/schedules/:id/run | E-20: Ejecutar programación manualmente
+Reports | GET | /api/v1/reports/data/operational | E-21: Datos operacionales precalculados (startDate, endDate)
+Reports | GET | /api/v1/reports/data/financial | E-22: Datos financieros precalculados (startDate, endDate)
+Reports | GET | /api/v1/reports/usage-stats | E-23: Estadísticas de uso del módulo (solo Owner/UM)
+Platform | GET | /api/v1/platform/tenants | Listar compañías (compañía (tenant)) (Owner only)
+Platform | GET | /api/v1/platform/tenants/:id | Obtener compañía (tenant) detalle
+Platform | POST | /api/v1/platform/tenants | Crear compañía (tenant)
+Platform | PUT | /api/v1/platform/tenants/:id | Actualizar compañía (tenant)
+Platform | PATCH | /api/v1/platform/tenants/:id/status | Actualizar compañía (tenant) estado
+Platform | GET | /api/v1/platform/users | Listar platform usuarios
+Platform | GET | /api/v1/platform/users/:id | Obtener usuario detalle
+Platform | POST | /api/v1/platform/users | Crear platform usuario
+Platform | PUT | /api/v1/platform/users/:id | Actualizar usuario
+Platform | PATCH | /api/v1/platform/users/:id/status | Actualizar usuario estado
+Platform | PATCH | /api/v1/platform/users/:id/permissions | Actualizar usuario permissions (sub_usuario only)
+Platform | POST | /api/v1/platform/tenants/:id/suspend | Suspend compañía (tenant)
+Platform | POST | /api/v1/platform/tenants/:id/reactivate | Reactivate compañía (tenant)
+Platform | DELETE | /api/v1/platform/tenants/:id | Cancel/eliminar compañía (tenant)
+Platform | GET | /api/v1/platform/tenants/:tenantId/modules | Obtener modules de compañía (tenant)
+Platform | PUT | /api/v1/platform/tenants/:tenantId/modules | Actualizar modules para compañía (tenant)
+Platform | GET | /api/v1/platform/tenants/:tenantId/modules/:moduleCode/enabled | Check if module is enabled
+Platform | POST | /api/v1/platform/users/master | Crear master usuario para compañía (tenant)
+Platform | POST | /api/v1/platform/users/force-password-reset | Force password reset
+Platform | GET | /api/v1/platform/transfers | Listar transferenciaencias
+Platform | POST | /api/v1/platform/transfers | Crear transferencia request
+Platform | POST | /api/v1/platform/transfers/:id/approve | Approve transferencia
+Platform | POST | /api/v1/platform/transfers/:id/execute | Execute transferencia
+Platform | POST | /api/v1/platform/transfers/:id/reject | Reject transferencia
+Platform | GET | /api/v1/platform/dashboard | Platform dashboard
+Platform | GET | /api/v1/platform/activity | Platform activity log
+Platform | GET | /api/v1/platform/tenants/:tenantId/fleet-groups | Listar grupos de flota
+Platform | POST | /api/v1/platform/tenants/:tenantId/fleet-groups | Crear grupo de flota
+Platform | PUT | /api/v1/platform/tenants/:tenantId/fleet-groups/:groupId | Actualizar grupo de flota
+Platform | DELETE | /api/v1/platform/tenants/:tenantId/fleet-groups/:groupId | Eliminar grupo de flota
+Workflows | GET | /api/v1/workflows | Listar flujo de trabajo definitions
+Workflows | GET | /api/v1/workflows/:id | Obtener flujo de trabajo detalle con recent executions
+Workflows | POST | /api/v1/workflows | Crear flujo de trabajo definition
+Workflows | PUT | /api/v1/workflows/:id | Actualizar flujo de trabajo definition
+Workflows | PATCH | /api/v1/workflows/:id/status | Change flujo de trabajo estado
+Workflows | DELETE | /api/v1/workflows/:id | Eliminar flujo de trabajo
+Workflows | GET | /api/v1/workflows/:id/executions | Obtener flujo de trabajo execution historial
+Workflows | POST | /api/v1/workflows/:id/trigger | Manually trigger flujo de trabajo execution
+Workflows | GET | /api/v1/workflows/default | Obtener default flujo de trabajo
+Workflows | GET | /api/v1/workflows/active | Listar active flujos de trabajo
+Workflows | POST | /api/v1/workflows/:id/duplicate | Duplicar flujo de trabajo
+Workflows | POST | /api/v1/workflows/:id/apply | Apply flujo de trabajo a orden de transporte
+Workflows | GET | /api/v1/orders/:orderId/workflow-progress | Obtener flujo de trabajo progress para orden de transporte
+Workflows | GET | /api/v1/workflows/suggest | Suggest flujo de trabajo
+Workflows | GET | /api/v1/workflows/:id/schedule-duration | Obtener estimated flujo de trabajo duration
+Workflows | POST | /api/v1/workflows/:id/validate-for-schedule | Validate flujo de trabajo para scheduling
+Workflows | GET | /api/v1/workflows/:id/validate-geofences | Validate flujo de trabajo geocercas
+Workflows | GET | /api/v1/workflows/helpers/available-geofences | Obtener available geocercas para flujos de trabajo
+Workflows | GET | /api/v1/workflows/helpers/geofences-by-category/:category | Obtener geocercas by category
+Workflows | GET | /api/v1/workflows/helpers/available-customers | Obtener available clientes para flujos de trabajo
+Orders | GET | /api/v1/orders | Listar transport órdenes de transporte (paginado, con filtros: estado, clienteId, vehículoId, conductorId, priority, type, date range, search)
+Orders | GET | /api/v1/orders/:id | Obtener orden de transporte detalle con items y tracking historial
+Orders | POST | /api/v1/orders | Crear transport orden de transporte (auto-genetarifas orden de transporteNumber ORD-YYYY-NNNNN, estado=draft)
+Orders | PATCH | /api/v1/orders/:id | Actualizar orden de transporte fields (draft/pending only, repuestoial COALESCE update)
+Orders | DELETE | /api/v1/orders/:id | Eliminación lógica orden de transporte (draft only)
+Orders | PATCH | /api/v1/orders/:id/status | Transition orden de transporte estado via 9-state machine con GPS side-effects
+Orders | PATCH | /api/v1/orders/:id/assign | Asignar vehículo y conducto a orden de transporte (validates availability)
+Orders | GET | /api/v1/orders/:id/tracking | Obtener orden de transporte tracking historial
+Orders | POST | /api/v1/orders/:id/transit-update | Registrar in-transit ETA actualizar con actual GPS posición
+Orders | POST | /api/v1/orders/:id/deliver | Marcar orden de transporte as delivered/completed con Proof de Entrega (POD)
+Orders | POST | /api/v1/orders/:id/cancel | Cancelar orden de transporte (must be in a cancellable state)
+Orders | POST | /api/v1/orders/:id/close | Administrative closure (completed → closed, validates todos los milestones terminal)
+Orders | POST | /api/v1/orders/:id/items | Add items/SKUs a existing orden de transporte (draft/pending/assigned)
+Orders | GET | /api/v1/orders/stats | Orden de transporte estadísticas by estado (all 9 states)
+Orders | POST | /api/v1/orders/import | STUB — Masivo importar órdenes de transporte desde Excel/CSV (returns 501 Not Implemented)
+Orders | GET | /api/v1/orders/export | Exportar órdenes de transporte a CSV
+Orders | POST | /api/v1/orders/bulk-send | Masivo send órdenes de transporte a GPS platform (sendOrden de transporteToGps + startSendData)
+Orders | GET | /api/v1/orders/:id/workflow-progress | Obtener milestone completion progress desde orden de transporte_milestones
+Orders | PATCH | /api/v1/orders/:id/milestones/:milestoneId | Manual milestone entry actualizar (CU-07: arrival/derepuestoure without GPS, auto-completes orden de transporte)
+Dashboard | GET | /api/v1/dashboard/stats | Obtener 12 KPIs + trends + sparklines (date query param optional)
+Dashboard | GET | /api/v1/dashboard/vehicles/overview | Obtener fleet distribution by estado (donut chart data)
+Dashboard | GET | /api/v1/dashboard/shipments | Obtener shipment estadísticas by month (last 10 months)
+Dashboard | GET | /api/v1/dashboard/vehicles/on-route | Obtener vehículos actually on ruta con speed, progress, ETA
+Bitacora | GET | /api/v1/bitacora/stats | Obtener bitacora estadísticas by estado y severity
+Bitacora | GET | /api/v1/bitacora/summary/vehicles | Bitacora resumen grouped by vehículo
+Bitacora | GET | /api/v1/bitacora/summary/geofences | Bitacora resumen grouped by geocerca
+Bitacora | GET | /api/v1/bitacora/export | Exportar bitacora entries (json/csv/xlsx)
+Bitacora | GET | /api/v1/bitacora/geofence-breaches | Listar geocerca breach events (entry/exit/dwell/deviation)
+Bitacora | GET | /api/v1/bitacora/vehicle/:vehicleId | Obtener bitacora historial para a specific vehículo
+Bitacora | GET | /api/v1/bitacora | Listar bitacora entries (paginated + filtros)
+Bitacora | POST | /api/v1/bitacora | Crear bitacora entry (manual)
+Bitacora | GET | /api/v1/bitacora/:id | Obtener bitacora entry detalle
+Bitacora | PUT | /api/v1/bitacora/:id/review | Marcar entry as reviewed (active→reviewed, completed→reviewed)
+Bitacora | PUT | /api/v1/bitacora/:id/dismiss | Dismiss entry (active→dismissed, completed→dismissed)
+Bitacora | PUT | /api/v1/bitacora/:id/notes | Add/actualizar operado notes
+Bitacora | PUT | /api/v1/bitacora/:id/assign-order | Asignar entry a an existing transport orden de transporte (validates orden de transporte exists)
+Bitacora | POST | /api/v1/bitacora/:id/create-order | Crear transport orden de transporte desde bitacora entry (state machine: completed/reviewed→orden de transporte_created)
+Bitacora | PUT | /api/v1/bitacora/:id/complete | Completar bitacora entry — calcular dwell_time_minutes desde timestamps
+RoutePlanner | GET | /api/v1/route-planner/routes | Listar rutas (paginado, filtros: estado/vehículoId/conductorId/search)
+RoutePlanner | GET | /api/v1/route-planner/routes/:id | Obtener ruta detalle con paradas
+RoutePlanner | POST | /api/v1/route-planner/routes | Crear ruta con optional paradas arreglo
+RoutePlanner | PATCH | /api/v1/route-planner/routes/:id/status | Transition ruta estado via RUTA_TRANSITIONS machine
+RoutePlanner | PATCH | /api/v1/route-planner/routes/:routeId/stops/:stopId/estado | Actualizar individual parada estado (arrived/completed/skipped)
+RoutePlanner | POST | /api/v1/route-planner/routes/:id/stops | Add paradas a existing ruta (draft/active only)
+RoutePlanner | GET | /api/v1/route-planner/routes/:id/status | Evaluate ruta delay estado con progress métricas
+RoutePlanner | POST | /api/v1/route-planner/optimize | E-01: Optimize multi-parada ruta (K-means++ / TSP / OSRM stub)
+RoutePlanner | POST | /api/v1/route-planner/calculate | E-02: Calcular distance/time between points
+RoutePlanner | GET | /api/v1/route-planner/geocode | E-03: Geocodificar address a coordinates (query param)
+RoutePlanner | POST | /api/v1/route-planner/routes/manual | E-06: Crear manual ruta con paradas + emitEvent
+RoutePlanner | PATCH | /api/v1/route-planner/routes/:id/assign | E-07: Asignar vehículo y conducto a ruta (genetarifad estado only)
+RoutePlanner | PATCH | /api/v1/route-planner/routes/:id/stops/reorder | E-08: Reorden de transporte paradas in ruta con sequence update
+RoutePlanner | PATCH | /api/v1/route-planner/routes/:id/confirm | E-09: Confirm ruta (genetarifad → confirmed), validates ≥2 paradas
+RoutePlanner | POST | /api/v1/route-planner/routes/confirm-all | E-10: Lote - confirm múltiples rutas atomically
+RoutePlanner | PATCH | /api/v1/route-planner/routes/:id/dispatch | E-11: Despachar ruta (confirmed → dispatched), validates vehículo+conductor
+RoutePlanner | PATCH | /api/v1/route-planner/routes/:id/reset | E-12: Restablecer ruta a draft estado
+RoutePlanner | PATCH | /api/v1/route-planner/routes/:id/revoke | E-13: Revocar confirmation (confirmed → genetarifad)
+RoutePlanner | DELETE | /api/v1/route-planner/routes/:id | E-14: Eliminar ruta (draft o genetarifad only)
+RoutePlanner | GET | /api/v1/route-planner/routes/:id/calculate | E-15: Obtener ruta totals (distance, duration, paradas count)
+RoutePlanner | GET | /api/v1/route-planner/depots | E-16: Listar active almacenes desde `almacenes` table
+RoutePlanner | GET | /api/v1/route-planner/vehicles | E-17: Listar available vehículos para routing (filtros by operational_estado)
+RoutePlanner | GET | /api/v1/route-planner/drivers | E-18: Listar available conductores para routing
+RoutePlanner | GET | /api/v1/route-planner/route-templates | E-19: Listar ruta plantillas orden de transporteed by usage_count
+RoutePlanner | POST | /api/v1/route-planner/route-templates | E-20: Crear ruta plantilla (configuration + optimizationParams + tags)
+RoutePlanner | POST | /api/v1/route-planner/whatif-scenarios | E-21: Crear what-if analysis scenario
+RoutePlanner | GET | /api/v1/route-planner/whatif-scenarios | E-22: Listar what-if scenarios (paginado)
+Finance | GET | /api/v1/finance/invoices | E-01: Listarar facturas (filtros: search/estado/type/clienteId/startDate/endDate, paginado)
+Finance | GET | /api/v1/finance/invoices/:id | E-02: Obtener factura po ID con line items
+Finance | POST | /api/v1/finance/invoices | E-03: Crear factura (calcula totales, estado=draft, genera INV-YYYY-NNNNN)
+Finance | PATCH | /api/v1/finance/invoices/:id/status | E-04: Transicionar estado de factura (máquina 8 estados)
+Finance | POST | /api/v1/finance/invoices/:id/send | E-05: Enviar factura al cliente (draft/pending → sent)
+Finance | GET | /api/v1/finance/payments | E-06: Listarar pagos (filtros: facturaId/clienteId/estado/method, paginado)
+Finance | POST | /api/v1/finance/payments | E-07: Registrar pago — reconcilia automáticamente la factura (amountPaid/amountDue/estado)
+Finance | GET | /api/v1/finance/payments?invoiceId=:id | E-08: Pagos de una factura (vía filtro facturaId en listPagos)
+Finance | GET | /api/v1/finance/costs | E-09: Listarar costoos (filtros: type/vehículoId/orden de transporteId/isApproved, paginado)
+Finance | POST | /api/v1/finance/costs | E-10: Registrar costoo (isApproved=false, requiere aprobación)
+Finance | PATCH | /api/v1/finance/costs/:id/approve | E-11: Aprobar costoo (sets isApproved=true, registra approvedBy/approvedAt)
+Finance | GET | /api/v1/finance/costs/by-order/:orderId | E-12: Costoos de una orden específica
+Finance | GET | /api/v1/finance/costs/by-vehicle/:vehicleId | E-13: Costoos de un vehículo (filtros: type/startDate/endDate, paginado)
+Finance | GET | /api/v1/finance/rates | E-14: Listarar tarifas (filtros: category/originZone/destinationZone/isActive)
+Finance | GET | /api/v1/finance/rates/:id | E-15: Obtener tarifa po ID
+Finance | GET | /api/v1/finance/rates/calculate | E-16: Calcular monto para ruta (originZone+destinationZone, soporta rangos escalonados, min/max charge)
+Finance | GET | /api/v1/finance/stats | E-17: Estadísticas financieras (totalFacturad/totalPaid/totalPending/totalOverdue/totalCostoos/profitMargin)
+Finance | GET | /api/v1/finance/clientes/:id/summary | E-18: Resumen financiero de cliente (totalFacturad/totalDue/overdueAmount/avgPagoDays)
+Finance | GET | /api/v1/finance/aging | E-19: Aging cuentas po cobrar (actual/1-30/31-60/61-90/+90 días)
+Finance | GET | /api/v1/finance/profitability | E-20: Análisis de rentabilidad (totalRevenue/totalCostoos/grossProfit/margin, bycliente top-10)
+Finance | GET | /api/v1/finance/cash-flow | E-21: Flujo de caja (totalInflows/totalOutflows/netCashFlow, detalle diario últimos 30 días)

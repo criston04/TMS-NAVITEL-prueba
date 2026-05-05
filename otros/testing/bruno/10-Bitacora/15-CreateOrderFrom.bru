@@ -1,0 +1,40 @@
+meta {
+  name: Create order from entry
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/bitacora/{{lastBitacoraEntryId}}/create-order
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "customerId": "{{lastCustomerId}}",
+    "priority": "normal",
+    "serviceType": "distribucion",
+    "notes": "Orden creada a partir de un evento de bitacora"
+  }
+}
+
+docs {
+  # POST /bitacora/:id/create-order
+
+  Flujo: un operador ve un evento de bitacora (ej: parada no planificada en un cliente
+  que todavia no tiene orden asociada) y crea una orden a posteriori.
+
+  **Restriccion:** solo permite desde entry con `status: "active"`.
+  Si el entry ya esta `reviewed`, `dismissed` o `completed`, responde `409`.
+
+  **Requisito:** correr antes `03-Master-Customers/02-Create.bru` para setear `lastCustomerId`.
+}

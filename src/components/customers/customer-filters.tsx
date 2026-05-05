@@ -48,8 +48,8 @@ const STATUS_OPTIONS: { value: EntityStatus | "all"; label: string; icon?: typeo
 
 const TYPE_OPTIONS: { value: CustomerType | "all"; label: string; icon?: typeof Building2 }[] = [
   { value: "all", label: "Todos los tipos" },
-  { value: "empresa", label: "Empresas", icon: Building2 },
-  { value: "persona", label: "Personas", icon: User },
+  { value: "company", label: "Empresas", icon: Building2 },
+  { value: "person", label: "Personas", icon: User },
 ];
 
 // CATEGORY_OPTIONS ahora viene del hook useCustomerCategories()
@@ -295,7 +295,7 @@ export function CustomerFiltersComponent({
           )}
           {filters.type && filters.type !== "all" && (
             <Badge variant="secondary" className="gap-1">
-              Tipo: {filters.type === "empresa" ? "Empresa" : "Persona"}
+              Tipo: {filters.type === "company" ? "Empresa" : "Persona"}
               <X 
                 className="h-3 w-3 cursor-pointer" 
                 onClick={() => updateFilter("type", "all")}

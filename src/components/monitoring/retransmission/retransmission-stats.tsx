@@ -74,32 +74,42 @@ export function RetransmissionStats({
     );
   }
 
+  // 2026-05-03: defaults defensivos. El backend a veces devuelve `stats` sin
+  // todos los campos (ej. solo `data: {}`); aqui garantizamos numeros.
+  const safeTotal = stats?.total ?? 0;
+  const safeOnline = stats?.online ?? 0;
+  const safeTempLoss = stats?.temporaryLoss ?? 0;
+  const safeDisconnected = stats?.disconnected ?? 0;
+  const safeOnlinePct = stats?.onlinePercentage ?? 0;
+  const safeTempLossPct = stats?.temporaryLossPercentage ?? 0;
+  const safeDisconnectedPct = stats?.disconnectedPercentage ?? 0;
+
   return (
     <div className={cn("grid gap-4 md:grid-cols-4", className)}>
       <StatCard
         title="Total Vehículos"
-        value={stats.total}
+        value={safeTotal}
         icon={<Activity className="h-5 w-5" />}
         color="default"
       />
       <StatCard
         title="En Línea"
-        value={stats.online}
-        percentage={stats.onlinePercentage}
+        value={safeOnline}
+        percentage={safeOnlinePct}
         icon={<Wifi className="h-5 w-5" />}
         color="success"
       />
       <StatCard
         title="Pérdida Temporal"
-        value={stats.temporaryLoss}
-        percentage={stats.temporaryLossPercentage}
+        value={safeTempLoss}
+        percentage={safeTempLossPct}
         icon={<AlertTriangle className="h-5 w-5" />}
         color="warning"
       />
       <StatCard
         title="Sin Conexión"
-        value={stats.disconnected}
-        percentage={stats.disconnectedPercentage}
+        value={safeDisconnected}
+        percentage={safeDisconnectedPct}
         icon={<WifiOff className="h-5 w-5" />}
         color="danger"
       />

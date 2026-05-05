@@ -1,9 +1,7 @@
-import type { 
-  WebSocketMessage, 
+import type {
+  WebSocketMessage,
   WebSocketConfig,
-  PositionUpdateMessage
 } from "@/types/monitoring";
-import { vehiclePositionsMock, simulateVehicleMovement } from "@/mocks/monitoring/vehicle-positions.mock";
 import { apiConfig, API_ENDPOINTS } from "@/config/api.config";
 
 /**
@@ -11,7 +9,9 @@ import { apiConfig, API_ENDPOINTS } from "@/config/api.config";
  */
 const DEFAULT_CONFIG: WebSocketConfig = {
   url: process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/monitoring",
-  maxReconnectAttempts: 5,
+  // 3 intentos es suficiente: si el backend no tiene WS implementado, no tiene
+  // sentido seguir molestando al usuario con errores. 5 era demasiado ruidoso.
+  maxReconnectAttempts: 3,
   reconnectBaseDelay: 1000,
   reconnectBackoffFactor: 2,
   maxReconnectDelay: 30000,
@@ -37,24 +37,28 @@ export class MonitoringWebSocketService {
   private reconnectAttempts = 0;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private heartbeatInterval: NodeJS.Timeout | null = null;
-  private mockInterval: NodeJS.Timeout | null = null;
   private connectionTimeout: ReturnType<typeof setTimeout> | null = null;
-  
+
   // Handlers
   private messageHandlers: Set<MessageHandler> = new Set();
   private connectHandlers: Set<ConnectionHandler> = new Set();
   private disconnectHandlers: Set<ConnectionHandler> = new Set();
   private errorHandlers: Set<ErrorHandler> = new Set();
-  
+
   // Subscripciones
   private subscribedVehicleIds: Set<string> = new Set();
-  
-  // Mock mode
-  private readonly useMock: boolean;
+
+  // Feature flag: el backend todavía no tiene /monitoring/websocket implementado.
+  // Mientras tanto mantenemos el WS DESACTIVADO por defecto para evitar:
+  //   - logs de error en consola (3 reintentos fallidos cada vez que montas un modulo de monitoreo)
+  //   - badge "Desconectado" rojo confuso cuando el HTTP polling en realidad funciona
+  // Cuando el backend exponga el endpoint, setear NEXT_PUBLIC_ENABLE_WEBSOCKET=true en .env.
+  private readonly websocketEnabled: boolean;
+  private hasWarnedDisabled = false;
 
   constructor(config: Partial<WebSocketConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.useMock = apiConfig.useMocks;
+    this.websocketEnabled = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === "true";
   }
 
   /**
@@ -66,28 +70,36 @@ export class MonitoringWebSocketService {
       return;
     }
 
-    if (this.useMock) {
-      this.connectMock();
+    // Si el feature flag esta desactivado, no intentamos conectar.
+    // La torre de control / multiventana funcionan via HTTP polling (GET /monitoring/tracking).
+    if (!this.websocketEnabled) {
+      if (!this.hasWarnedDisabled) {
+        console.info(
+          "[WS] WebSocket desactivado (NEXT_PUBLIC_ENABLE_WEBSOCKET != 'true'). " +
+          "Usando polling HTTP para tracking. Activar cuando el backend exponga /monitoring/websocket."
+        );
+        this.hasWarnedDisabled = true;
+      }
       return;
     }
 
     try {
       const wsUrl = apiConfig.baseUrl.replace(/^http/, 'ws') + API_ENDPOINTS.monitoring.websocket;
       this.socket = new WebSocket(wsUrl);
-      
+
       this.socket.onopen = () => {
         console.log("[WS] Connected");
         this.isConnected = true;
         this.reconnectAttempts = 0;
         this.startHeartbeat();
         this.connectHandlers.forEach(handler => handler());
-        
+
         // Re-suscribir a vehículos
         if (this.subscribedVehicleIds.size > 0) {
           this.sendSubscription(Array.from(this.subscribedVehicleIds));
         }
       };
-      
+
       this.socket.onmessage = (event) => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
@@ -96,76 +108,24 @@ export class MonitoringWebSocketService {
           console.error("[WS] Error parsing message:", error);
         }
       };
-      
+
       this.socket.onerror = (event) => {
-        console.error("[WS] Error:", event);
+        // Usamos warn (no error) porque el backend puede aún no tener /monitoring/websocket implementado.
+        // Esto evita que aparezca como error ruidoso en consola mientras el backend completa el feature.
+        console.warn("[WS] Error (backend websocket no disponible?):", event);
         const error = new Error("WebSocket error");
         this.errorHandlers.forEach(handler => handler(error));
       };
-      
+
       this.socket.onclose = () => {
         console.log("[WS] Disconnected");
         this.handleDisconnect();
       };
-      
+
     } catch (error) {
-      console.error("[WS] Connection error:", error);
+      console.warn("[WS] Connection error:", error);
       this.scheduleReconnect();
     }
-  }
-
-  /**
-   * Conecta en modo mock (simulación)
-   */
-  private connectMock(): void {
-    console.log("[WS Mock] Connecting...");
-
-    // Simular delay de conexión
-    this.connectionTimeout = setTimeout(() => {
-      this.isConnected = true;
-      console.log("[WS Mock] Connected");
-      this.connectionTimeout = null;
-      this.connectHandlers.forEach(handler => handler());
-
-      // Iniciar simulación de posiciones
-      this.startMockSimulation();
-    }, 500);
-  }
-
-  /**
-   * Inicia simulación de actualizaciones mock
-   */
-  private startMockSimulation(): void {
-    if (this.mockInterval) {
-      clearInterval(this.mockInterval);
-    }
-
-    this.mockInterval = setInterval(() => {
-      if (!this.isConnected) return;
-
-      // Simular actualizaciones de posición para vehículos suscritos
-      this.subscribedVehicleIds.forEach(vehicleId => {
-        const vehicleIndex = vehiclePositionsMock.findIndex(v => v.id === vehicleId);
-        if (vehicleIndex === -1) return;
-
-        // Simular movimiento
-        const updatedVehicle = simulateVehicleMovement(vehiclePositionsMock[vehicleIndex]);
-        vehiclePositionsMock[vehicleIndex] = updatedVehicle;
-
-        // Crear mensaje de actualización
-        const message: PositionUpdateMessage = {
-          type: "position_update",
-          vehicleId: updatedVehicle.id,
-          position: updatedVehicle.position,
-          movementStatus: updatedVehicle.movementStatus,
-          connectionStatus: updatedVehicle.connectionStatus,
-          timestamp: new Date().toISOString(),
-        };
-
-        // Notificar a los handlers
-        this.messageHandlers.forEach(handler => handler(message));
-      });
-    }, 3000); // Actualizar cada 3 segundos
   }
 
   /**
@@ -173,14 +133,14 @@ export class MonitoringWebSocketService {
    */
   disconnect(): void {
     console.log("[WS] Disconnecting...");
-    
+
     this.clearTimers();
-    
+
     if (this.socket) {
       this.socket.close();
       this.socket = null;
     }
-    
+
     this.isConnected = false;
     this.subscribedVehicleIds.clear();
     this.disconnectHandlers.forEach(handler => handler());
@@ -197,11 +157,20 @@ export class MonitoringWebSocketService {
   }
 
   /**
-   * Programa reconexión con backoff exponencial
+   * Programa reconexión con backoff exponencial.
+   *
+   * Si alcanzamos el máximo, dejamos de intentar (no es un error fatal —
+   * significa que el backend probablemente no tiene el endpoint websocket
+   * implementado todavía). La UI puede seguir funcionando en modo "polling"
+   * usando GET /monitoring/tracking.
    */
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
-      console.error("[WS] Max reconnect attempts reached");
+      console.warn(
+        `[WS] Max reconnect attempts reached (${this.config.maxReconnectAttempts}). ` +
+        `El backend probablemente aún no expone /monitoring/websocket. ` +
+        `La torre de control seguirá funcionando por polling.`
+      );
       return;
     }
 
@@ -211,7 +180,7 @@ export class MonitoringWebSocketService {
     );
 
     console.log(`[WS] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts + 1}/${this.config.maxReconnectAttempts})`);
-    
+
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectAttempts++;
       this.connect();
@@ -249,17 +218,13 @@ export class MonitoringWebSocketService {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
     }
-    if (this.mockInterval) {
-      clearInterval(this.mockInterval);
-      this.mockInterval = null;
-    }
   }
 
   /**
    * Envía mensaje de suscripción al servidor
    */
   private sendSubscription(vehicleIds: string[]): void {
-    if (!this.useMock && this.socket?.readyState === WebSocket.OPEN) {
+    if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({
         type: "subscribe",
         vehicleIds,
@@ -272,11 +237,11 @@ export class MonitoringWebSocketService {
    */
   subscribeToVehicles(vehicleIds: string[]): void {
     vehicleIds.forEach(id => this.subscribedVehicleIds.add(id));
-    
+
     if (this.isConnected) {
       this.sendSubscription(vehicleIds);
     }
-    
+
     console.log(`[WS] Subscribed to vehicles: ${vehicleIds.join(", ")}`);
   }
 
@@ -285,14 +250,14 @@ export class MonitoringWebSocketService {
    */
   unsubscribeFromVehicles(vehicleIds: string[]): void {
     vehicleIds.forEach(id => this.subscribedVehicleIds.delete(id));
-    
-    if (!this.useMock && this.socket?.readyState === WebSocket.OPEN) {
+
+    if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({
         type: "unsubscribe",
         vehicleIds,
       }));
     }
-    
+
     console.log(`[WS] Unsubscribed from vehicles: ${vehicleIds.join(", ")}`);
   }
 
@@ -337,6 +302,15 @@ export class MonitoringWebSocketService {
    */
   getConnectionStatus(): boolean {
     return this.isConnected;
+  }
+
+  /**
+   * Indica si el WebSocket esta habilitado por feature flag.
+   * Si es false, la torre/multiventana funcionan solo con HTTP polling
+   * y el UI deberia mostrar "Polling" en vez de "Desconectado" (rojo).
+   */
+  isWebSocketEnabled(): boolean {
+    return this.websocketEnabled;
   }
 
   /**

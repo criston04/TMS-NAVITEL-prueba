@@ -1,0 +1,38 @@
+meta {
+  name: Toggle status batch
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/master/geofences/toggle-estatus-batch
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "ids": [
+      "{{lastGeofenceId}}"
+    ],
+    "status": 0
+  }
+}
+
+docs {
+  # POST /geofences/toggle-estatus-batch — Activar/desactivar masivo
+
+  **Excel:** `Geofence | POST | /geofences/toggle-estatus-batch | Alternar estado para múltiples geocercas`
+
+  Body: `{ ids: string[], status: 0 | 1 }` (0=inactive, 1=active).
+
+  Nota: el nombre del endpoint tiene typo en el Excel: "estatus" en vez de "status".
+}

@@ -109,7 +109,7 @@ const billingSchema = z.object({
 });
 
 const customerSchema = z.object({
-  type: z.enum(["empresa", "persona"]),
+  type: z.enum(["company", "person"]),
   documentType: z.enum(["RUC", "DNI", "CE", "PASSPORT"]),
   documentNumber: z.string().min(1, "Documento requerido"),
   name: z.string().min(3, "Nombre muy corto"),
@@ -146,8 +146,8 @@ const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
 ];
 
 const CUSTOMER_TYPES: { value: CustomerType; label: string; icon: typeof Building2 }[] = [
-  { value: "empresa", label: "Empresa", icon: Building2 },
-  { value: "persona", label: "Persona Natural", icon: User },
+  { value: "company", label: "Empresa", icon: Building2 },
+  { value: "person", label: "Persona Natural", icon: User },
 ];
 
 // CATEGORIES ahora viene del hook useCustomerCategories()
@@ -185,7 +185,7 @@ export function CustomerFormModal({
 
   // Valores por defecto como constante para reutilizar en reset
   const INITIAL_VALUES: CustomerFormData = {
-    type: "empresa",
+    type: "company",
     documentType: "RUC",
     documentNumber: "",
     name: "",

@@ -234,6 +234,20 @@ export function ControlTowerMap({
 
     // Agregar o actualizar marcadores
     vehicles.forEach((vehicle) => {
+      // 2026-05-03: skip vehiculos sin posicion GPS valida. Antes Leaflet
+      // crashebamos al hacer L.marker([undefined, undefined]).
+      const lat = vehicle.position?.lat;
+      const lng = vehicle.position?.lng;
+      if (typeof lat !== "number" || typeof lng !== "number" || isNaN(lat) || isNaN(lng)) {
+        // Si tenia marcador previo, lo eliminamos
+        const oldMarker = markersRef.current.get(vehicle.id);
+        if (oldMarker) {
+          oldMarker.remove();
+          markersRef.current.delete(vehicle.id);
+        }
+        return;
+      }
+
       const isSelected = vehicle.id === selectedVehicleId;
       const { svg, size } = createVehicleIconSvg(vehicle, isSelected);
 
@@ -245,7 +259,7 @@ export function ControlTowerMap({
         popupAnchor: [0, -size / 2],
       });
 
-      const position: [number, number] = [vehicle.position.lat, vehicle.position.lng];
+      const position: [number, number] = [lat, lng];
 
       let marker = markersRef.current.get(vehicle.id);
 
@@ -280,12 +294,10 @@ export function ControlTowerMap({
     // Si hay un vehículo seleccionado, centrar en él
     if (selectedVehicleId) {
       const selectedVehicle = vehicles.find((v) => v.id === selectedVehicleId);
-      if (selectedVehicle) {
-        map.setView(
-          [selectedVehicle.position.lat, selectedVehicle.position.lng],
-          Math.max(map.getZoom(), 14),
-          { animate: true }
-        );
+      const sLat = selectedVehicle?.position?.lat;
+      const sLng = selectedVehicle?.position?.lng;
+      if (selectedVehicle && typeof sLat === "number" && typeof sLng === "number" && !isNaN(sLat) && !isNaN(sLng)) {
+        map.setView([sLat, sLng], Math.max(map.getZoom(), 14), { animate: true });
       }
     }
   }, [vehicles, selectedVehicleId, handleMarkerClick, isMapInitialized]);
@@ -296,11 +308,19 @@ export function ControlTowerMap({
     const L = leafletRef.current;
     if (!map || !L || vehicles.length === 0 || !isMapInitialized) return;
 
-    // Solo hacer fit bounds si no hay vehículo seleccionado y hay más de 1
-    if (!selectedVehicleId && vehicles.length > 1) {
-      const bounds = L.latLngBounds(
-        vehicles.map((v): [number, number] => [v.position.lat, v.position.lng])
-      );
+    // 2026-05-03: filtrar vehiculos con GPS valido antes de calcular bounds.
+    const validCoords = vehicles
+      .map((v): [number, number] | null => {
+        const lat = v.position?.lat;
+        const lng = v.position?.lng;
+        if (typeof lat !== "number" || typeof lng !== "number" || isNaN(lat) || isNaN(lng)) return null;
+        return [lat, lng];
+      })
+      .filter((c): c is [number, number] => c !== null);
+
+    // Solo hacer fit bounds si no hay vehículo seleccionado y hay mas de 1 con GPS valido
+    if (!selectedVehicleId && validCoords.length > 1) {
+      const bounds = L.latLngBounds(validCoords);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     }
   }, [vehicles.length, selectedVehicleId, isMapInitialized]);

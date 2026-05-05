@@ -157,53 +157,113 @@ export const orderContactSchema = z.object({
 });
 
 /**
- * Schema principal para crear una orden (CreateOrderDTO)
+ * 2026-05-03: Shape base (sin refinements) reutilizable.
+ *
+ * Zod no permite usar `.partial()` sobre schemas con refinements, así que
+ * extraemos el `.object()` puro acá y aplicamos los refinements en cada
+ * schema derivado.
  */
-export const createOrderSchema = z
+const orderBaseShape = z.object({
+  customerId: z
+    .string()
+    .min(1, 'Selecciona un cliente'),
+  carrierId: z.string().optional(),
+  vehicleId: z.string().optional(),
+  driverId: z.string().optional(),
+  workflowId: z.string().optional(),
+  priority: z.enum(ORDER_PRIORITIES as [OrderPriority, ...OrderPriority[]]),
+  serviceType: z.enum(SERVICE_TYPES as [ServiceType, ...ServiceType[]]),
+  orderNumber: z.string().optional(),
+  externalReference: z.string().max(100, 'Máximo 100 caracteres').optional(),
+  gpsOperatorId: z.string().optional(),
+  cargo: cargoSchema,
+  // En draft, milestones es opcional (puede crearse después)
+  milestones: z.array(milestoneSchema).optional().default([]),
+  // En draft, fechas son opcionales (programación posterior)
+  scheduledStartDate: z.string().optional(),
+  scheduledEndDate: z.string().optional(),
+  notes: z.string().max(1000, 'Máximo 1000 caracteres').optional(),
+  tags: z.array(z.string().min(1).max(50)).optional(),
+  orderContact: orderContactSchema.optional(),
+});
+
+/**
+ * Refinement compartido: validar que startDate <= endDate cuando ambos existen.
+ */
+const startBeforeEndRefinement = (data: { scheduledStartDate?: string; scheduledEndDate?: string }) => {
+  if (data.scheduledStartDate && data.scheduledEndDate) {
+    return data.scheduledStartDate <= data.scheduledEndDate;
+  }
+  return true;
+};
+
+const startBeforeEndError = {
+  message: 'La fecha de inicio debe ser anterior a la fecha de fin',
+  path: ['scheduledEndDate'],
+};
+
+/**
+ * Schema para CREAR una orden en estado DRAFT.
+ *
+ * 2026-05-03: Reescrito para reflejar el flujo real del wizard, que permite
+ * crear borradores incompletos (sin fechas, sin hitos, sin asignación).
+ * Solo customerId, priority, serviceType y carga (description + weight) son
+ * required en draft. Para validar una orden lista para programar, usar
+ * `orderReadyForSchedulingSchema`.
+ */
+export const createOrderSchema = orderBaseShape.refine(
+  startBeforeEndRefinement,
+  startBeforeEndError
+);
+
+/**
+ * Schema STRICT — orden lista para PROGRAMAR/ASIGNAR.
+ *
+ * Este schema valida que la orden tenga TODOS los datos necesarios para
+ * salir del estado draft y poder ser programada. Se usa cuando el usuario
+ * intenta cambiar el estado a `pending`/`assigned` o cuando se quiere
+ * enviar a la cola de programación.
+ */
+export const orderReadyForSchedulingSchema = z
   .object({
-    customerId: z
-      .string()
-      .min(1, 'Selecciona un cliente'),
-    carrierId: z.string().optional(),
-    vehicleId: z.string().optional(),
-    driverId: z.string().optional(),
-    workflowId: z.string().optional(),
+    customerId: z.string().min(1),
     priority: z.enum(ORDER_PRIORITIES as [OrderPriority, ...OrderPriority[]]),
     serviceType: z.enum(SERVICE_TYPES as [ServiceType, ...ServiceType[]]),
-    orderNumber: z.string().optional(),
-    externalReference: z.string().max(100, 'Máximo 100 caracteres').optional(),
-    gpsOperatorId: z.string().optional(),
     cargo: cargoSchema,
     milestones: z
       .array(milestoneSchema)
-      .min(2, 'Agrega al menos origen y destino'),
-    scheduledStartDate: z.string().min(1, 'Fecha de inicio requerida'),
-    scheduledEndDate: z.string().min(1, 'Fecha de fin requerida'),
-    notes: z.string().max(1000, 'Máximo 1000 caracteres').optional(),
-    tags: z.array(z.string().min(1).max(50)).optional(),
-    orderContact: orderContactSchema.optional(),
+      .min(2, 'Agrega al menos origen y destino antes de programar'),
+    scheduledStartDate: z.string().min(1, 'Fecha de inicio requerida para programar'),
+    scheduledEndDate: z.string().min(1, 'Fecha de fin requerida para programar'),
   })
   .refine(
-    (data) => {
-      if (data.scheduledStartDate && data.scheduledEndDate) {
-        return data.scheduledStartDate <= data.scheduledEndDate;
-      }
-      return true;
-    },
-    {
-      message: 'La fecha de inicio debe ser anterior a la fecha de fin',
-      path: ['scheduledEndDate'],
-    }
+    (data) => data.scheduledStartDate <= data.scheduledEndDate,
+    startBeforeEndError
   );
 
 /**
- * Schema para actualizar una orden (UpdateOrderDTO)
+ * Helper para detectar qué le falta a una orden draft para estar lista
+ * para programación. Devuelve un array de mensajes (vacío si está lista).
  */
-export const updateOrderSchema = createOrderSchema.partial().extend({
-  status: z
-    .enum(ORDER_STATUSES as [OrderStatus, ...OrderStatus[]])
-    .optional(),
-});
+export function getOrderReadinessIssues(dto: unknown): string[] {
+  const result = orderReadyForSchedulingSchema.safeParse(dto);
+  if (result.success) return [];
+  return result.error.issues.map(issue => issue.message);
+}
+
+/**
+ * Schema para actualizar una orden (UpdateOrderDTO).
+ * Aplicamos `.partial()` sobre el shape base SIN refinements (Zod no permite
+ * .partial() sobre objetos con refinements) y reaplicamos el refinement.
+ */
+export const updateOrderSchema = orderBaseShape
+  .partial()
+  .extend({
+    status: z
+      .enum(ORDER_STATUSES as [OrderStatus, ...OrderStatus[]])
+      .optional(),
+  })
+  .refine(startBeforeEndRefinement, startBeforeEndError);
 
 /**
  * Schema para filtros de búsqueda de órdenes

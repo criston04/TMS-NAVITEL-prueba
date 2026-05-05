@@ -1,0 +1,65 @@
+meta {
+  name: Refresh access token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{rootUrl}}/auth/refresh
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+script:post-response {
+  // v3 Rev3: { success: true, data: { accessToken: "...", refreshToken: "..." } }
+  const body = res.getBody();
+  if (body) {
+    const data = body.data || body;
+    const accessToken = data.accessToken || data.access_token || data.token;
+    const refreshToken = data.refreshToken || data.refresh_token;
+    if (accessToken) {
+      bru.setEnvVar("authToken", accessToken);
+      console.log("[Refresh] nuevo authToken guardado");
+    }
+    if (refreshToken) {
+      bru.setEnvVar("refreshToken", refreshToken);
+      console.log("[Refresh] nuevo refreshToken guardado (rotacion)");
+    }
+  }
+}
+
+docs {
+  # POST /auth/refresh (NUEVO en v3 Rev3 — actualizado a v3 Rev3 — 2026-04-27)
+
+  Endpoint SIN prefijo `/api/v1`. Usa el `refreshToken` que guardó el Login.
+
+  ## Request
+  ```json
+  { "refreshToken": "<jwt>" }
+  ```
+
+  ## Response
+  ```json
+  {
+    "success": true,
+    "data": {
+      "accessToken": "<nuevo jwt>",
+      "refreshToken": "<jwt rotado opcional>"
+    }
+  }
+  ```
+
+  El frontend (api-client v3 Rev3) llama este endpoint automáticamente cuando recibe 401 con un access token expirado, antes de reintentar la request original. Si el refresh también falla, dispara logout.
+
+  El script post-response actualiza ambos `authToken` y `refreshToken` en las env vars.
+}

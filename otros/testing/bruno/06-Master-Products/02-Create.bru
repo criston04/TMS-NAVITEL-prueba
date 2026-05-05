@@ -1,0 +1,187 @@
+meta {
+  name: Create product
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/master/products
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "sku": "PROD-001",
+    "code": "PROD-001",
+    "name": "Fertilizante NPK 15-15-15",
+    "description": "Bolsa 50kg",
+    "category": "agro",
+    "unit_of_measure": "bag",
+    "barcode": "7501234567890",
+    "unit_price": 120,
+    "image_url": "https://storage.test/prod-001.jpg",
+    "customer_id": null,
+    "status": "active",
+    "notes": "Producto agrícola estacional",
+    "weight": 50,
+    "volume": 0.05,
+    "requires_refrigeration": false,
+    "is_hazardous": false,
+    "hazardous_class": null,
+    "stackable": true,
+    "max_stack_height": 5,
+    "requires_special_handling": false,
+    "min_temperature": null,
+    "max_temperature": null,
+    "handling_instructions": "Mantener seco",
+    "dimensions": {
+      "length": 0.6,
+      "width": 0.4,
+      "height": 0.2,
+      "weight": 50,
+      "volume": 0.05
+    },
+    "transport_conditions": {
+      "requires_refrigeration": false,
+      "requires_special_handling": false,
+      "stackable": true,
+      "max_stack_height": 5,
+      "handling_instructions": "Mantener seco",
+      "min_temperature": null,
+      "max_temperature": null,
+      "temperature_range": {
+        "min": 0,
+        "max": 0,
+        "unit": "celsius"
+      }
+    }
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastProductId", id);
+
+  // Espejo EXACTO de mapProductToBackend()
+  const sent = {
+    sku: "PROD-001",
+    code: "PROD-001",
+    name: "Fertilizante NPK 15-15-15",
+    description: "Bolsa 50kg",
+    category: "agro",
+    unit_of_measure: "bag",
+    barcode: "7501234567890",
+    unit_price: 120,
+    image_url: "https://storage.test/prod-001.jpg",
+    status: "active",
+    notes: "Producto agrícola estacional",
+    weight: 50,
+    volume: 0.05,
+    requires_refrigeration: false,
+    is_hazardous: false,
+    stackable: true,
+    max_stack_height: 5,
+    requires_special_handling: false,
+    handling_instructions: "Mantener seco",
+  };
+
+  // Helper: backend devuelve booleans como 0/1 (TINYINT)
+  function valueMatches(expected, got) {
+    if (got === null || got === undefined) return false;
+    if (typeof expected === "boolean" && (got === 0 || got === 1)) {
+      return Boolean(got) === expected;
+    }
+    return got === expected;
+  }
+
+  console.log("===================================================");
+  console.log("            VERIFICACION CREATE PRODUCT            ");
+  console.log("===================================================");
+  console.log("product id:", id);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ---");
+
+  const ok = [], lost = [], mismatched = [];
+  for (const key of Object.keys(sent)) {
+    const expected = sent[key];
+    const got = obj[key];
+    if (got === null || got === undefined) {
+      lost.push(key);
+      console.log("  ❌", key.padEnd(28), "PERDIDO — env:", JSON.stringify(expected));
+    } else if (valueMatches(expected, got)) {
+      ok.push(key);
+      console.log("  ✅", key.padEnd(28), JSON.stringify(got));
+    } else {
+      mismatched.push(key);
+      console.log("  ⚠️ ", key.padEnd(28), "DIFIERE — env:", JSON.stringify(expected), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- CAMPOS NULL (esperado: customer_id, hazardous_class, temperaturas) ---");
+  for (const k of ["customer_id", "hazardous_class", "min_temperature", "max_temperature"]) {
+    console.log("  ", k.padEnd(28), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("--- SUB-OBJETOS / RELACIONALES ---");
+  console.log("  dimensions{}:               ", obj.dimensions          ? "✅ persistido" : "❌ DESCARTADO");
+  console.log("  transport_conditions{}:     ", obj.transport_conditions ? "✅ persistido" : "❌ DESCARTADO");
+
+  console.log("");
+  console.log("--- CAMPOS EXTRA QUE AGREGA EL BACKEND ---");
+  const expectedKeys = new Set([...Object.keys(sent), "id", "customer_id", "hazardous_class", "min_temperature", "max_temperature", "dimensions", "transport_conditions"]);
+  const extras = Object.keys(obj).filter(k => !expectedKeys.has(k));
+  for (const k of extras) {
+    console.log("  +", k.padEnd(28), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("==================== RESUMEN ====================");
+  console.log("  OK:        ", String(ok.length).padEnd(3));
+  console.log("  PERDIDOS:  ", String(lost.length).padEnd(3), lost.length ? "→ " + lost.join(", ") : "");
+  console.log("  DIFIERE:   ", String(mismatched.length).padEnd(3), mismatched.length ? "→ " + mismatched.join(", ") : "");
+  console.log("  EXTRA BE:  ", String(extras.length).padEnd(3));
+  console.log("===================================================");
+}
+
+docs {
+  # POST /master/products — payload IDÉNTICO al que produce mapProductToBackend()
+
+  ## Cambios respecto a versión anterior del Bruno
+  - Quitado `weight_kg` (frontend NO lo envía, usa `weight`)
+  - Quitado `volume_m3` (frontend NO lo envía, usa `volume`)
+  - Quitado `is_dangerous` (frontend NO lo envía, usa `is_hazardous`)
+  - Quitado `unit` suelto (frontend NO lo envía, usa `unit_of_measure`)
+
+  ## Campos del frontend (mapProductToBackend)
+  - sku + code (alias para upsert)
+  - name, description, category, unit_of_measure, barcode, unit_price, image_url
+  - customer_id (puede ser null)
+  - status, notes
+  - weight, volume (planos, no _kg/_m3)
+  - is_hazardous (no is_dangerous), hazardous_class
+  - stackable, max_stack_height, requires_refrigeration, requires_special_handling
+  - min_temperature, max_temperature, handling_instructions
+  - dimensions{} (length, width, height, weight, volume)
+  - transport_conditions{} (todo lo de transporte agrupado)
+
+  ## ⚠ Bugs/gaps del backend
+  - `code` enviado pero siempre persiste como `null`
+  - `dimensions{}` no persiste (descartado)
+  - `transport_conditions{}` no persiste (solo los planos)
+  - Booleans devueltos como 0/1 (TINYINT)
+}

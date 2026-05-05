@@ -91,7 +91,7 @@ function generateRouteReport(
     <h2>Resumen General</h2>
     <div class="grid">
       <div class="metric">
-        <div class="value">${distanceKm.toFixed(1)} km</div>
+        <div class="value">${(distanceKm ?? 0).toFixed(1)} km</div>
         <div class="label">Distancia Total</div>
       </div>
       <div class="metric">
@@ -99,11 +99,11 @@ function generateRouteReport(
         <div class="label">Duración</div>
       </div>
       <div class="metric">
-        <div class="value">${avgSpeed.toFixed(0)} km/h</div>
+        <div class="value">${(avgSpeed ?? 0).toFixed(0)} km/h</div>
         <div class="label">Velocidad Promedio</div>
       </div>
       <div class="metric">
-        <div class="value">${maxSpeed.toFixed(0)} km/h</div>
+        <div class="value">${(maxSpeed ?? 0).toFixed(0)} km/h</div>
         <div class="label">Velocidad Máxima</div>
       </div>
       <div class="metric">
@@ -147,8 +147,8 @@ function generateRouteReport(
           <tr>
             <td>${i + 1}</td>
             <td>${new Date(p.timestamp).toLocaleTimeString("es-PE")}</td>
-            <td>${p.lat.toFixed(5)}</td>
-            <td>${p.lng.toFixed(5)}</td>
+            <td>${(p.lat ?? 0).toFixed(5)}</td>
+            <td>${(p.lng ?? 0).toFixed(5)}</td>
             <td>${(p.speed ?? 0).toFixed(0)}</td>
           </tr>`
           )

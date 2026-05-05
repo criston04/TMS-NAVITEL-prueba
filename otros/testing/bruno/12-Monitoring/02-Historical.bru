@@ -1,0 +1,35 @@
+meta {
+  name: Historical route (per vehicle)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/monitoring/historical?vehicleId={{lastVehicleId}}&startDateTime=2026-04-20T00:00:00Z&endDateTime=2026-04-22T23:59:59Z
+  body: none
+  auth: bearer
+}
+
+params:query {
+  vehicleId: {{lastVehicleId}}
+  startDateTime: 2026-04-20T00:00:00Z
+  endDateTime: 2026-04-22T23:59:59Z
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /monitoring/historical
+
+  **Campos requeridos (camelCase + iso 8601):**
+  - `vehicleId`
+  - `startDateTime` ← OJO: NO es `startDate`
+  - `endDateTime` ← OJO: NO es `endDate`
+
+  Si mandas `startDate/endDate` responde 400 "required".
+
+  Response: `{data: {points: [], stats: {totalPoints, maxSpeed, avgSpeed}}}`.
+  `points` tiene la polyline con timestamps GPS.
+}

@@ -1,0 +1,56 @@
+meta {
+  name: Update geofence
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/master/geofences/{{lastGeofenceId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Almacén Central Lima EDITADO",
+    "shortName": "ALM-CENTRAL",
+    "address": "jiron test 124 (actualizado)",
+    "description": "Almacén reclasificado como alta prioridad.",
+    "category": "warehouse",
+    "color": "#EF4444",
+    "opacity": 0.35,
+    "tags": ["almacen", "lima", "norte", "vip"],
+    "alerts": {
+      "onEntry": true,
+      "onExit": true,
+      "onDwell": true,
+      "dwellTimeMinutes": 15,
+      "notifyEmails": [
+        "ops@transsac.pe",
+        "alertas@transsac.pe",
+        "gerencia@transsac.pe"
+      ]
+    },
+    "status": "active"
+  }
+}
+
+docs {
+  # PUT /geofences/:id (actualizado a v3 Rev3 — 2026-04-27)
+
+  Solo metadata — mismo shape limpio v3 Rev3:
+  - Sin prefijos `g*`.
+  - Sin `customer_id` (server-side via JWT).
+  - `status: "active" | "inactive"` (string).
+  - `alerts{}` anidado.
+
+  No incluir `type`, `gpoints`, `lat`, `lng`, `radius` si no quieres cambiar la geometría.
+}

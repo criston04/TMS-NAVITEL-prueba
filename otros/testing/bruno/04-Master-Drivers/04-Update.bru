@@ -1,0 +1,45 @@
+meta {
+  name: Update driver
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/master/drivers/{{lastDriverId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "first_name": "Juan Carlos",
+    "last_name": "Perez Bruno",
+    "phone": "+51 999 888 777",
+    "availability": "on-route",
+    "status": "active",
+    "address": "Av. Bruno 456, San Isidro, Lima",
+    "notes": "Actualizado via PUT"
+  }
+}
+
+docs {
+  # PUT /master/drivers/:id — update parcial
+
+  Solo manda los campos que quieres cambiar. El backend hace merge con
+  lo existente. La verificación completa de qué campos persiste el backend
+  se hace en `02-Create.bru` (ahí está el script con el reporte detallado).
+
+  ## Workarounds de operaciones (backend no tiene endpoints dedicados)
+  - Enable:          `{"status": "active"}`
+  - Block:           `{"status": "blocked"}`
+  - Assign vehicle:  `{"assigned_vehicle_id": "<vehicleId>"}`
+  - Unassign:        `{"assigned_vehicle_id": null}`
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Delete product
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/master/products/{{lastProductId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # DELETE /master/products/:id
+
+  Soft-delete. Responde 200 al eliminar, 404 si el ID no existe.
+}

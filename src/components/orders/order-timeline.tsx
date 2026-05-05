@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   MapPin,
   Clock,
@@ -10,6 +10,7 @@ import {
   Truck,
   Package,
   ArrowDown,
+  Timer,
 } from 'lucide-react';
 import type { Order, OrderMilestone, MilestoneStatus } from '@/types/order';
 import { cn } from '@/lib/utils';
@@ -44,6 +45,8 @@ interface TimelineItemProps {
   showTimes: boolean;
   /** Es interactivo */
   interactive: boolean;
+  /** Hora actual para cálculos en vivo */
+  now: Date;
   /** Callback al click */
   onClick?: (milestone: OrderMilestone) => void;
 }
@@ -146,6 +149,48 @@ function calculateDelay(planned: Date, actual: Date): number {
   return Math.round((new Date(actual).getTime() - new Date(planned).getTime()) / (1000 * 60));
 }
 
+/**
+ * Calcula tiempo detenido en un punto (dwell time) en minutos
+ * @param entry - Fecha de entrada a la geocerca
+ * @param exit - Fecha de salida de la geocerca (null si todavía está ahí)
+ * @param now - Fecha actual para cálculos en vivo
+ * @returns Minutos detenido
+ */
+function calculateDwellMinutes(entry: Date, exit: Date | null, now: Date): number {
+  const end = exit ? new Date(exit) : now;
+  return Math.max(0, Math.round((end.getTime() - new Date(entry).getTime()) / (1000 * 60)));
+}
+
+/**
+ * Formatea una duración en minutos a formato legible
+ * @param totalMinutes - Total de minutos
+ * @returns Duración formateada (ej: "2h 35min", "45min")
+ */
+function formatDuration(totalMinutes: number): string {
+  if (totalMinutes < 1) return '<1min';
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes}min`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}min`;
+}
+
+/**
+ * Hook que devuelve la hora actual actualizada cada minuto
+ * Solo se activa cuando hay milestones con el vehículo detenido (sin actualExit)
+ */
+function useLiveClock(hasActiveDwell: boolean): Date {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    if (!hasActiveDwell) return;
+    const interval = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(interval);
+  }, [hasActiveDwell]);
+
+  return now;
+}
+
 // COMPONENTE TIMELINE ITEM
 
 /**
@@ -156,6 +201,7 @@ function TimelineItem({
   isLast,
   showTimes,
   interactive,
+  now,
   onClick,
 }: Readonly<TimelineItemProps>) {
   const statusConfig = MILESTONE_STATUS_CONFIG[milestone.status];
@@ -171,6 +217,26 @@ function TimelineItem({
   }, [milestone.actualEntry, milestone.estimatedArrival]);
 
   const isDelayed = delay !== null && delay > 15; // Más de 15 minutos tarde
+
+  // Calcular tiempo detenido en el punto
+  const dwellInfo = useMemo(() => {
+    if (!milestone.actualEntry) return null;
+
+    const isStillHere = !milestone.actualExit &&
+      (milestone.status === 'arrived' || milestone.status === 'in_progress');
+
+    const dwellMinutes = calculateDwellMinutes(
+      new Date(milestone.actualEntry),
+      milestone.actualExit ? new Date(milestone.actualExit) : null,
+      now,
+    );
+
+    return {
+      minutes: dwellMinutes,
+      formatted: formatDuration(dwellMinutes),
+      isLive: isStillHere,
+    };
+  }, [milestone.actualEntry, milestone.actualExit, milestone.status, now]);
 
   return (
     <div
@@ -282,6 +348,27 @@ function TimelineItem({
                 <span>Salida: {formatTime(new Date(milestone.actualExit))}</span>
               </div>
             )}
+
+            {/* Tiempo detenido en punto */}
+            {dwellInfo && (
+              <div className={cn(
+                'flex items-center gap-2 mt-1 text-xs font-medium rounded-md px-2 py-1 w-fit',
+                dwellInfo.isLive
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  : 'bg-muted text-muted-foreground',
+              )}>
+                <Timer className="w-3 h-3" />
+                <span>
+                  Tiempo en punto: {dwellInfo.formatted}
+                </span>
+                {dwellInfo.isLive && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -335,6 +422,17 @@ function OrderTimelineComponent({
   const sortedMilestones = useMemo(() => {
     return [...milestones].sort((a, b) => a.sequence - b.sequence);
   }, [milestones]);
+
+  // Detectar si hay algún milestone con el vehículo detenido actualmente
+  const hasActiveDwell = useMemo(() => {
+    return milestones.some(
+      m => m.actualEntry && !m.actualExit &&
+        (m.status === 'arrived' || m.status === 'in_progress'),
+    );
+  }, [milestones]);
+
+  // Reloj en vivo (solo tictaquea cuando hay dwell activo)
+  const now = useLiveClock(hasActiveDwell);
 
   // Calcular progreso
   const progress = useMemo(() => {
@@ -397,6 +495,30 @@ function OrderTimelineComponent({
                     {formatTime(new Date(milestone.estimatedArrival))}
                   </span>
                 )}
+                {milestone.actualEntry && (() => {
+                  const isStillHere = !milestone.actualExit &&
+                    (milestone.status === 'arrived' || milestone.status === 'in_progress');
+                  const dwellMin = calculateDwellMinutes(
+                    new Date(milestone.actualEntry),
+                    milestone.actualExit ? new Date(milestone.actualExit) : null,
+                    now,
+                  );
+                  return (
+                    <span className={cn(
+                      'text-xs mt-0.5 flex items-center gap-1',
+                      isStillHere ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground',
+                    )}>
+                      <Timer className="w-3 h-3" />
+                      {formatDuration(dwellMin)}
+                      {isStillHere && (
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
+                        </span>
+                      )}
+                    </span>
+                  );
+                })()}
               </div>
             );
           })}
@@ -414,6 +536,7 @@ function OrderTimelineComponent({
           isLast={idx === sortedMilestones.length - 1}
           showTimes={showTimes}
           interactive={interactive}
+          now={now}
           onClick={onMilestoneClick}
         />
       ))}

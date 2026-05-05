@@ -1,0 +1,39 @@
+meta {
+  name: Change status
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{lastOrderId}}/status
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "pending"
+  }
+}
+
+docs {
+  # PATCH /orders/:id/status — Cambiar estado
+
+  **Excel:** `PATCH /api/v1/orders/:id/status | Transition orden de transporte estado via 9-state machine con GPS side-effects`
+
+  El backend valida transiciones de estado. Algunas rutas:
+  - `draft` → `pending` (validable)
+  - `pending` → `assigned` (requiere vehicle_id, driver_id)
+  - `assigned` → `in_transit` (inicio de viaje)
+  - cualquier estado → `cancelled`
+
+  Probar con diferentes valores de status para ver qué acepta.
+}

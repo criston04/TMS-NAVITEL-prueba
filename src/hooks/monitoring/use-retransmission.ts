@@ -33,8 +33,11 @@ export interface UseRetransmissionState {
   gpsCompanies: GpsCompany[];
   /** Lista de operadores/transportistas */
   companies: string[];
-  
+
+  /** true SOLO durante la primera carga (para mostrar skeleton inicial) */
   isLoading: boolean;
+  /** true durante refresh en segundo plano (para girar el icono sin parpadear la UI) */
+  isRefreshing: boolean;
   /** Error si ocurrió alguno */
   error: Error | null;
   
@@ -74,8 +77,11 @@ export function useRetransmission(
   options: UseRetransmissionOptions = {}
 ): UseRetransmissionState & UseRetransmissionActions {
   const {
+    // 30 segundos es un balance razonable: data razonablemente fresca sin
+    // golpear al backend cada 10s. Ademas pausamos cuando la tab no esta
+    // visible para no gastar requests cuando nadie mira la pantalla.
     autoRefresh = true,
-    refreshIntervalMs = 10000,
+    refreshIntervalMs = 30000,
     initialFilters = {},
   } = options;
 
@@ -92,20 +98,31 @@ export function useRetransmission(
   const [gpsCompanies, setGpsCompanies] = useState<GpsCompany[]>([]);
   const [companies, setCompanies] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [filters, setFiltersState] = useState<RetransmissionFilters>(initialFilters);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  
+
   // Refs para auto-refresh
   const autoRefreshEnabled = useRef(autoRefresh);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Marca si ya cargamos alguna vez. Evita que cada tick de auto-refresh haga
+  // parpadear la UI (stats skeleton + tabla skeleton). Solo la PRIMERA carga
+  // muestra skeleton; las siguientes son silenciosas.
+  const hasLoadedOnceRef = useRef(false);
 
   /**
-   * Carga los datos de retransmisión
+   * Carga los datos de retransmisión.
+   * - Primera vez: setIsLoading(true) -> muestra skeleton inicial
+   * - Siguientes: setIsRefreshing(true) -> solo gira el icono del boton
    */
   const loadData = useCallback(async (currentFilters: RetransmissionFilters) => {
     try {
-      setIsLoading(true);
+      if (hasLoadedOnceRef.current) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
 
       const [recordsData, statsData] = await Promise.all([
@@ -116,10 +133,12 @@ export function useRetransmission(
       setRecords(recordsData);
       setStats(statsData);
       setLastUpdated(new Date());
+      hasLoadedOnceRef.current = true;
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Error loading retransmission data"));
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -215,19 +234,33 @@ export function useRetransmission(
     loadData(filters);
   }, [filters, loadData]);
 
+  // Auto-refresh con pausa cuando la tab no está visible.
+  // Esto evita gastar requests y pintar en un navegador que el usuario no está
+  // mirando (best practice UX + mejora el consumo del backend).
   useEffect(() => {
     if (!autoRefresh || !autoRefreshEnabled.current) return;
+    if (typeof document === "undefined") return;
 
-    intervalRef.current = setInterval(() => {
-      if (autoRefreshEnabled.current) {
+    const tick = () => {
+      // Saltamos el refresh si la tab esta oculta o si esta pausado manualmente
+      if (document.visibilityState !== "visible") return;
+      if (!autoRefreshEnabled.current) return;
+      loadData(filters);
+    };
+
+    intervalRef.current = setInterval(tick, refreshIntervalMs);
+
+    // Cuando la tab vuelve a ser visible, refrescar una vez (data fresca al volver)
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && autoRefreshEnabled.current) {
         loadData(filters);
       }
-    }, refreshIntervalMs);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [autoRefresh, refreshIntervalMs, filters, loadData]);
 
@@ -238,6 +271,7 @@ export function useRetransmission(
     gpsCompanies,
     companies,
     isLoading,
+    isRefreshing,
     error,
     filters,
     lastUpdated,
@@ -254,6 +288,7 @@ export function useRetransmission(
     gpsCompanies,
     companies,
     isLoading,
+    isRefreshing,
     error,
     filters,
     lastUpdated,

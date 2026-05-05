@@ -42,14 +42,13 @@ export * from "./maintenance";
 export { routingService } from "./routing.service";
 
 // Servicio de Reportes PDF
-export { pdfReportService } from "./pdf-report.service";
+// pdf-report.service eliminado el 2026-05-02 (código muerto sin consumers).
 
 // Servicio de Recordatorios
 export { reminderService } from "./reminder.service";
 
 // Base service para extensión
 export { BaseService, BulkService } from "./base.service";
-export type { IBaseService, IBulkService } from "./base.service";
 
 // Servicios de Plataforma (Nivel 1: Owner TMS)
 export {

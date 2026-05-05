@@ -1,0 +1,22 @@
+meta {
+  name: Find by SKU
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/master/products/by-sku/SKU-BRUNO-021
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/products/by-sku/:sku
+
+  Buscar producto por SKU. Verificar si el backend implementa este endpoint —
+  algunos masters lo exponen y otros usan `?search=SKU-X` en el listado como fallback.
+}

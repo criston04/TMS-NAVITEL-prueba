@@ -1,0 +1,33 @@
+meta {
+  name: Vehicles - maintenance overview
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/maintenance/vehicles
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/vehicles
+
+  Lista de vehiculos con info de mantenimiento.
+  Shape de cada item:
+  ```json
+  {
+    "id": "...", "plate": "FOR-188",
+    "brand": "Volvo", "model": "FH16", "year": 2024,
+    "current_mileage": 0, "status": "active",
+    "operational_status": "available",
+    "active_work_orders": 0
+  }
+  ```
+
+  Envelope `{data: [...]}`.
+}

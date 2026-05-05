@@ -6,9 +6,15 @@ import { ArrowLeft, Package } from 'lucide-react';
 import type { CreateOrderDTO } from '@/types/order';
 
 // Componentes
+import dynamic from 'next/dynamic';
 import { PageWrapper } from '@/components/page-wrapper';
 import { Button } from '@/components/ui/button';
-import { OrderFormWizard } from '@/components/orders/order-form-wizard';
+
+// Wizard de 1253 líneas — lazy-load
+const OrderFormWizard = dynamic(
+  () => import('@/components/orders/order-form-wizard').then(m => ({ default: m.OrderFormWizard })),
+  { ssr: false, loading: () => <div className="h-[600px] rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
+);
 import {
   Dialog,
   DialogContent,

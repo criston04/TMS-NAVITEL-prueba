@@ -27,11 +27,19 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import {
-  gpsOperatorsMock,
-  getConnectedGpsOperators,
-  type GpsOperator,
-} from '@/mocks/master/gps-operators.mock';
+// Tipo y datos de operadores GPS (antes importados de mocks)
+export interface GpsOperator {
+  id: string;
+  name: string;
+  shortName: string;
+  isActive: boolean;
+  integrationStatus: 'connected' | 'pending' | 'error' | 'not-configured';
+  vehiclesTracked?: number;
+  notes?: string;
+}
+const gpsOperatorsMock: GpsOperator[] = [];
+const getConnectedGpsOperators = (): GpsOperator[] =>
+  gpsOperatorsMock.filter((op) => op.integrationStatus === 'connected' && op.isActive);
 
 interface GpsOperatorSelectorProps {
   /** Valor seleccionado */

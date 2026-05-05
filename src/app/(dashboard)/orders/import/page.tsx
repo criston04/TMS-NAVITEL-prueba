@@ -31,6 +31,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useEntityCache } from '@/contexts/entity-cache-context';
 
 /**
  * Página de importación de órdenes desde archivo Excel/CSV
@@ -39,6 +40,7 @@ export default function OrdersImportPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { success: toastSuccess, error: toastError } = useToast();
+  const { getCustomerName } = useEntityCache();
 
   const {
     status,
@@ -351,7 +353,7 @@ export default function OrdersImportPage() {
                           {order.orderNumber}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {order.customer?.name || order.customerId}
+                          {order.customer?.name || getCustomerName(order.customerId)}
                         </p>
                       </div>
                       <Badge variant="secondary">{order.status}</Badge>

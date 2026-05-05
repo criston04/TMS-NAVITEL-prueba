@@ -1,0 +1,107 @@
+meta {
+  name: Create entry
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/bitacora
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "vehicleId": "{{lastVehicleId}}",
+    "driverId": "{{lastDriverId}}",
+    "eventType": "unplanned_stop",
+    "severity": "medium",
+    "title": "Parada no planificada",
+    "description": "Test Bruno — parada fuera de ruta",
+    "locationLat": -12.0464,
+    "locationLng": -77.0428
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastBitacoraEntryId", id);
+
+  const sent = {
+    vehicleId: bru.getEnvVar("lastVehicleId"),
+    driverId: bru.getEnvVar("lastDriverId"),
+    eventType: "unplanned_stop",
+    severity: "medium",
+    title: "Parada no planificada",
+    description: "Test Bruno — parada fuera de ruta",
+    locationLat: -12.0464,
+    locationLng: -77.0428,
+  };
+
+  console.log("===================================================");
+  console.log("          VERIFICACION CREATE BITACORA             ");
+  console.log("===================================================");
+  console.log("entry id:", id);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ---");
+  for (const k of Object.keys(sent)) {
+    // Backend puede devolver en snake_case
+    const altKey = k.replace(/[A-Z]/g, m => "_" + m.toLowerCase());
+    const got = obj[k] ?? obj[altKey];
+    if (got === null || got === undefined) {
+      console.log("  ❌", k.padEnd(22), "PERDIDO");
+    } else if (got === sent[k] || (typeof got === "string" && typeof sent[k] === "string" && got === sent[k])) {
+      console.log("  ✅", k.padEnd(22), JSON.stringify(got));
+    } else {
+      console.log("  ⚠️ ", k.padEnd(22), "DIFIERE — env:", JSON.stringify(sent[k]), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- HIDRATACIÓN (bug backend: no resuelve nombres) ---");
+  console.log("  vehicle_plate:        ", obj.vehicle_plate ?? obj.vehiclePlate ?? "❌ no hidratado (bug)");
+  console.log("  driver_name:          ", obj.driver_name ?? obj.driverName ?? "❌ no hidratado (bug)");
+
+  console.log("");
+  console.log("--- CAMPOS NULL ESPERADO POR LIFECYCLE ---");
+  for (const k of ["reviewed_at", "reviewed_by", "dismissed_at", "related_order_id", "operator_notes"]) {
+    console.log("  ", k.padEnd(22), "=", obj[k] === null || obj[k] === undefined ? "null (esperado, sin review aún)" : JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("--- AUTO-EVENTOS GPS (esperado solo entries manuales sin GPS) ---");
+  console.log("  source:                ", obj.source ?? "n/a", "(\"manual\" si lo creaste tú; \"geofence\" requiere GPS)");
+  console.log("  dwell_time_minutes:    ", obj.dwell_time_minutes ?? "null (calculado por GPS)");
+
+  console.log("");
+  console.log("==================== RESPUESTA COMPLETA ====================");
+  console.log(JSON.stringify(obj, null, 2));
+  console.log("============================================================");
+}
+
+docs {
+  # POST /bitacora
+
+  **Campos requeridos:** `eventType`, `vehicleId` (camelCase).
+
+  Backend acepta en snake_case tambien pero prefiere camelCase segun los errores 400.
+
+  Valores de `eventType` detectados: `unplanned_stop`, `deviation`, `geofence_entry`, `geofence_exit`.
+  Valores de `severity`: `low`, `medium`, `high`, `critical`.
+
+  Response 201 con envelope `{data: {...}}` y shape completo del entry recien creado.
+
+  **Quirk:** Backend NO hidrata `vehicle_plate` ni `driver_name` en el response — vienen `null`.
+}

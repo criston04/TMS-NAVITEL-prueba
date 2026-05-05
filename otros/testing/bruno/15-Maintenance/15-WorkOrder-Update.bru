@@ -1,0 +1,36 @@
+meta {
+  name: Update work order (PUT, not DELETE)
+  type: http
+  seq: 15
+}
+
+put {
+  url: {{baseUrl}}/maintenance/work-orders/{{lastWorkOrderId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "diagnosis": "Filtro obstruido",
+    "resolution": "Cambiado filtro + aceite",
+    "status": "completed"
+  }
+}
+
+docs {
+  # PUT /maintenance/work-orders/:id
+
+  Update parcial. Response shape minimo `{data: {id, updated: true}}`.
+
+  **NO existe DELETE** — `DELETE /maintenance/work-orders/:id` responde 405.
+  Para "cancelar" una work order, actualizar con `{"status": "cancelled"}`.
+}

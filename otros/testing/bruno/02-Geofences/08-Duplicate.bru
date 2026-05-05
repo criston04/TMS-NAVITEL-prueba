@@ -1,0 +1,36 @@
+meta {
+  name: Duplicate geofence
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/master/geofences/{{lastGeofenceId}}/duplicate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "newName": "Copia de la geocerca"
+  }
+}
+
+docs {
+  # POST /geofences/:id/duplicate — Duplicar
+
+  **Excel:** `Geofence | POST | /geofences/:id/duplicate | Duplicar geocerca y sincronizar copy a GPS proveedor`
+
+  Crea una copia de la geocerca origen. Segun Excel, tambien sincroniza
+  con el proveedor GPS.
+
+  Body opcional: `{ newName: "..." }` — si no se manda, backend genera nombre.
+}

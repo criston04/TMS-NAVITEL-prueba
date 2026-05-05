@@ -1,0 +1,28 @@
+meta {
+  name: Delete order
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/orders/{{lastOrderId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # DELETE /orders/:id — Eliminar
+
+  **Excel:** `DELETE /api/v1/orders/:id | Eliminación lógica orden (draft only)`
+
+  IMPORTANTE: Solo se puede eliminar si está en estado `draft`.
+  Si la orden ya cambió de estado (pending, assigned, etc.), este DELETE probablemente falle con 409 Conflict.
+
+  Es soft-delete (backend pone `deleted_at`, no borra físicamente).
+
+  Después de ejecutar, ejecutar `01-List` para verificar que desapareció.
+}

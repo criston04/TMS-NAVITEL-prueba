@@ -1,0 +1,34 @@
+meta {
+  name: Change status (PATCH)
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/master/products/{{lastProductId}}/status
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "inactive"
+  }
+}
+
+docs {
+  # PATCH /master/products/:id/status
+
+  **Este SI funciona en products** (a diferencia de toggle-status de customers).
+  Responde 200 con body `"OK"` (plain text, no JSON).
+
+  Valores validos: `"active"`, `"inactive"`.
+}

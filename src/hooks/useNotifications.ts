@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { notificationService } from "@/services/notification.service";
+import { isBackendNotImplemented } from "@/services/missing-endpoint-helper";
 import type {
   SystemNotification,
   NotificationFilters,
@@ -140,6 +141,21 @@ export function useNotifications(
         setPage(1);
       }
     } catch (err) {
+      // 2026-05-03 (issue B.1): si el endpoint no está implementado en el
+      // backend, mostramos estado vacío silenciosamente en lugar de "Error".
+      // El módulo /notifications es de los 6 fantasma — el backend NO lo
+      // tiene aún. Cuando lo implemente, este hook funcionará automáticamente.
+      if (isBackendNotImplemented(err)) {
+        setState(prev => ({
+          ...prev,
+          notifications: [],
+          total: 0,
+          unreadCount: 0,
+          isLoading: false,
+          error: null,
+        }));
+        return;
+      }
       const errorMessage = err instanceof Error ? err.message : "Error al cargar notificaciones";
       setState(prev => ({
         ...prev,
@@ -158,6 +174,8 @@ export function useNotifications(
       const stats = await notificationService.getStats(userId);
       setState(prev => ({ ...prev, stats }));
     } catch (err) {
+      // Backend no implementado: dejar stats null sin warning
+      if (isBackendNotImplemented(err)) return;
       console.error("[useNotifications] Error al cargar stats:", err);
     }
   }, [userId]);
@@ -172,6 +190,7 @@ export function useNotifications(
       const preferences = await notificationService.getPreferences(userId);
       setState(prev => ({ ...prev, preferences }));
     } catch (err) {
+      if (isBackendNotImplemented(err)) return;
       console.error("[useNotifications] Error al cargar preferencias:", err);
     }
   }, [userId]);

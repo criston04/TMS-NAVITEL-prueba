@@ -1,0 +1,63 @@
+meta {
+  name: Import
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/master/customers/import
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "customers": [
+      {
+        "code": "CUST-IMPORT-001",
+        "type": "company",
+        "documentType": "RUC",
+        "documentNumber": "20555666777",
+        "name": "Importado 1",
+        "email": "imp1@test.com",
+        "phone": "+51 999 000 001",
+        "status": "active",
+        "category": "standard"
+      },
+      {
+        "code": "CUST-IMPORT-002",
+        "type": "person",
+        "documentType": "DNI",
+        "documentNumber": "12345678",
+        "name": "Importado 2",
+        "email": "imp2@test.com",
+        "phone": "+51 999 000 002",
+        "status": "active",
+        "category": "standard"
+      }
+    ]
+  }
+}
+
+docs {
+  # POST /master/customers/import
+
+  **Excel:** `POST /api/v1/master/customers/import`
+
+  Importar masivo de customers. Body: arreglo con objetos Customer.
+
+  Ajustar si el backend espera el arreglo directo (no dentro de { customers: [...] }).
+
+  Response esperado:
+  ```json
+  { "success": 2, "failed": 0, "errors": [] }
+  ```
+}

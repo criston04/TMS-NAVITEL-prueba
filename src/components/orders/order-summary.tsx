@@ -75,6 +75,8 @@ export interface OrderSummaryData {
     geofenceName: string;
     address: string;
     estimatedArrival?: string;
+    estimatedDeparture?: string;
+    scheduleEnabled?: boolean;
   }>;
   
   assignment?: {
@@ -392,15 +394,59 @@ export function OrderSummary({ data, onEditSection }: OrderSummaryProps) {
         icon={<Calendar className="w-4 h-4" />}
         onEdit={() => onEditSection?.('schedule')}
       >
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <Label>Inicio Programado</Label>
-            <p className="text-sm mt-1">{formatDate(data.scheduledStart)}</p>
-          </div>
-          <div>
-            <Label>Fin Programado</Label>
-            <p className="text-sm mt-1">{formatDate(data.scheduledEnd)}</p>
-          </div>
+        <div className="space-y-3">
+          {data.milestones.map((milestone) => {
+            const hasSchedule = milestone.scheduleEnabled && milestone.estimatedArrival;
+            return (
+              <div key={milestone.id} className="flex items-start gap-3">
+                <div
+                  className={cn(
+                    'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shrink-0 mt-0.5',
+                    milestone.type === 'origin' && 'bg-green-500 text-white',
+                    milestone.type === 'destination' && 'bg-red-500 text-white',
+                    milestone.type === 'waypoint' && 'bg-blue-500 text-white'
+                  )}
+                >
+                  {milestone.sequence}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-sm">{milestone.geofenceName}</span>
+                  {hasSchedule ? (
+                    <div className="grid gap-2 mt-1 sm:grid-cols-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Llegada</p>
+                        <p className="text-sm">{formatDate(milestone.estimatedArrival!)}</p>
+                      </div>
+                      {milestone.estimatedDeparture && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">Salida</p>
+                          <p className="text-sm">{formatDate(milestone.estimatedDeparture)}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">Sin programación</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {data.scheduledStart && data.scheduledEnd && (
+            <>
+              <Separator />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label>Rango Total — Inicio</Label>
+                  <p className="text-sm mt-1">{formatDate(data.scheduledStart)}</p>
+                </div>
+                <div>
+                  <Label>Rango Total — Fin</Label>
+                  <p className="text-sm mt-1">{formatDate(data.scheduledEnd)}</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </SummarySection>
 

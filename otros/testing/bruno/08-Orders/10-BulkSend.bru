@@ -1,0 +1,34 @@
+meta {
+  name: Bulk send to external GPS
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/orders/bulk-send
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "orderIds": ["{{lastOrderId}}"]
+  }
+}
+
+docs {
+  # POST /orders/bulk-send
+
+  Envia ordenes al sistema externo de GPS / Navitel.
+  Frontend lo invoca desde `OrderService.sendToExternal()` y `bulkSendToExternal()`.
+
+  Backend devuelve `{ sent: [...], failed: [...] }` (BulkSendResult).
+}

@@ -1,0 +1,190 @@
+meta {
+  name: Create workflow
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/master/workflows
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Workflow Delivery Estandar Bruno",
+    "code": "WF-DELIVERY-STD",
+    "description": "Workflow estándar para órdenes de delivery — generado desde Bruno",
+    "isDefault": true,
+    "triggerEvent": "order.created",
+    "actions": [
+      {
+        "type": "execute_step",
+        "sequence": 1,
+        "config": {
+          "name": "Validar orden",
+          "action": "validate_order",
+          "isRequired": true,
+          "actionConfig": {}
+        }
+      },
+      {
+        "type": "execute_step",
+        "sequence": 2,
+        "config": {
+          "name": "Asignar vehículo",
+          "action": "assign_vehicle",
+          "isRequired": true,
+          "actionConfig": {
+            "minCapacityKg": 0,
+            "preferredVehicleType": "truck"
+          }
+        }
+      },
+      {
+        "type": "execute_step",
+        "sequence": 3,
+        "config": {
+          "name": "Notificar al conductor",
+          "action": "notify_driver",
+          "isRequired": true,
+          "actionConfig": {
+            "channel": "whatsapp"
+          }
+        }
+      },
+      {
+        "type": "execute_step",
+        "sequence": 4,
+        "config": {
+          "name": "Verificar geocerca de destino",
+          "action": "geofence_check",
+          "isRequired": false,
+          "actionConfig": {}
+        }
+      },
+      {
+        "type": "execute_step",
+        "sequence": 5,
+        "config": {
+          "name": "Capturar firma",
+          "action": "capture_signature",
+          "isRequired": true,
+          "actionConfig": {}
+        }
+      }
+    ]
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastWorkflowId", id);
+
+  // Espejo del shape que produce workflowMasterService.create()
+  const sent = {
+    name: "Workflow Delivery Estandar Bruno",
+    triggerEvent: "order.created",
+  };
+  const sentExtras = ["code", "description", "isDefault"];
+
+  console.log("===================================================");
+  console.log("           VERIFICACION CREATE WORKFLOW            ");
+  console.log("===================================================");
+  console.log("workflow id:", id);
+  console.log("");
+  console.log("--- CAMPOS REQUERIDOS POR BACKEND ---");
+  for (const k of Object.keys(sent)) {
+    const got = obj[k];
+    if (got === sent[k]) {
+      console.log("  ✅", k.padEnd(20), JSON.stringify(got));
+    } else {
+      console.log("  ❌", k.padEnd(20), "env:", JSON.stringify(sent[k]), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- CAMPOS EXTRA QUE FRONTEND ENVIA (probablemente ignorados) ---");
+  for (const k of sentExtras) {
+    const got = obj[k];
+    console.log("  ", k.padEnd(20), got !== null && got !== undefined ? "✅ " + JSON.stringify(got) : "❌ no persistido");
+  }
+
+  console.log("");
+  console.log("--- ACTIONS ---");
+  if (Array.isArray(obj.actions)) {
+    console.log("  actions:             ✅ array de", obj.actions.length, "acciones");
+  } else if (typeof obj.actions === "string") {
+    console.log("  actions:             ⚠️ devuelto como STRING JSON escapado (bug serialización backend)");
+    try {
+      const parsed = JSON.parse(obj.actions);
+      console.log("                       parsed:", parsed.length, "acciones");
+    } catch {}
+  } else {
+    console.log("  actions:             ❌ formato inesperado:", typeof obj.actions);
+  }
+
+  console.log("");
+  console.log("--- CAMPOS QUE AGREGA EL BACKEND ---");
+  for (const k of ["trigger_event", "conditions", "is_active", "is_default", "status", "execution_count", "last_executed_at", "created_by", "tenant_id", "version"]) {
+    if (obj[k] !== undefined) {
+      console.log("  +", k.padEnd(20), "=", JSON.stringify(obj[k]));
+    }
+  }
+
+  console.log("===================================================");
+}
+
+docs {
+  # POST /master/workflows — payload IDÉNTICO al que produce el frontend hoy
+
+  Refleja `workflowMasterService.create()` que mapea `data.steps[]` (modelo
+  frontend) a `actions[]` con shape event-driven que el backend acepta.
+
+  ## Mapeo del frontend
+  ```typescript
+  // workflows.service.ts línea ~80
+  const backendPayload = {
+    name: data.name,
+    triggerEvent: "order.created",  // hardcoded por ahora
+    actions: data.steps.map((step, idx) => ({
+      type: "execute_step",
+      sequence: idx + 1,
+      config: {
+        name: step.name,
+        action: step.action,
+        isRequired: step.isRequired,
+        actionConfig: step.actionConfig,
+      },
+    })),
+    description: data.description,
+    code: data.code,
+    isDefault: data.isDefault,
+  };
+  ```
+
+  ## ⚠ Bugs/quirks del backend
+  - **Path correcto:** `/master/workflows` (no `/workflows/definitions` como
+    decía la doc Rev3 — fue corregido en api.config.ts el 2026-04-30).
+  - **`actions` devuelto como string JSON escapado** en POST pero parseado en GET.
+    Inconsistencia pendiente.
+  - `code`, `description`, `isDefault` enviados pero el backend probablemente
+    los ignora (no documentado explícitamente). Verificar en response.
+  - Backend NO acepta el shape `steps[]` original del frontend.
+
+  ## Frontend
+  - Service: `src/services/master/workflows.service.ts`
+  - Tipo: `src/types/workflow.ts` → `Workflow`, `WorkflowStep`, `WorkflowAction`
+}

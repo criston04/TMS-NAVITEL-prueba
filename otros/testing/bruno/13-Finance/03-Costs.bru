@@ -1,0 +1,29 @@
+meta {
+  name: Transport costs - list
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/finance/costs?page=1&pageSize=20
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/costs
+
+  Lista costos de transporte.
+  Envelope `{data: [], meta: {total, page, pageSize}}`.
+
+  Filtros opcionales: `orderId`, `vehicleId`, `costType`, `dateFrom`, `dateTo`.
+}

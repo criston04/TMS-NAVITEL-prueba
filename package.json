@@ -6,10 +6,7 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:route-planner": "vitest run src/tests/route-planner"
+    "lint": "eslint"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -38,8 +35,6 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^11.18.2",
-    "jspdf": "^4.1.0",
-    "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "leaflet-path-drag": "^1.9.5",
@@ -64,21 +59,14 @@
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "^11.12.0",
     "@tailwindcss/postcss": "^4",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^5.1.2",
     "babel-plugin-react-compiler": "1.0.0",
     "docx": "^9.6.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.5",
-    "jsdom": "^27.4.0",
-    "msw": "^2.12.7",
-    "playwright": "^1.58.0",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "vitest": "^4.0.18"
+    "typescript": "^5"
   }
 }

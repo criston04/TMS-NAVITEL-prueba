@@ -21,15 +21,21 @@ import type {
 } from '@/types/scheduling';
 import type { Order } from '@/types/order';
 import { schedulingService, type AssignmentPayload } from '@/services/scheduling-service';
-import {
-  MOCK_VEHICLES,
-  MOCK_DRIVERS,
-  DEFAULT_SCHEDULING_CONFIG,
-  generateMockTimelines,
-  type MockVehicle,
-  type MockDriver,
-  type AutoScheduleResult,
-} from '@/mocks/scheduling';
+
+// Re-exportamos los tipos canónicos del servicio (antes el hook tenía sus
+// propios MockVehicle / MockDriver / AutoScheduleResult con shape distinto que
+// rompía la asignación a parámetros del servicio).
+export type { MockVehicle, MockDriver, AutoScheduleResult } from "@/services/scheduling-service";
+import type { MockVehicle, MockDriver, AutoScheduleResult } from "@/services/scheduling-service";
+
+const MOCK_VEHICLES: MockVehicle[] = [];
+const MOCK_DRIVERS: MockDriver[] = [];
+const DEFAULT_SCHEDULING_CONFIG: SchedulingFeatureFlags = {
+  enableAutoSuggestion: true,
+  enableHOSValidation: true,
+  enableRealtimeConflictCheck: true,
+} as SchedulingFeatureFlags;
+const generateMockTimelines = (_orders: ScheduledOrder[]): ResourceTimeline[] => [];
 
 /** Filtro de estado para vista de lista */
 export type OrderStateFilter = 'all' | 'in_execution' | 'assigned' | 'unassigned';
@@ -389,43 +395,54 @@ export function useScheduling(): UseSchedulingReturn {
 
     const loadInitialData = async () => {
       setIsLoading(true);
-      
-      try {
-        const [ordersData, kpisData, allOrdersData] = await Promise.all([
-          schedulingService.getPendingOrders(),
-          schedulingService.getKPIs(),
-          schedulingService.getAllOrders(),
-        ]);
-        
-        if (isMounted) {
-          setPendingOrders(ordersData);
-          setAllOrders(allOrdersData);
-          setSchedulingKpis(kpisData);
 
-          // Transform assigned orders into ScheduledOrders and merge with existing
-          // (from localStorage). This populates the calendar on first load.
-          setScheduledOrders(prev => {
-            const existingIds = new Set(prev.map(o => o.id));
-            const fromOrders: ScheduledOrder[] = allOrdersData
-              .filter(o => o.vehicleId && !existingIds.has(o.id))
-              .map(o => ({
-                ...o,
-                scheduledDate: o.scheduledStartDate ? new Date(o.scheduledStartDate) : new Date(),
-                scheduledStartTime: '08:00',
-                estimatedEndTime: '12:00',
-                estimatedDuration: 4,
-                scheduleStatus: (o.status === 'in_transit' ? 'in_progress' : 'scheduled') as import('@/types/scheduling').ScheduleStatus,
-              }));
-            return fromOrders.length > 0 ? [...prev, ...fromOrders] : prev;
-          });
-        }
-      } catch (error) {
-        console.error('Error cargando datos de programación:', error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      // Usamos allSettled para que un endpoint roto (404/500) no tumbe los demas.
+      // El backend actualmente tiene varios endpoints de scheduling sin implementar
+      // o con bugs (pending-orders 404, all-orders 404, kpis 500).
+      const [pendingRes, kpisRes, allOrdersRes] = await Promise.allSettled([
+        schedulingService.getPendingOrders(),
+        schedulingService.getKPIs(),
+        schedulingService.getAllOrders(),
+      ]);
+
+      if (!isMounted) return;
+
+      const ordersData = pendingRes.status === 'fulfilled' ? pendingRes.value : [];
+      const kpisData = kpisRes.status === 'fulfilled' ? kpisRes.value : null;
+      const allOrdersData = allOrdersRes.status === 'fulfilled' ? allOrdersRes.value : [];
+
+      if (pendingRes.status === 'rejected') {
+        console.warn('[useScheduling] getPendingOrders fallo:', pendingRes.reason);
       }
+      if (kpisRes.status === 'rejected') {
+        console.warn('[useScheduling] getKPIs fallo:', kpisRes.reason);
+      }
+      if (allOrdersRes.status === 'rejected') {
+        console.warn('[useScheduling] getAllOrders fallo:', allOrdersRes.reason);
+      }
+
+      setPendingOrders(ordersData);
+      setAllOrders(allOrdersData);
+      if (kpisData) setSchedulingKpis(kpisData);
+
+      // Transform assigned orders into ScheduledOrders and merge with existing
+      // (from localStorage). This populates the calendar on first load.
+      setScheduledOrders(prev => {
+        const existingIds = new Set(prev.map(o => o.id));
+        const fromOrders: ScheduledOrder[] = allOrdersData
+          .filter(o => o.vehicleId && !existingIds.has(o.id))
+          .map(o => ({
+            ...o,
+            scheduledDate: o.scheduledStartDate ? new Date(o.scheduledStartDate) : new Date(),
+            scheduledStartTime: '08:00',
+            estimatedEndTime: '12:00',
+            estimatedDuration: 4,
+            scheduleStatus: (o.status === 'in_transit' ? 'in_progress' : 'scheduled') as import('@/types/scheduling').ScheduleStatus,
+          }));
+        return fromOrders.length > 0 ? [...prev, ...fromOrders] : prev;
+      });
+
+      setIsLoading(false);
     };
     
     loadInitialData();
@@ -442,19 +459,29 @@ export function useScheduling(): UseSchedulingReturn {
     let isMounted = true;
 
     const loadSecondaryData = async () => {
-      try {
-        const [notifs, logs, blocked] = await Promise.all([
-          schedulingService.getNotifications(),
-          schedulingService.getAuditLogs(),
-          schedulingService.getBlockedDays(),
-        ]);
-        if (isMounted) {
-          setNotifications(notifs);
-          setAuditLogs(logs);
-          setBlockedDays(blocked);
-        }
-      } catch (error) {
-        console.error('Error cargando datos secundarios:', error);
+      // allSettled: si un endpoint falla no tumba los demas
+      const [notifsRes, logsRes, blockedRes] = await Promise.allSettled([
+        schedulingService.getNotifications(),
+        schedulingService.getAuditLogs(),
+        schedulingService.getBlockedDays(),
+      ]);
+
+      if (!isMounted) return;
+
+      if (notifsRes.status === 'fulfilled') {
+        setNotifications(notifsRes.value);
+      } else {
+        console.warn('[useScheduling] getNotifications fallo:', notifsRes.reason);
+      }
+      if (logsRes.status === 'fulfilled') {
+        setAuditLogs(logsRes.value);
+      } else {
+        console.warn('[useScheduling] getAuditLogs fallo:', logsRes.reason);
+      }
+      if (blockedRes.status === 'fulfilled') {
+        setBlockedDays(blockedRes.value);
+      } else {
+        console.warn('[useScheduling] getBlockedDays fallo:', blockedRes.reason);
       }
     };
 
@@ -769,7 +796,7 @@ export function useScheduling(): UseSchedulingReturn {
       );
       setAutoScheduleResult(result);
 
-      if (result.assigned > 0 && result.assignments?.length > 0) {
+      if (result.successfulAssignments > 0 && result.assignments?.length > 0) {
         // Crear ScheduledOrders reales a partir de las asignaciones
         const newScheduled: ScheduledOrder[] = [];
         const assignedOrderIds = new Set<string>();
@@ -798,17 +825,17 @@ export function useScheduling(): UseSchedulingReturn {
         // Actualizar KPIs
         setSchedulingKpis(prev => ({
           ...prev,
-          pendingOrders: prev.pendingOrders - result.assigned,
-          scheduledToday: prev.scheduledToday + result.assigned,
-          fleetUtilization: Math.min(100, prev.fleetUtilization + result.assigned * 5),
-          driverUtilization: Math.min(100, prev.driverUtilization + result.assigned * 5),
+          pendingOrders: prev.pendingOrders - result.successfulAssignments,
+          scheduledToday: prev.scheduledToday + result.successfulAssignments,
+          fleetUtilization: Math.min(100, prev.fleetUtilization + result.successfulAssignments * 5),
+          driverUtilization: Math.min(100, prev.driverUtilization + result.successfulAssignments * 5),
         }));
 
         addNotificationInternal({
           type: 'auto_schedule',
           severity: 'success',
           title: 'Auto-programación completada',
-          message: `${result.assigned} órdenes asignadas automáticamente, ${result.failed} sin asignar`,
+          message: `${result.successfulAssignments} órdenes asignadas automáticamente, ${result.failedAssignments} sin asignar`,
         });
       }
     } catch (error) {

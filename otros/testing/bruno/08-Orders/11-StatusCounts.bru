@@ -1,0 +1,22 @@
+meta {
+  name: Status counts
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/orders/status-counts
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /orders/status-counts
+
+  Devuelve el conteo de ordenes por estado (draft, pending, assigned, in_transit, delivered, cancelled, ...).
+  Usado por el dashboard de Orders y el header del listado.
+}

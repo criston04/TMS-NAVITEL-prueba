@@ -52,7 +52,8 @@ interface WorkflowSelectorProps {
 /**
  * Calcula la duración total de un workflow
  */
-function calculateTotalDuration(steps: WorkflowStep[]): number {
+function calculateTotalDuration(steps: WorkflowStep[] | undefined | null): number {
+  if (!Array.isArray(steps)) return 0;
   return steps.reduce((total, step) => total + (step.estimatedDurationMinutes || 0), 0);
 }
 
@@ -198,7 +199,7 @@ function WorkflowSelectorComponent({
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        {workflow.steps.length} pasos • {formatDuration(calculateTotalDuration(workflow.steps))}
+                        {workflow.steps?.length ?? 0} pasos • {formatDuration(calculateTotalDuration(workflow.steps))}
                       </div>
                     </div>
                     {selectedWorkflow?.id === workflow.id && (
@@ -227,7 +228,7 @@ function WorkflowSelectorComponent({
               )}
               
               <Badge variant="outline" className="text-xs">
-                {selectedWorkflow.steps.length} pasos
+                {selectedWorkflow.steps?.length ?? 0} pasos
               </Badge>
               
               <Badge variant="outline" className="text-xs">
@@ -265,7 +266,8 @@ function WorkflowSelectorComponent({
           </Button>
           {isStepsOpen && (
             <div className="mt-3 pl-2 border-l-2 border-muted ml-1">
-              {selectedWorkflow.steps
+              {(selectedWorkflow.steps ?? [])
+                .slice()
                 .sort((a, b) => a.sequence - b.sequence)
                 .map((step, index, arr) => (
                   <StepPreviewItem

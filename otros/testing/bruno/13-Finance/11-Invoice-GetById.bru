@@ -1,0 +1,22 @@
+meta {
+  name: Get invoice by id
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/finance/invoices/{{lastInvoiceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/invoices/:id
+
+  Devuelve la factura con `lineItems[]` embebidos.
+  Envelope `{data: {...}}`.
+}

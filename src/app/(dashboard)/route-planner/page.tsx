@@ -41,8 +41,9 @@ import { DriverSelector } from "@/components/route-planner/driver-selector";
 import { RouteActionsEnhanced } from "@/components/route-planner/route-actions-enhanced";
 import { StopSequenceEnhanced } from "@/components/route-planner/stop-sequence-enhanced";
 import { RouteAlerts, ManualRouteCreator } from "@/components/route-planner";
-import { mockVehicles, mockDrivers, ROUTE_COLORS } from "@/lib/mock-data/route-planner";
+import { ROUTE_COLORS } from "@/lib/route-planner-utils";
 import { useRoutePlannerOrders } from "@/hooks/useRoutePlannerOrders";
+import { useRoutePlannerFleet } from "@/hooks/useRoutePlannerFleet";
 import { cn } from "@/lib/utils";
 
 /* ============================================
@@ -498,6 +499,9 @@ function RouteAssignmentPanel() {
   const [isConfirming, setIsConfirming] = useState(false);
   const isAllConfirmed = generatedRoutes.every((r) => r.status === "confirmed");
 
+  // Flota real (vehículos + conductores) desde el backend
+  const { vehicles: plannerVehicles, drivers: plannerDrivers } = useRoutePlannerFleet();
+
   const selectedRoute = generatedRoutes.find((r) => r.id === selectedRouteId);
   const currentAssignment = routeAssignments.find((a) => a.routeId === selectedRouteId);
 
@@ -597,7 +601,7 @@ function RouteAssignmentPanel() {
             <ScrollArea className="flex-1 min-h-0">
               <TabsContent value="vehicle" className="p-4 mt-0">
                 <VehicleSelector
-                  vehicles={mockVehicles}
+                  vehicles={plannerVehicles}
                   onSelect={(vehicle) => {
                     if (!selectedRouteId) return;
                     if (vehicle) {
@@ -613,7 +617,7 @@ function RouteAssignmentPanel() {
               </TabsContent>
               <TabsContent value="driver" className="p-4 mt-0">
                 <DriverSelector
-                  drivers={mockDrivers}
+                  drivers={plannerDrivers}
                   onSelect={(driver) => {
                     if (!selectedRouteId) return;
                     if (driver) {
@@ -698,8 +702,10 @@ function RoutePlannerContent() {
     addOrder,
   } = useRoutePlanner();
 
-  // Órdenes reales del módulo Orders (con fallback a mock data)
-  const { orders: plannerOrders, isLoading: ordersLoading, usingFallback } = useRoutePlannerOrders();
+  // Órdenes reales del módulo Orders (SIN fallback a mocks)
+  const { orders: plannerOrders, isLoading: ordersLoading, usingFallback } = useRoutePlannerOrders({
+    includeFallbackMocks: false,
+  });
   
   // Órdenes importadas desde archivo Excel
   const [importedOrders, setImportedOrders] = useState<TransportOrder[]>([]);
@@ -801,9 +807,9 @@ function RoutePlannerContent() {
           style={{ flexShrink: 0 }}
         >
           <div className="w-[340px] h-full">
-            {usingFallback && (
+            {!ordersLoading && plannerOrders.length === 0 && importedOrders.length === 0 && (
               <div className="px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs text-center">
-                Usando datos de ejemplo — crea órdenes en el módulo Órdenes
+                No hay órdenes planificables — crea órdenes en el módulo Órdenes o impórtalas desde Excel
               </div>
             )}
             <OrderList 

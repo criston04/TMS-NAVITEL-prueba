@@ -1,0 +1,22 @@
+meta {
+  name: Audit logs
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/operations/scheduling/audit-logs
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /operations/scheduling/audit-logs
+
+  Historial de cambios en scheduling.
+  Envelope: `{data: [], meta: {total, page, pageSize}}`.
+}

@@ -1,0 +1,83 @@
+meta {
+  name: Update customer (PUT)
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/master/customers/{{lastCustomerId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Cliente Bruno SA ACTUALIZADO",
+    "trade_name": "Bruno Corp ACTUALIZADO",
+    "email": "bruno-updated@test.com",
+    "phone": "+51 999 888 999",
+    "phone2": "+51 999 888 991",
+    "website": "https://brunocorp-updated.test",
+    "category": "premium",
+    "credit_limit": 80000,
+    "credit_used": 12500,
+    "notes": "Cliente upgradeado a premium (update desde Bruno).",
+    "address": "Av. Bruno 123, Lima, Lima, PE",
+    "addresses": [
+      {
+        "id": "addr-001",
+        "label": "Sede principal",
+        "street": "Av. Bruno 123",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "PE",
+        "zip_code": "15001",
+        "is_default": true,
+        "lat": -12.0837,
+        "lng": -77.0442
+      }
+    ],
+    "contacts": [
+      {
+        "id": "ctc-001",
+        "name": "María Pérez",
+        "email": "maria.perez@brunocorp.test",
+        "phone": "+51 999 111 222",
+        "position": "Gerente de Logística",
+        "is_primary": true,
+        "notify_deliveries": true,
+        "notify_incidents": true
+      }
+    ],
+    "billing_config": {
+      "payment_terms": "45_days",
+      "currency": "PEN",
+      "requires_po": true,
+      "volume_discount": 10
+    }
+  }
+}
+
+docs {
+  # PUT /master/customers/:id
+
+  ## ⚠ Estado del endpoint
+  Sniff 2026-04-29: el backend devuelve **HTTP 404** aunque la doc Rev3 lista
+  este endpoint. Pendiente de implementación.
+
+  ## Cambios respecto al body original
+  - `coordinates: {lat, lng}` aplanado a `lat`/`lng` directos en cada address
+    (el backend espera planos, no anidados).
+  - NO se envía `billing_address` dentro de `billing_config` — causa HTTP 500
+    (mismo bug que en Create).
+
+  ## Después ejecutar 03-GetById para confirmar los cambios.
+}

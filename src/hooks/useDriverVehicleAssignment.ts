@@ -107,6 +107,23 @@ export function useDriverVehicleAssignment(
   }, []);
 
   /**
+   * Actualiza las estadísticas.
+   *
+   * 2026-05-03 (issue B.2): movido ARRIBA antes de createAssignment/unassign/
+   * transferVehicle que lo invocan. Antes estaba declarado después y dependía
+   * del hoisting de la closure — funcionaba en runtime pero rompía con HMR
+   * y strict mode. Ahora el orden es correcto.
+   */
+  const refreshStats = React.useCallback(async () => {
+    try {
+      const data = await assignmentService.getStats(driversRef.current, vehiclesRef.current);
+      setStats(data);
+    } catch (err) {
+      console.error("Error al obtener estadísticas:", err);
+    }
+  }, []);
+
+  /**
    * Valida una asignación
    */
   const validateAssignment = React.useCallback(async (
@@ -164,7 +181,7 @@ export function useDriverVehicleAssignment(
     } finally {
       setIsLoading(false);
     }
-  }, [getDriverById, getVehicleById, loadAssignments]);
+  }, [getDriverById, getVehicleById, loadAssignments, refreshStats]);
 
   /**
    * Desasigna un conductor de un vehículo
@@ -225,7 +242,7 @@ export function useDriverVehicleAssignment(
     } finally {
       setIsLoading(false);
     }
-  }, [getDriverById, getVehicleById, loadAssignments]);
+  }, [getDriverById, getVehicleById, loadAssignments, refreshStats]);
 
   /**
    * Obtiene la asignación de un conductor
@@ -314,17 +331,9 @@ export function useDriverVehicleAssignment(
     }
   }, []);
 
-  /**
-   * Actualiza las estadísticas
-   */
-  const refreshStats = React.useCallback(async () => {
-    try {
-      const data = await assignmentService.getStats(driversRef.current, vehiclesRef.current);
-      setStats(data);
-    } catch (err) {
-      console.error("Error al obtener estadísticas:", err);
-    }
-  }, []);
+  // 2026-05-03 (issue B.2): `refreshStats` se movió arriba, antes de
+  // createAssignment/unassign/transferVehicle. La definición duplicada
+  // se eliminó.
 
   /**
    * Limpia el error

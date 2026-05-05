@@ -1,0 +1,30 @@
+meta {
+  name: Get product by id
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/master/products/{{lastProductId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/products/:id
+
+  Devuelve envelope `{data: {...}}` con el product completo.
+
+  **Shape real del backend (hallazgo forense 2026-04-22):**
+  ```
+  {id, tenant_id, sku, name, description, category, unit_of_measure,
+   weight, volume, requires_refrigeration (0|1), min_temperature, max_temperature,
+   handling_instructions, customer_id, status, created_at, updated_at}
+  ```
+
+  Backend persiste MAS campos de los documentados en 10_BUGS_CONSOLIDADOS.md — revisar el transformer.
+}

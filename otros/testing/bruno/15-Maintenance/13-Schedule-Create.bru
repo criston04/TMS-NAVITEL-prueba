@@ -1,0 +1,112 @@
+meta {
+  name: Create maintenance schedule
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/maintenance/schedules
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "vehicleId": "{{lastVehicleId}}",
+    "type": "oil_change",
+    "serviceType": "oil_change",
+    "name": "Cambio aceite cada 5000km",
+    "scheduleType": "mileage",
+    "triggerType": "mileage",
+    "triggerValue": 5000,
+    "intervalKm": 5000,
+    "intervalDays": null,
+    "nextDueMileage": 5000,
+    "nextDueDate": null,
+    "alertDaysBefore": 7,
+    "alertKmBefore": 500,
+    "isActive": true
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastScheduleId", id);
+
+  const sent = {
+    vehicleId: bru.getEnvVar("lastVehicleId"),
+    type: "oil_change",
+    name: "Cambio aceite cada 5000km",
+    scheduleType: "mileage",
+    intervalKm: 5000,
+    nextDueMileage: 5000,
+    alertDaysBefore: 7,
+    alertKmBefore: 500,
+    isActive: true,
+  };
+
+  console.log("===================================================");
+  console.log("        VERIFICACION CREATE SCHEDULE               ");
+  console.log("===================================================");
+  console.log("schedule id:", id);
+  console.log("");
+  for (const k of Object.keys(sent)) {
+    const altKey = k.replace(/[A-Z]/g, m => "_" + m.toLowerCase());
+    const got = obj[k] ?? obj[altKey];
+    if (got === null || got === undefined) {
+      console.log("  ❌", k.padEnd(20), "PERDIDO — env:", JSON.stringify(sent[k]));
+    } else {
+      console.log("  ", got === sent[k] ? "✅" : "⚠️", k.padEnd(20), JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- SIN GPS: schedules por hours/mileage no se disparan auto ---");
+  console.log("Si triggerType=mileage, current_mileage del vehicle viene de GPS.");
+  console.log("Sin GPS, no avanza el contador y el schedule no se dispara solo.");
+  console.log("Funciona si actualizas current_mileage manualmente desde el form.");
+  console.log("===================================================");
+}
+
+docs {
+  # POST /maintenance/schedules — alineado con MaintenanceSchedule del frontend
+
+  ## Body shape (src/types/maintenance.ts línea 88)
+  ```typescript
+  {
+    vehicleId: string,
+    type: MaintenanceType,           // "oil_change"|"tire_rotation"|"brake_check"|...
+    scheduleType: 'mileage'|'time'|'both',
+    intervalKm?: number,
+    intervalDays?: number,
+    nextDueDate?: string,
+    nextDueMileage?: number,
+    alertDaysBefore: number,
+    alertKmBefore: number,
+    isActive: boolean,
+  }
+  ```
+
+  ## Aliases que enviamos por compat
+  - `type` (canónico) + `serviceType` (alias del backend antiguo)
+  - `scheduleType` (canónico) + `triggerType` (alias del backend antiguo)
+  - `triggerValue` = `intervalKm` (cuando scheduleType="mileage")
+
+  ## ⚠ Sin GPS conectado
+  - Si `scheduleType: "mileage"` → necesita `current_mileage` que viene del GPS.
+    Sin GPS no avanza solo. Funciona si actualizas el odómetro manualmente.
+  - Si `scheduleType: "time"` → funciona normal (timer del backend).
+  - Si `scheduleType: "hours"` → necesita `engine_hours_total` del GPS. Sin GPS NO funciona.
+}

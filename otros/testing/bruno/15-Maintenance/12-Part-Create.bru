@@ -1,0 +1,108 @@
+meta {
+  name: Create part
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/maintenance/parts
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "sku": "PART-OIL-15W40",
+    "partNumber": "OIL-15W40-25L",
+    "name": "Aceite 15W-40 25L",
+    "description": "Aceite multigrado para motores diesel - tambor 25L",
+    "category": "filters",
+    "brand": "Mobil",
+    "unit": "unidad",
+    "unitPrice": 280,
+    "minStock": 5,
+    "currentStock": 20,
+    "reorderPoint": 8,
+    "supplierId": null,
+    "supplierName": "Distribuidora Mobil Lima",
+    "location": "Almacén A - Estante 3",
+    "notes": "Compatible con flota Volvo FH y Mercedes Actros",
+    "isActive": true
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastPartId", id);
+
+  const sent = {
+    sku: "PART-OIL-15W40",
+    partNumber: "OIL-15W40-25L",
+    name: "Aceite 15W-40 25L",
+    description: "Aceite multigrado para motores diesel - tambor 25L",
+    category: "filters",
+    brand: "Mobil",
+    unit: "unidad",
+    unitPrice: 280,
+    minStock: 5,
+    currentStock: 20,
+    reorderPoint: 8,
+    supplierName: "Distribuidora Mobil Lima",
+    location: "Almacén A - Estante 3",
+    isActive: true,
+  };
+
+  console.log("===================================================");
+  console.log("            VERIFICACION CREATE PART               ");
+  console.log("===================================================");
+  console.log("part id:", id);
+  console.log("");
+  for (const k of Object.keys(sent)) {
+    const altKey = k.replace(/[A-Z]/g, m => "_" + m.toLowerCase());
+    const got = obj[k] ?? obj[altKey];
+    if (got === null || got === undefined) {
+      console.log("  ❌", k.padEnd(18), "PERDIDO — env:", JSON.stringify(sent[k]));
+    } else {
+      console.log("  ", got === sent[k] ? "✅" : "⚠️", k.padEnd(18), JSON.stringify(got));
+    }
+  }
+  console.log("===================================================");
+}
+
+docs {
+  # POST /maintenance/parts — payload completo con todos los campos del frontend
+
+  ## Body shape sugerido
+  ```typescript
+  {
+    sku: string,
+    partNumber?: string,
+    name: string,
+    description?: string,
+    category: PartCategory,        // "engine"|"brakes"|"filters"|...
+    brand?: string,
+    unit: string,
+    unitPrice: number,
+    minStock: number,
+    currentStock: number,
+    reorderPoint?: number,
+    supplierId?: string,
+    supplierName?: string,
+    location?: string,
+    notes?: string,
+    isActive: boolean,
+  }
+  ```
+}

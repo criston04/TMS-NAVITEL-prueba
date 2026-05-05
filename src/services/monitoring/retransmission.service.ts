@@ -1,153 +1,165 @@
-import type { 
-  RetransmissionRecord, 
-  RetransmissionStats, 
+import type {
+  RetransmissionRecord,
+  RetransmissionStats,
   RetransmissionFilters,
-  GpsCompany 
+  GpsCompany,
 } from "@/types/monitoring";
-import { 
-  retransmissionMock, 
-  generateRetransmissionStats,
-  filterRetransmissionRecords,
-  updateRetransmissionComment 
-} from "@/mocks/monitoring/retransmission.mock";
-import { gpsCompaniesMock, getActiveGpsCompanies } from "@/mocks/monitoring/gps-companies.mock";
-import { apiConfig, API_ENDPOINTS } from "@/config/api.config";
+import { API_ENDPOINTS } from "@/config/api.config";
 import { apiClient } from "@/lib/api";
+
+/**
+ * 2026-05-03: Helper para desempacar respuestas envueltas en `{data: ...}`.
+ * Verificado empiricamente que el modulo monitoreo del backend devuelve casi
+ * todo con envelope `{data: ...}`. Sin desempacar, los componentes reciben el
+ * objeto envoltorio en lugar del array/objeto real (stats con `total` undefined,
+ * dropdowns vacios, etc.).
+ */
+function unwrap<T>(response: unknown): T {
+  if (Array.isArray(response)) return response as T;
+  if (response && typeof response === "object") {
+    const r = response as { data?: unknown; items?: unknown };
+    if (r.data !== undefined) return r.data as T;
+    if (r.items !== undefined) return r.items as T;
+  }
+  return response as T;
+}
+
+/**
+ * Stats vacios usados como fallback cuando el backend no implementa /stats todavia.
+ */
+function emptyStats(): RetransmissionStats {
+  return {
+    total: 0,
+    online: 0,
+    temporaryLoss: 0,
+    disconnected: 0,
+    onlinePercentage: 0,
+    temporaryLossPercentage: 0,
+    disconnectedPercentage: 0,
+  };
+}
 
 /**
  * Servicio de Retransmisión
  * Maneja consultas y actualizaciones de estado de retransmisión GPS
  */
 export class RetransmissionService {
-  private readonly useMocks: boolean;
-  private readonly endpoint = "/monitoring/retransmission";
-
-  constructor() {
-    this.useMocks = apiConfig.useMocks;
-  }
-
-  /**
-   * Simula delay de red para mocks
-   */
-  private async simulateDelay(ms: number = 300): Promise<void> {
-    if (this.useMocks) {
-      await new Promise(resolve => setTimeout(resolve, ms));
-    }
-  }
-
   /**
    * Obtiene todos los registros de retransmisión con filtros opcionales
    */
   async getAll(filters?: RetransmissionFilters): Promise<RetransmissionRecord[]> {
-    if (this.useMocks) {
-      await this.simulateDelay();
-      
-      if (!filters) {
-        return [...retransmissionMock];
-      }
-      
-      return filterRetransmissionRecords(retransmissionMock, {
-        vehicleSearch: filters.vehicleSearch,
-        companyId: filters.companyId,
-        movementStatus: filters.movementStatus,
-        retransmissionStatus: filters.retransmissionStatus,
-        gpsCompanyId: filters.gpsCompanyId,
-        hasComments: filters.hasComments,
-      });
-    }
-
-    return apiClient.get<RetransmissionRecord[]>(API_ENDPOINTS.monitoring.retransmission, {
+    // Backend devuelve {data: []} (no array directo). Desempacamos por robustez.
+    const response = await apiClient.get<unknown>(API_ENDPOINTS.monitoring.retransmission, {
       params: filters as unknown as Record<string, string>,
     });
+    if (Array.isArray(response)) return response as RetransmissionRecord[];
+    if (response && typeof response === "object") {
+      const r = response as { data?: unknown; items?: unknown };
+      const list = r.data ?? r.items;
+      if (Array.isArray(list)) return list as RetransmissionRecord[];
+    }
+    return [];
   }
 
   /**
-   * Obtiene un registro por ID
+   * Obtiene un registro por ID.
+   * 2026-05-03: agregado unwrap para envelope `{data: ...}`.
    */
   async getById(id: string): Promise<RetransmissionRecord | null> {
-    if (this.useMocks) {
-      await this.simulateDelay(200);
-      const record = retransmissionMock.find(r => r.id === id);
-      return record || null;
-    }
-
-    return apiClient.get<RetransmissionRecord | null>(`${API_ENDPOINTS.monitoring.retransmission}/${id}`);
+    const raw = await apiClient.get<unknown>(`${API_ENDPOINTS.monitoring.retransmission}/${id}`);
+    return unwrap<RetransmissionRecord | null>(raw);
   }
 
   /**
-   * Actualiza el comentario de un registro
+   * Actualiza el comentario de un registro.
+   * 2026-05-03: agregado unwrap.
    */
   async updateComment(recordId: string, comment: string): Promise<RetransmissionRecord> {
-    if (this.useMocks) {
-      await this.simulateDelay(400);
-      const record = updateRetransmissionComment(recordId, comment);
-      
-      if (!record) {
-        throw new Error(`Record not found: ${recordId}`);
-      }
-      
-      return record;
-    }
-
-    return apiClient.patch<RetransmissionRecord>(`${API_ENDPOINTS.monitoring.retransmission}/${recordId}/comment`, { comment });
+    const raw = await apiClient.patch<unknown>(`${API_ENDPOINTS.monitoring.retransmission}/${recordId}/comment`, { comment });
+    return unwrap<RetransmissionRecord>(raw);
   }
 
   /**
-   * Obtiene estadísticas de retransmisión
+   * Obtiene estadisticas de retransmision.
+   * 2026-05-03 (bug fix CRITICO): el backend devuelve `{data: {total, online, ...}}`
+   * y antes el frontend retornaba el envelope completo, asi que la UI accedia
+   * a `stats.total` que era undefined (en realidad estaba en `stats.data.total`).
+   * Resultado: cards mostraban "0" cuando en realidad habia datos. Ahora
+   * desempacamos con `unwrap()`.
    */
   async getStats(filters?: RetransmissionFilters): Promise<RetransmissionStats> {
-    if (this.useMocks) {
-      await this.simulateDelay(200);
-      
-      const records = filters 
-        ? filterRetransmissionRecords(retransmissionMock, filters)
-        : retransmissionMock;
-        
-      return generateRetransmissionStats(records);
+    try {
+      const raw = await apiClient.get<unknown>(
+        `${API_ENDPOINTS.monitoring.retransmission}/stats`,
+        { params: filters as unknown as Record<string, string> }
+      );
+      return unwrap<RetransmissionStats>(raw);
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 404) {
+        console.warn("[retransmissionService.getStats] backend 404. Devolviendo stats vacios.");
+        return emptyStats();
+      }
+      throw err;
     }
-
-    return apiClient.get<RetransmissionStats>(`${API_ENDPOINTS.monitoring.retransmission}/stats`, {
-      params: filters as unknown as Record<string, string>,
-    });
   }
 
   /**
-   * Obtiene lista de empresas GPS
+   * Obtiene lista de empresas GPS.
+   * 2026-05-03 (bug fix): agregado unwrap. El backend responde con `{data: []}`.
    */
   async getGpsCompanies(): Promise<GpsCompany[]> {
-    if (this.useMocks) {
-      await this.simulateDelay(100);
-      return [...gpsCompaniesMock];
+    try {
+      const raw = await apiClient.get<unknown>(`${API_ENDPOINTS.monitoring.retransmission}/gps-companies`);
+      return unwrap<GpsCompany[]>(raw);
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 404) {
+        console.warn("[retransmissionService.getGpsCompanies] backend 404. Devolviendo [].");
+        return [];
+      }
+      throw err;
     }
-
-    return apiClient.get<GpsCompany[]>(`${API_ENDPOINTS.monitoring.retransmission}/gps-companies`);
   }
 
   /**
-   * Obtiene solo empresas GPS activas
+   * Obtiene solo empresas GPS activas.
+   * 2026-05-03 (bug fix): agregado unwrap.
    */
   async getActiveGpsCompanies(): Promise<GpsCompany[]> {
-    if (this.useMocks) {
-      await this.simulateDelay(100);
-      return getActiveGpsCompanies();
+    try {
+      const raw = await apiClient.get<unknown>(
+        `${API_ENDPOINTS.monitoring.retransmission}/gps-companies`,
+        { params: { active: "true" } }
+      );
+      return unwrap<GpsCompany[]>(raw);
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 404) {
+        console.warn("[retransmissionService.getActiveGpsCompanies] backend 404. Devolviendo [].");
+        return [];
+      }
+      throw err;
     }
-
-    return apiClient.get<GpsCompany[]>(`${API_ENDPOINTS.monitoring.retransmission}/gps-companies`, {
-      params: { active: "true" },
-    });
   }
 
   /**
-   * Obtiene lista única de empresas/operadores en los registros
+   * Obtiene lista unica de empresas/operadores en los registros.
+   * 2026-05-03 (bug fix): agregado unwrap. El backend responde `{data: []}`.
+   * Antes el dropdown "Empresa" en filtros aparecia vacio aunque hubiera datos.
    */
   async getCompanies(): Promise<string[]> {
-    if (this.useMocks) {
-      await this.simulateDelay(100);
-      const companies = new Set(retransmissionMock.map(r => r.companyName));
-      return Array.from(companies).sort();
+    try {
+      const raw = await apiClient.get<unknown>(`${API_ENDPOINTS.monitoring.retransmission}/companies`);
+      return unwrap<string[]>(raw);
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 404) {
+        console.warn("[retransmissionService.getCompanies] backend 404. Devolviendo [].");
+        return [];
+      }
+      throw err;
     }
-
-    return apiClient.get<string[]>(`${API_ENDPOINTS.monitoring.retransmission}/companies`);
   }
 
   /**
@@ -155,7 +167,7 @@ export class RetransmissionService {
    */
   async exportToCSV(filters?: RetransmissionFilters): Promise<Blob> {
     const records = await this.getAll(filters);
-    
+
     const headers = [
       "ID",
       "Placa",
@@ -167,7 +179,7 @@ export class RetransmissionService {
       "Duración Sin Conexión (seg)",
       "Comentarios"
     ].join(",");
-    
+
     const rows = records.map(record => [
       record.id,
       record.vehiclePlate,
@@ -179,34 +191,21 @@ export class RetransmissionService {
       record.disconnectedDuration,
       `"${record.comments || ""}"`,
     ].join(","));
-    
+
     const csv = [headers, ...rows].join("\n");
     return new Blob([csv], { type: "text/csv;charset=utf-8;" });
   }
 
   /**
-   * Marca múltiples registros con el mismo comentario
+   * Marca multiples registros con el mismo comentario.
+   * 2026-05-03: agregado unwrap.
    */
   async bulkUpdateComments(recordIds: string[], comment: string): Promise<RetransmissionRecord[]> {
-    if (this.useMocks) {
-      await this.simulateDelay(500);
-      
-      const updatedRecords: RetransmissionRecord[] = [];
-      
-      for (const recordId of recordIds) {
-        const record = updateRetransmissionComment(recordId, comment);
-        if (record) {
-          updatedRecords.push(record);
-        }
-      }
-      
-      return updatedRecords;
-    }
-
-    return apiClient.patch<RetransmissionRecord[]>(`${API_ENDPOINTS.monitoring.retransmission}/bulk-comments`, {
+    const raw = await apiClient.patch<unknown>(`${API_ENDPOINTS.monitoring.retransmission}/bulk-comments`, {
       recordIds,
       comment,
     });
+    return unwrap<RetransmissionRecord[]>(raw);
   }
 }
 

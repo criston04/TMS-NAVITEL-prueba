@@ -1,0 +1,23 @@
+meta {
+  name: Find by RUC
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/master/operators/by-ruc/20987654321
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/operators/by-ruc/:ruc
+
+  **NOTE:** segun el codigo del frontend (`operators.service.ts`), el backend NO
+  expone `/by-ruc`. El service usa `getOptional` (404 -> null) como fallback.
+  Mantenemos el request para verificar si el backend lo implementa más adelante.
+}

@@ -54,7 +54,32 @@ import { ToastProvider, useToast } from "@/components/ui/toast";
 import { useGeofences } from "@/hooks/useGeofences";
 import { type MapLayerType } from "@/hooks/useLeafletMap";
 import { Geofence, GeofenceCategory } from "@/types/models/geofence";
-import { geofenceCategories, geofenceColors } from "@/mocks/master/geofences.mock";
+// Categorías y colores de geocercas (antes importadas de mocks)
+const geofenceCategories: Array<{
+  value: GeofenceCategory;
+  label: string;
+  description: string;
+  color: string;
+}> = [
+  { value: "warehouse", label: "Almacén", description: "Centro de almacenamiento", color: "#6366f1" },
+  { value: "customer", label: "Cliente", description: "Ubicación de cliente", color: "#10b981" },
+  { value: "plant", label: "Planta", description: "Planta industrial", color: "#f59e0b" },
+  { value: "port", label: "Puerto", description: "Puerto marítimo", color: "#0ea5e9" },
+  { value: "checkpoint", label: "Punto de control", description: "Checkpoint", color: "#8b5cf6" },
+  { value: "restricted", label: "Restringida", description: "Zona restringida", color: "#ef4444" },
+  { value: "delivery", label: "Entrega", description: "Zona de entrega", color: "#14b8a6" },
+  { value: "other", label: "Otra", description: "Otra categoría", color: "#64748b" },
+];
+const geofenceColors: Array<{ name: string; value: string }> = [
+  { name: "Indigo", value: "#6366f1" },
+  { name: "Esmeralda", value: "#10b981" },
+  { name: "Ámbar", value: "#f59e0b" },
+  { name: "Cielo", value: "#0ea5e9" },
+  { name: "Violeta", value: "#8b5cf6" },
+  { name: "Rojo", value: "#ef4444" },
+  { name: "Cian", value: "#06b6d4" },
+  { name: "Rosa", value: "#ec4899" },
+];
 import { cn } from "@/lib/utils";
 
 const GeofencesMapNew = dynamic(
@@ -308,8 +333,13 @@ function GeofencesPageContent() {
       }
       
       handleCancelEditing();
-    } catch {
-      showError("Error", "No se pudo guardar la geocerca");
+    } catch (error) {
+      // Mensaje especifico cuando backend responde 404 (endpoint no implementado)
+      const message = error instanceof Error && error.message
+        ? error.message
+        : "No se pudo guardar la geocerca";
+      showError("Error al guardar", message);
+      console.error("[GeofencesPage] Error al guardar:", error);
     }
   }, [formData, editingId, createGeofence, updateGeofence, handleCancelEditing, success, showError]);
   
@@ -739,7 +769,11 @@ function GeofencesPageContent() {
                     ) : (
                       <div className="divide-y divide-gray-200 dark:divide-slate-700">
                         {displayedGeofences.map((geofence) => {
-                          const CategoryIcon = CATEGORY_ICONS[geofence.category];
+                          // Fallback a MapPin si el backend devuelve una categoría
+                          // que el frontend no conoce (ej. "delivery_zone" en lugar
+                          // de "delivery"). Sin esto, <CategoryIcon> es undefined
+                          // y React lanza "Element type is invalid".
+                          const CategoryIcon = CATEGORY_ICONS[geofence.category] ?? MapPin;
                           return (
                             <div
                               key={geofence.id}
@@ -812,10 +846,10 @@ function GeofencesPageContent() {
                                     <Badge variant="outline" className="text-xs">
                                       {geofenceCategories.find((c) => c.value === geofence.category)?.label}
                                     </Badge>
-                                    {geofence.alerts.onEntry && (
+                                    {geofence.alerts?.onEntry && (
                                       <Badge variant="secondary" className="text-xs">Entrada</Badge>
                                     )}
-                                    {geofence.alerts.onExit && (
+                                    {geofence.alerts?.onExit && (
                                       <Badge variant="secondary" className="text-xs">Salida</Badge>
                                     )}
                                   </div>
@@ -830,7 +864,7 @@ function GeofencesPageContent() {
                 </>
               ) : (
                 /* Formulario de edición */
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full min-h-0">
                   <div className="p-4 border-b border-gray-200 dark:border-slate-700 shrink-0">
                     <div className="flex items-center justify-between">
                       <h2 className="text-lg font-bold">
@@ -841,8 +875,9 @@ function GeofencesPageContent() {
                       </Button>
                     </div>
                   </div>
-                  
-                  <div className="flex-1 overflow-y-auto p-4">
+
+                  {/* min-h-0 es CRITICO en flex-in-flex para que overflow-y-auto funcione */}
+                  <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     <GeofenceForm
                       formData={formData}
                       onFormDataChange={(data) => setFormData((prev) => ({ ...prev, ...data }))}

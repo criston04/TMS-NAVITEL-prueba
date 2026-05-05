@@ -1,0 +1,28 @@
+meta {
+  name: Invoices - list
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/finance/invoices?page=1&pageSize=20
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/invoices
+
+  Lista facturas. Envelope `{data: [], meta: {total, page, pageSize, totalPages}}`.
+
+  Filtros opcionales: `customerId`, `status`, `dateFrom`, `dateTo`, `search`.
+}

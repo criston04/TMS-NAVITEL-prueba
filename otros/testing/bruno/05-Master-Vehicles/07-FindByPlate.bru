@@ -1,0 +1,25 @@
+meta {
+  name: Find by plate (actualmente 404)
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/master/vehicles/by-plate/FOR-188
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/vehicles/by-plate/:plate
+
+  **ROTO: devuelve `404 Not Found` sin mensaje descriptivo.**
+  El endpoint probablemente no existe en el backend, o lo captura el handler de `/:id`.
+
+  **Workaround frontend:** usar `GET /master/vehicles?search=<plate>` y filtrar en cliente por `plate`.
+  Eso es lo que hace `vehiclesService.findByPlate()` en modo fallback.
+}

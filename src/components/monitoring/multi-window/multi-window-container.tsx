@@ -6,6 +6,7 @@ import { Wifi, WifiOff, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMultiWindow } from "@/hooks/monitoring/use-multi-window";
 import { useVehicleTracking } from "@/hooks/monitoring/use-vehicle-tracking";
+import { monitoringWebSocketService } from "@/services/monitoring/websocket.service";
 import { GridControls } from "./grid-controls";
 import { MultiWindowGrid } from "./multi-window-grid";
 import { VehicleSelectorModal } from "./vehicle-selector-modal";
@@ -149,11 +150,20 @@ export function MultiWindowContainer({
                   Tiempo real activo
                 </span>
               </>
-            ) : (
+            ) : monitoringWebSocketService.isWebSocketEnabled() ? (
+              // WS habilitado pero no conectado → realmente desconectado
               <>
                 <WifiOff className="h-4 w-4 text-red-500" />
                 <span className="text-sm text-red-600 dark:text-red-400">
                   Desconectado
+                </span>
+              </>
+            ) : (
+              // WS deshabilitado por config: usamos polling HTTP, que es estado valido
+              <>
+                <Wifi className="h-4 w-4 text-amber-500" />
+                <span className="text-sm text-amber-600 dark:text-amber-400">
+                  Actualizacion periodica
                 </span>
               </>
             )}

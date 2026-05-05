@@ -1,0 +1,37 @@
+meta {
+  name: Bulk delete geofences
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/master/geofences/bulk-delete
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "ids": [
+      "{{lastGeofenceId}}"
+    ]
+  }
+}
+
+docs {
+  # POST /geofences/bulk-delete — Eliminar varias
+
+  **Excel:** `Geofence | POST | /geofences/bulk-delete | Masivo eliminación lógica geocercas`
+
+  Body: `{ ids: string[] }` — array de UUIDs.
+
+  Para probar con multiples, pegar mas ids en el array manualmente.
+}

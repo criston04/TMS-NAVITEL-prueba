@@ -28,7 +28,25 @@
       "Bash(timeout 25 bash -c 'npx next dev --port 3095 &:*)",
       "Bash(timeout 25 bash -c \"npx next dev --webpack --port 3094 &:*)",
       "Bash(curl -s http://localhost:3000/)",
-      "Bash(curl -s http://localhost:3094/)"
+      "Bash(curl -s http://localhost:3094/)",
+      "Bash(curl -sS -o /tmp/resp.txt -w \"HTTP_STATUS:%{http_code}\\\\nLATENCY:%{time_total}s\\\\n\" -m 15 https://api-service.gruponavitel.com/api/v1/health)",
+      "Read(//tmp/**)",
+      "Bash(curl -sS -o /tmp/login.txt -w \"HTTP_STATUS:%{http_code}\\\\n\" -m 15 -X POST https://api-service.gruponavitel.com/api/v1/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin\",\"password\":\"Admin1432!\"}')",
+      "Bash(npx tsc *)",
+      "Bash(echo \"PID:$!\")",
+      "Bash(curl -sS -o /dev/null -w \"http://localhost:3000 = HTTP %{http_code}\\\\n\" -m 5 http://localhost:3000)",
+      "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code}\\\\n\" -m 5 http://localhost:3000)",
+      "Bash(curl -sS -H 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwidGVuYW50SWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoib3duZXIiLCJleHAiOjE3NzY0MjI4MDUsImlhdCI6MTc3NjQwMTIwNSwianRpIjoiQm9HTzREMmR3In0.YMyTAFUWa0WKQuhY0if4HL4fuQ5ODCqsdIbIzKOgAJs' -m 10 https://api-service.gruponavitel.com/api/v1/operations/scheduling/blocked-days)",
+      "Bash(curl -sS -H 'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwidGVuYW50SWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoib3duZXIiLCJleHAiOjE3NzY0MjI4MDUsImlhdCI6MTc3NjQwMTIwNSwianRpIjoiQm9HTzREMmR3In0.YMyTAFUWa0WKQuhY0if4HL4fuQ5ODCqsdIbIzKOgAJs' -m 10 https://api-service.gruponavitel.com/api/v1/master/customers)",
+      "Bash(python -c ' *)",
+      "Bash(pip install *)",
+      "WebSearch",
+      "Bash(cat)",
+      "Bash(bash /tmp/analyze_services.sh)",
+      "WebFetch(domain:tanstack.com)",
+      "WebFetch(domain:axios-http.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.stripe.com)"
     ]
   }
 }

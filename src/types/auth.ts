@@ -1097,10 +1097,15 @@ export function hasPermission(
   action: PermissionAction,
   customPermissions?: Permission[]
 ): boolean {
-  // Si hay permisos personalizados, usar esos
+  // Defensivo: el backend hoy devuelve roles en UPPERCASE ("OWNER") pero
+  // DEFAULT_ROLES está en lowercase ("owner"). Normalizamos para no romper
+  // si algo se filtra sin normalizar.
+  const normalizedRole = (typeof role === "string" ? role.toLowerCase() : role) as AnyRole;
+
+  // Si hay permisos personalizados (no vacíos), usar esos
   const permissions =
-    customPermissions ??
-    DEFAULT_ROLES.find((r) => r.code === role)?.permissions ??
+    (customPermissions && customPermissions.length > 0 ? customPermissions : undefined) ??
+    DEFAULT_ROLES.find((r) => r.code === normalizedRole)?.permissions ??
     [];
 
   const perm = permissions.find((p) => p.resource === resource);

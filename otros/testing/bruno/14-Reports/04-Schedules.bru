@@ -1,0 +1,21 @@
+meta {
+  name: Report schedules
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/reports/schedules
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /reports/schedules
+
+  Reportes programados (cron-like). Envelope `{data: []}`.
+}

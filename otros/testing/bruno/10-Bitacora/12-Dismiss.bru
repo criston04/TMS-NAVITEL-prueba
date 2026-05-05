@@ -1,0 +1,34 @@
+meta {
+  name: Dismiss entry
+  type: http
+  seq: 12
+}
+
+put {
+  url: {{baseUrl}}/bitacora/{{lastBitacoraEntryId}}/dismiss
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "reason": "falso positivo"
+  }
+}
+
+docs {
+  # PUT /bitacora/:id/dismiss
+
+  Descarta un entry (lo marca como `status: "dismissed"`).
+  Response minimo: `{data: {id, status}}`.
+
+  Transicion desde `active` → `dismissed`. No permite pasar a `completed` desde `dismissed`.
+}

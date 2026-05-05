@@ -1,0 +1,223 @@
+meta {
+  name: Create customer
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/master/customers
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "code": "CUST-BRUNO-219",
+    "type": "company",
+    "document_type": "RUC",
+    "document_number": "20123553789",
+    "name": "Cliente Bruno SA",
+    "trade_name": "Bruno Corp",
+    "email": "bruno@test.com",
+    "phone": "+51 999 888 777",
+    "phone2": "+51 999 888 778",
+    "website": "https://brunocorp.test",
+    "address": "Av. Bruno 123, Lima, Lima, PE",
+    "status": "active",
+    "category": "standard",
+    "credit_limit": 50000,
+    "credit_used": 0,
+    "notes": "Cliente generado desde Bruno",
+    "industry": "Logistics",
+    "tags": ["wholesale", "premium"],
+    "preferred_workflow_id": null,
+    "addresses": [
+      {
+        "id": "addr-001",
+        "label": "Sede principal",
+        "street": "Av. Bruno 123",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "PE",
+        "zip_code": "15001",
+        "reference": "Frente al parque",
+        "is_default": true,
+        "lat": -12.0837,
+        "lng": -77.0442
+      },
+      {
+        "id": "addr-002",
+        "label": "Almacén Callao",
+        "street": "Av. Argentina 4793",
+        "city": "Callao",
+        "state": "Callao",
+        "country": "PE",
+        "zip_code": "07041",
+        "is_default": false,
+        "lat": -12.0260,
+        "lng": -77.1180
+      }
+    ],
+    "contacts": [
+      {
+        "id": "ctc-001",
+        "name": "María Pérez",
+        "email": "maria.perez@brunocorp.test",
+        "phone": "+51 999 111 222",
+        "position": "Gerente de Logística",
+        "department": "Operaciones",
+        "is_primary": true,
+        "notify_deliveries": true,
+        "notify_incidents": true
+      },
+      {
+        "id": "ctc-002",
+        "name": "Juan Torres",
+        "email": "juan.torres@brunocorp.test",
+        "phone": "+51 999 222 333",
+        "position": "Asistente de Operaciones",
+        "department": "Logística",
+        "is_primary": false,
+        "notify_deliveries": true,
+        "notify_incidents": false
+      }
+    ],
+    "billing_config": {
+      "payment_terms": "30_days",
+      "currency": "PEN",
+      "requires_po": false,
+      "billing_email": "facturacion@brunocorp.test",
+      "volume_discount": 5
+    }
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastCustomerId", id);
+
+  // Espejo de mapCustomerToBackend()
+  const sent = {
+    code: "CUST-BRUNO-219",
+    type: "company",
+    document_type: "RUC",
+    document_number: "20123553789",
+    name: "Cliente Bruno SA",
+    trade_name: "Bruno Corp",
+    email: "bruno@test.com",
+    phone: "+51 999 888 777",
+    phone2: "+51 999 888 778",
+    website: "https://brunocorp.test",
+    address: "Av. Bruno 123, Lima, Lima, PE",
+    status: "active",
+    category: "standard",
+    credit_limit: 50000,
+    credit_used: 0,
+    notes: "Cliente generado desde Bruno",
+    industry: "Logistics",
+    tags: ["wholesale", "premium"],
+  };
+
+  function valueMatches(expected, got) {
+    if (got === null || got === undefined) return false;
+    if (Array.isArray(expected)) {
+      return Array.isArray(got) && JSON.stringify(got) === JSON.stringify(expected);
+    }
+    return got === expected;
+  }
+
+  console.log("===================================================");
+  console.log("            VERIFICACION CREATE CUSTOMER           ");
+  console.log("===================================================");
+  console.log("customer id:", id);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ---");
+
+  const ok = [], lost = [], mismatched = [];
+  for (const key of Object.keys(sent)) {
+    const expected = sent[key];
+    const got = obj[key];
+    if (got === null || got === undefined) {
+      lost.push(key);
+      console.log("  ❌", key.padEnd(22), "PERDIDO — env:", JSON.stringify(expected));
+    } else if (valueMatches(expected, got)) {
+      ok.push(key);
+      console.log("  ✅", key.padEnd(22), JSON.stringify(got));
+    } else {
+      mismatched.push(key);
+      console.log("  ⚠️ ", key.padEnd(22), "DIFIERE — env:", JSON.stringify(expected), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- SUB-OBJETOS / RELACIONALES ---");
+  console.log("  addresses[]:       ", Array.isArray(obj.addresses) && obj.addresses.length > 0 ? "✅ persistido (" + obj.addresses.length + ")" : "❌ DESCARTADO");
+  console.log("  contacts[]:        ", Array.isArray(obj.contacts)  && obj.contacts.length  > 0 ? "✅ persistido (" + obj.contacts.length + ")"  : "❌ DESCARTADO");
+  console.log("  billing_config:    ", obj.billing_config ? "✅ persistido" : "❌ DESCARTADO");
+
+  console.log("");
+  console.log("--- CAMPOS EXTRA QUE AGREGA EL BACKEND ---");
+  const expectedKeys = new Set([...Object.keys(sent), "id", "addresses", "contacts", "billing_config", "preferred_workflow_id"]);
+  const extras = Object.keys(obj).filter(k => !expectedKeys.has(k));
+  for (const k of extras) {
+    console.log("  +", k.padEnd(28), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("==================== RESUMEN ====================");
+  console.log("  OK:        ", String(ok.length).padEnd(3), "campos persistidos");
+  console.log("  PERDIDOS:  ", String(lost.length).padEnd(3), lost.length ? "→ " + lost.join(", ") : "");
+  console.log("  DIFIERE:   ", String(mismatched.length).padEnd(3), mismatched.length ? "→ " + mismatched.join(", ") : "");
+  console.log("  EXTRA BE:  ", String(extras.length).padEnd(3));
+  console.log("===================================================");
+}
+
+docs {
+  # POST /master/customers — payload IDÉNTICO al que produce el frontend hoy
+
+  Este body refleja exactamente lo que `mapCustomerToBackend()` genera tras los
+  fixes de 2026-04-30 (en particular: `lat`/`lng` PLANOS dentro de cada address,
+  no anidados en `coordinates`).
+
+  ## Lo que el backend persiste hoy (sniff 2026-04-29)
+  - Planos: `code, type, document_type/number, name, trade_name, email, phone,
+    phone2, website, address (string), status, category, credit_limit/used, notes`
+
+  ## ⚠ `type` solo persiste con valores en INGLÉS
+  - `"company"` ✅ → `"company"`
+  - `"person"` ✅ → `"person"`
+  - cualquier otro → `""` (vacío)
+
+  ## ⚠ Campos que la doc v3 Rev3 dice que persiste pero NO lo hace
+  Reportados en `BACKEND_GAPS.md`:
+  - `addresses[]` (array rico con lat/lng planos)
+  - `contacts[]`
+  - `billing_config`
+  - `industry`, `tags`, `preferred_workflow_id` (los devuelve siempre null)
+
+  ## ⚠ BUG CRÍTICO DEL BACKEND (descubierto 2026-05-01)
+
+  Si dentro de `billing_config` se envía el sub-objeto `billing_address`, el
+  backend responde **HTTP 500 Internal Server Error**.
+
+  El frontend (transformer) ya NO envía `billing_address`. Cuando el backend
+  arregle el bug (probablemente crear tabla `customer_billing_address` o
+  manejar el sub-objeto en su query), descomentar el bloque correspondiente
+  en `src/lib/transformers/customer.transformer.ts`.
+
+  ## Frontend
+  - Tipo: `src/types/models/customer.ts` → `Customer`
+  - Transformer: `src/lib/transformers/customer.transformer.ts` → `mapCustomerToBackend`
+}

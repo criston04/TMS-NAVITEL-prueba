@@ -124,8 +124,12 @@ export const WorkflowLayout = memo(function WorkflowLayout({
         success('Workflow creado correctamente');
       }
       setIsEditing(false);
-    } catch {
-      error('No se pudo guardar el workflow');
+    } catch (err) {
+      const message = err instanceof Error && err.message
+        ? err.message
+        : 'No se pudo guardar el workflow';
+      error(message);
+      console.error('[WorkflowLayout] Error al guardar workflow:', err);
     } finally {
       setIsSaving(false);
     }

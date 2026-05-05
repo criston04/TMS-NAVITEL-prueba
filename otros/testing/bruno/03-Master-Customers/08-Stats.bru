@@ -1,0 +1,21 @@
+meta {
+  name: Stats
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/master/customers/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/customers/stats
+  **Excel:** `GET /api/v1/master/customers/stats`
+  Devuelve totales por estado, tipo, categoria, etc.
+}

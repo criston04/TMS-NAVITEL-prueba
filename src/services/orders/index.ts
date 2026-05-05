@@ -1,8 +1,8 @@
 export { orderService, OrderService } from './OrderService';
 export type { IOrderService } from './OrderService';
 
-export { workflowService, WorkflowService } from './WorkflowService';
-export type { IWorkflowService } from './WorkflowService';
+// NOTA: `WorkflowService` (orders) se eliminó el 2026-05-02 por ser duplicado
+// sin consumers. Usar `unifiedWorkflowService` desde `@/services/workflow.service`.
 
 export { orderImportService, OrderImportService, EXPECTED_COLUMNS } from './OrderImportService';
 

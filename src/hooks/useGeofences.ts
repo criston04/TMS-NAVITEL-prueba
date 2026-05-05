@@ -339,14 +339,18 @@ export function useGeofences(options: UseGeofencesOptions = {}): UseGeofencesRet
   }, []);
   
   const updateCategoryBatch = useCallback(async (
-    ids: string[], 
+    ids: string[],
     category: GeofenceCategory
   ): Promise<void> => {
-    await Promise.all(ids.map((id) => updateGeofence(id, { category })));
-  }, [updateGeofence]);
+    // 1 sola request al endpoint batch del backend (PATCH /geofences/batch-category)
+    await geofencesService.updateCategoryBatch(ids, category);
+    await loadGeofences();
+  }, [loadGeofences]);
   
   const toggleStatusBatch = useCallback(async (ids: string[]): Promise<void> => {
-    await Promise.all(ids.map((id) => geofencesService.toggleStatus(id)));
+    // 1 sola request al endpoint batch del backend en lugar de N llamadas
+    // (que disparan rate-limit 429 en cuanto pasas de ~5 ids).
+    await geofencesService.toggleStatusBatch(ids);
     await loadGeofences();
   }, [loadGeofences]);
   

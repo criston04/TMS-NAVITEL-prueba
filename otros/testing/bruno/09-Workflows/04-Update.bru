@@ -1,0 +1,38 @@
+meta {
+  name: Update workflow
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/workflows/{{lastWorkflowId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "WF Trigger Test Bruno EDITADO",
+    "description": "actualizado via Bruno"
+  }
+}
+
+docs {
+  # PUT /workflows/:id
+
+  Partial update. **Shape minimo en response:**
+  ```
+  {"data": {"id": "...", "updated": true}}
+  ```
+
+  Idealmente deberia devolver el workflow completo (como hacen customers/drivers/vehicles).
+  Para refrescar la UI hay que hacer un GET /:id adicional.
+}

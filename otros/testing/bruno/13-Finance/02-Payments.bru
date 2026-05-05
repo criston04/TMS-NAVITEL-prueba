@@ -1,0 +1,28 @@
+meta {
+  name: Payments - list
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/finance/payments?page=1&pageSize=20
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/payments
+
+  Lista pagos. Envelope `{data: [], meta: {total, page, pageSize}}`.
+
+  Filtros opcionales: `invoiceId`, `customerId`, `dateFrom`, `dateTo`, `paymentMethod`.
+}

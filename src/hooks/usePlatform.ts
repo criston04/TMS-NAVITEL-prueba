@@ -39,6 +39,7 @@ import {
   platformDashboardService,
   fleetGroupService,
 } from "@/services/platform.service";
+import { isBackendNotImplemented } from "@/services/missing-endpoint-helper";
 
 // ════════════════════════════════════════════════════════
 // TIPOS
@@ -89,6 +90,20 @@ export function usePlatform() {
   const setLoading = (isLoading: boolean) => setState((s) => ({ ...s, isLoading, error: null }));
   const setError = (error: string) => setState((s) => ({ ...s, isLoading: false, error }));
 
+  /**
+   * 2026-05-03 (issue B.1): el módulo /platform es uno de los 6 fantasma —
+   * backend NO lo tiene implementado. Cuando un endpoint devuelve 404, en
+   * vez de mostrar "Error" al usuario master, mostramos un mensaje claro:
+   * "Módulo en construcción".
+   */
+  const handleErrorOrPending = (err: unknown, fallbackMessage: string) => {
+    if (isBackendNotImplemented(err)) {
+      setError("Módulo de Plataforma pendiente del backend (en construcción).");
+      return;
+    }
+    setError(err instanceof Error ? err.message : fallbackMessage);
+  };
+
   // ── TENANTS ────────────────────────────────────
 
   const fetchTenants = useCallback(async (params?: SearchParams) => {
@@ -103,7 +118,7 @@ export function usePlatform() {
       }));
       return result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar tenants");
+      handleErrorOrPending(err, "Error al cargar tenants");
       throw err;
     }
   }, []);
@@ -115,7 +130,7 @@ export function usePlatform() {
       setState((s) => ({ ...s, selectedTenant: tenant, isLoading: false }));
       return tenant;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar tenant");
+      handleErrorOrPending(err, "Error al cargar tenant");
       throw err;
     }
   }, []);
@@ -132,7 +147,7 @@ export function usePlatform() {
       }));
       return tenant;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al crear tenant");
+      handleErrorOrPending(err, "Error al crear tenant");
       throw err;
     }
   }, []);
@@ -149,7 +164,7 @@ export function usePlatform() {
       }));
       return updated;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al actualizar tenant");
+      handleErrorOrPending(err, "Error al actualizar tenant");
       throw err;
     }
   }, []);
@@ -166,7 +181,7 @@ export function usePlatform() {
       }));
       return suspended;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al suspender tenant");
+      handleErrorOrPending(err, "Error al suspender tenant");
       throw err;
     }
   }, []);
@@ -183,7 +198,7 @@ export function usePlatform() {
       }));
       return reactivated;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al reactivar tenant");
+      handleErrorOrPending(err, "Error al reactivar tenant");
       throw err;
     }
   }, []);
@@ -200,7 +215,7 @@ export function usePlatform() {
         isLoading: false,
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al eliminar tenant");
+      handleErrorOrPending(err, "Error al eliminar tenant");
       throw err;
     }
   }, []);
@@ -214,7 +229,7 @@ export function usePlatform() {
       setState((s) => ({ ...s, tenantModules: modules, isLoading: false }));
       return modules;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar módulos");
+      handleErrorOrPending(err, "Error al cargar módulos");
       throw err;
     }
   }, []);
@@ -226,7 +241,7 @@ export function usePlatform() {
       setState((s) => ({ ...s, tenantModules: modules, isLoading: false }));
       return modules;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al actualizar módulos");
+      handleErrorOrPending(err, "Error al actualizar módulos");
       throw err;
     }
   }, []);
@@ -244,7 +259,7 @@ export function usePlatform() {
       setState((s) => ({ ...s, isLoading: false }));
       return user;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al crear usuario maestro");
+      handleErrorOrPending(err, "Error al crear usuario maestro");
       throw err;
     }
   }, []);
@@ -256,7 +271,7 @@ export function usePlatform() {
       setState((s) => ({ ...s, isLoading: false }));
       return result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al forzar reset de contraseña");
+      handleErrorOrPending(err, "Error al forzar reset de contraseña");
       throw err;
     }
   }, []);
@@ -275,7 +290,7 @@ export function usePlatform() {
       }));
       return result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar transferencias");
+      handleErrorOrPending(err, "Error al cargar transferencias");
       throw err;
     }
   }, []);
@@ -292,7 +307,7 @@ export function usePlatform() {
       }));
       return transfer;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al crear transferencia");
+      handleErrorOrPending(err, "Error al crear transferencia");
       throw err;
     }
   }, []);
@@ -308,7 +323,7 @@ export function usePlatform() {
       }));
       return updated;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al aprobar transferencia");
+      handleErrorOrPending(err, "Error al aprobar transferencia");
       throw err;
     }
   }, []);
@@ -324,7 +339,7 @@ export function usePlatform() {
       }));
       return updated;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al ejecutar transferencia");
+      handleErrorOrPending(err, "Error al ejecutar transferencia");
       throw err;
     }
   }, []);
@@ -340,7 +355,7 @@ export function usePlatform() {
       }));
       return updated;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al rechazar transferencia");
+      handleErrorOrPending(err, "Error al rechazar transferencia");
       throw err;
     }
   }, []);
@@ -354,7 +369,7 @@ export function usePlatform() {
       setState((s) => ({ ...s, dashboard, isLoading: false }));
       return dashboard;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar dashboard");
+      handleErrorOrPending(err, "Error al cargar dashboard");
       throw err;
     }
   }, []);
@@ -370,7 +385,7 @@ export function usePlatform() {
       }));
       return result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar actividad");
+      handleErrorOrPending(err, "Error al cargar actividad");
       throw err;
     }
   }, []);
@@ -384,7 +399,7 @@ export function usePlatform() {
       setState((s) => ({ ...s, fleetGroups: groups, isLoading: false }));
       return groups;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar grupos de flota");
+      handleErrorOrPending(err, "Error al cargar grupos de flota");
       throw err;
     }
   }, []);
@@ -401,7 +416,7 @@ export function usePlatform() {
         }));
         return group;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al crear grupo de flota");
+        handleErrorOrPending(err, "Error al crear grupo de flota");
         throw err;
       }
     },
@@ -420,7 +435,7 @@ export function usePlatform() {
         }));
         return updated;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al actualizar grupo de flota");
+        handleErrorOrPending(err, "Error al actualizar grupo de flota");
         throw err;
       }
     },
@@ -437,7 +452,7 @@ export function usePlatform() {
         isLoading: false,
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al eliminar grupo de flota");
+      handleErrorOrPending(err, "Error al eliminar grupo de flota");
       throw err;
     }
   }, []);

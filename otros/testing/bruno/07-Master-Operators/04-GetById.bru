@@ -1,0 +1,25 @@
+meta {
+  name: Get operator by id
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/master/operators/{{lastOperatorId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/operators/:id
+
+  **BLOQUEADO por BUG #4:** no hay registros en BD porque `POST /operators` rechaza todos los
+  valores posibles de `type` (`propio`, `tercero`, `asociado` → `1007 "type no valido"`).
+
+  Cuando el backend confirme los valores validos del enum `operator.type`, correr primero
+  `02-Create.bru` para sembrar un registro y este endpoint funcionara.
+}

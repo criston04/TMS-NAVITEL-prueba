@@ -1,0 +1,39 @@
+meta {
+  name: Batch category
+  type: http
+  seq: 12
+}
+
+patch {
+  url: {{baseUrl}}/master/geofences/batch-category
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "ids": [
+      "{{lastGeofenceId}}"
+    ],
+    "category": "warehouse"
+  }
+}
+
+docs {
+  # PATCH /geofences/batch-category — Categoria masivo
+
+  **Excel:** `Geofence | PATCH | /geofences/batch-category | Actualizar category para múltiples geocercas`
+
+  Body: `{ ids: string[], category: GeofenceCategory }`
+
+  Valores validos de category:
+  `warehouse`, `customer`, `plant`, `port`, `checkpoint`, `restricted`, `delivery`, `other`
+}

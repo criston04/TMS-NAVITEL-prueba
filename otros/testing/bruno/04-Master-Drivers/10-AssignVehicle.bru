@@ -1,0 +1,36 @@
+meta {
+  name: Assign vehicle (workaround via PUT)
+  type: http
+  seq: 10
+}
+
+put {
+  url: {{baseUrl}}/master/drivers/{{lastDriverId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "assigned_vehicle_id": "{{lastVehicleId}}"
+  }
+}
+
+docs {
+  # Asignar vehiculo a driver
+
+  **No existe endpoint dedicado `/assign-vehicle`** (backend responde 404).
+
+  En su lugar usamos el PUT genérico con el campo `assigned_vehicle_id`.
+  Para desasignar, mandar `"assigned_vehicle_id": null`.
+
+  **Requisito:** correr antes `05-Master-Vehicles/02-Create.bru` para setear `lastVehicleId`.
+}

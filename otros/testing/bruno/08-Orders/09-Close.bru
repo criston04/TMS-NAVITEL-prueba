@@ -1,0 +1,38 @@
+meta {
+  name: Close order (POD)
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/orders/{{lastOrderId}}/close
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "actual_pickup_at": "2026-04-22T08:15:00.000Z",
+    "actual_delivery_at": "2026-04-22T13:50:00.000Z",
+    "actual_distance_km": 14.2,
+    "actual_duration_min": 335,
+    "pod_signature_url": "https://files.test/orders/pod-bruno-001.png",
+    "receiver_name": "María Pérez",
+    "notes": "Entregado conforme. Cliente firmó POD."
+  }
+}
+
+docs {
+  # POST /orders/:id/close — Cerrar orden con Proof of Delivery
+
+  Endpoint que el frontend invoca desde `OrderService.closeOrder()`.
+  Marca la orden como entregada (status=delivered) y persiste el POD.
+}

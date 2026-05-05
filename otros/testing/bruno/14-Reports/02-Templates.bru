@@ -1,0 +1,21 @@
+meta {
+  name: Report templates
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/reports/templates
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /reports/templates
+
+  Plantillas de reportes. Envelope `{data: []}`.
+}

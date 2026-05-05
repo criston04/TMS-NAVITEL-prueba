@@ -1,0 +1,40 @@
+meta {
+  name: Schedule report (recurring)
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/reports/schedules
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "definitionId": "fleet-summary",
+    "name": "Resumen flota mensual",
+    "format": "pdf",
+    "frequency": "monthly",
+    "recipients": ["admin@test.com"]
+  }
+}
+
+docs {
+  # POST /reports/schedules
+
+  **Campos requeridos (error VALIDATION_ERROR si faltan):**
+  `definitionId`, `name`, `frequency`, `format`.
+
+  ⚠ `frequency` (NO `cronExpression`): valores `daily`, `weekly`, `monthly`, `quarterly`, `yearly`.
+
+  Requiere `definitionId` existente (sino 404 DEFINITION_NOT_FOUND).
+}

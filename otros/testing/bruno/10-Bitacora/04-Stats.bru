@@ -1,0 +1,25 @@
+meta {
+  name: Stats
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/bitacora/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /bitacora/stats
+
+  **Funciona bien** (a diferencia de stats de master que tienen BUG #1).
+
+  Response: `{data: {total, active, completed, reviewed, orderCreated, dismissed, severityLow, severityMedium, severityHigh, severityCritical}}`.
+
+  Campos pueden venir en `null` si no hay entries para esa categoria.
+}

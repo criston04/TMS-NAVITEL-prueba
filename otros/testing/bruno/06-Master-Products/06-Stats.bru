@@ -1,0 +1,23 @@
+meta {
+  name: Stats (BUG #1 - actualmente 404)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/master/products/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/products/stats
+
+  **ROTO: devuelve `404 "Product no encontrado"`** — mismo BUG #1.
+
+  Frontend hace fallback calculando stats desde el listado.
+}

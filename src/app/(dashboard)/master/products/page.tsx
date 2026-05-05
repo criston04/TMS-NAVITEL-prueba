@@ -293,6 +293,10 @@ export default function ProductsPage() {
   const handleFormSubmit = useCallback(async (data: ProductFormData) => {
     setIsSubmitting(true);
     try {
+      // `isDangerous` puede venir explícito del form o derivarse de category="peligroso".
+      // Esto es lo que el transformer manda como `is_hazardous` al backend.
+      const isDangerous = data.isDangerous || data.category === "peligroso";
+
       const dto: CreateProductDTO = {
         sku: data.sku,
         name: data.name,
@@ -313,6 +317,8 @@ export default function ProductsPage() {
           stackable: data.stackable,
           maxStackHeight: data.maxStackHeight,
         },
+        isDangerous,
+        hazardousClass: data.hazardousClass || undefined,
         customerId: data.customerId || undefined,
         notes: data.notes || undefined,
       };

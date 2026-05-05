@@ -1,0 +1,26 @@
+meta {
+  name: List vehicles
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/master/vehicles?page=1&pageSize=5
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 5
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/vehicles
+
+  Proposito: ver si usa `plate`, `brand`, `model` limpio o con prefijo `v*`.
+}

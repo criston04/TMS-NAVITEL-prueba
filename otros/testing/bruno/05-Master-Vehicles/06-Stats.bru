@@ -1,0 +1,25 @@
+meta {
+  name: Stats (BUG #1 - actualmente 404)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/master/vehicles/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/vehicles/stats
+
+  **ROTO: devuelve `404 "Vehicle no encontrado"` por BUG #1** (el router resuelve `/:id` antes).
+
+  Fix backend: reordenar rutas en el router — especificas ANTES de `/:id`.
+
+  El frontend (`vehiclesService.getStats`) tiene fallback: calcula stats a partir del listado real si esto da 404.
+}

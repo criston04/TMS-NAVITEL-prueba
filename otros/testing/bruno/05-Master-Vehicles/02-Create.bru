@@ -1,0 +1,223 @@
+meta {
+  name: Create vehicle
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/master/vehicles
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "code": "VEH-001",
+    "plate": "ABC-123",
+    "type": "truck",
+    "body_type": "furgon",
+    "trailer_plate": null,
+    "brand": "Volvo",
+    "model": "FH16",
+    "year": 2024,
+    "vin": "YV2RT40A8XB123456",
+    "color": "Blanco",
+    "fuel_type": "diesel",
+    "operational_status": "available",
+    "status": "active",
+    "current_mileage": 0,
+    "gps_device_id": null,
+    "operator_id": null,
+    "notes": "Vehículo de prueba",
+    "capacity_kg": 25000,
+    "capacity_m3": 80,
+    "specs": {
+      "engine_type": "diesel",
+      "engine_displacement": 16.0,
+      "engine_number": "VEMD12345",
+      "chassis_number": "YV2RT40A8XB123456",
+      "axles": 3,
+      "tires": 10,
+      "fuel_tank_capacity": 600,
+      "transmission": "automatic"
+    },
+    "capacity": {
+      "max_weight_kg": 25000,
+      "max_volume_m3": 80,
+      "max_pallets": 33,
+      "gross_weight": 40000,
+      "tare_weight": 15000
+    },
+    "insurance": {
+      "id": "pol-soat-001",
+      "type": "SOAT",
+      "policy_number": "POL-SOAT-2026",
+      "insurer": "Rímac",
+      "start_date": "2026-01-01",
+      "end_date": "2027-01-01",
+      "coverage_amount": 100000
+    },
+    "insurance_policies": [
+      {
+        "id": "pol-soat-001",
+        "type": "SOAT",
+        "policy_number": "POL-SOAT-2026",
+        "insurer": "Rímac",
+        "start_date": "2026-01-01",
+        "end_date": "2027-01-01",
+        "coverage_amount": 100000
+      },
+      {
+        "id": "pol-tr-001",
+        "type": "todo_riesgo",
+        "policy_number": "POL-TR-2026",
+        "insurer": "Pacífico",
+        "start_date": "2026-01-01",
+        "end_date": "2027-01-01",
+        "coverage_amount": 500000
+      }
+    ],
+    "registration": {
+      "registration_number": "REG-001-2024",
+      "owner_name": "Transportes Navitel S.A.",
+      "owner_document": "20100100100",
+      "registration_date": "2024-03-15",
+      "registry_office": "SUNARP Lima"
+    },
+    "documents": [
+      {
+        "id": "doc-soat",
+        "name": "SOAT",
+        "is_required": true,
+        "status": "valid",
+        "expiration_date": "2027-01-01",
+        "file_url": "https://storage.test/soat.pdf"
+      },
+      {
+        "id": "doc-rt",
+        "name": "Revisión Técnica",
+        "is_required": true,
+        "status": "valid",
+        "expiration_date": "2026-09-30",
+        "file_url": "https://storage.test/rt.pdf"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastVehicleId", id);
+
+  // Espejo de mapVehicleToBackend()
+  const sent = {
+    code: "VEH-001",
+    plate: "ABC-123",
+    type: "truck",
+    body_type: "furgon",
+    brand: "Volvo",
+    model: "FH16",
+    year: 2024,
+    vin: "YV2RT40A8XB123456",
+    color: "Blanco",
+    fuel_type: "diesel",
+    operational_status: "available",
+    status: "active",
+    current_mileage: 0,
+    notes: "Vehículo de prueba",
+    capacity_kg: 25000,
+    capacity_m3: 80,
+  };
+
+  function valueMatches(expected, got) {
+    if (got === null || got === undefined) return false;
+    return got === expected;
+  }
+
+  console.log("===================================================");
+  console.log("            VERIFICACION CREATE VEHICLE            ");
+  console.log("===================================================");
+  console.log("vehicle id:", id);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ---");
+
+  const ok = [], lost = [], mismatched = [];
+  for (const key of Object.keys(sent)) {
+    const expected = sent[key];
+    const got = obj[key];
+    if (got === null || got === undefined) {
+      lost.push(key);
+      console.log("  ❌", key.padEnd(22), "PERDIDO — env:", JSON.stringify(expected));
+    } else if (valueMatches(expected, got)) {
+      ok.push(key);
+      console.log("  ✅", key.padEnd(22), JSON.stringify(got));
+    } else {
+      mismatched.push(key);
+      console.log("  ⚠️ ", key.padEnd(22), "DIFIERE — env:", JSON.stringify(expected), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- CAMPOS NULL (esperado: trailer_plate, gps_device_id, operator_id) ---");
+  for (const k of ["trailer_plate", "gps_device_id", "operator_id"]) {
+    console.log("  ", k.padEnd(22), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("--- SUB-OBJETOS / RELACIONALES ---");
+  console.log("  specs{}:           ", obj.specs              ? "✅ persistido" : "❌ DESCARTADO");
+  console.log("  capacity{}:        ", obj.capacity           ? "✅ persistido" : "❌ DESCARTADO");
+  console.log("  insurance{}:       ", obj.insurance          ? "✅ persistido" : "❌ DESCARTADO");
+  console.log("  insurance_policies:", Array.isArray(obj.insurance_policies) ? "✅ persistido (" + obj.insurance_policies.length + ")" : "❌ DESCARTADO");
+  console.log("  registration{}:    ", obj.registration       ? "✅ persistido" : "❌ DESCARTADO");
+  console.log("  documents[]:       ", Array.isArray(obj.documents) && obj.documents.length > 0 ? "✅ persistido (" + obj.documents.length + ")" : "❌ DESCARTADO");
+
+  console.log("");
+  console.log("--- CAMPOS EXTRA QUE AGREGA EL BACKEND ---");
+  const expectedKeys = new Set([...Object.keys(sent), "id", "trailer_plate", "gps_device_id", "operator_id", "specs", "capacity", "insurance", "insurance_policies", "registration", "documents"]);
+  const extras = Object.keys(obj).filter(k => !expectedKeys.has(k));
+  for (const k of extras) {
+    console.log("  +", k.padEnd(28), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("==================== RESUMEN ====================");
+  console.log("  OK:        ", String(ok.length).padEnd(3));
+  console.log("  PERDIDOS:  ", String(lost.length).padEnd(3), lost.length ? "→ " + lost.join(", ") : "");
+  console.log("  DIFIERE:   ", String(mismatched.length).padEnd(3), mismatched.length ? "→ " + mismatched.join(", ") : "");
+  console.log("  EXTRA BE:  ", String(extras.length).padEnd(3));
+  console.log("===================================================");
+}
+
+docs {
+  # POST /master/vehicles — payload IDÉNTICO al que produce el frontend hoy
+
+  Refleja `mapVehicleToBackend()` tras los fixes de 2026-04-30:
+  - Ahora se manda `insurance` SINGULAR (la primera póliza) además del array
+    `insurance_policies` completo. Esto porque la doc del backend dice que
+    el POST acepta `insurance` como objeto singular.
+
+  ## ⚠ Sub-objetos NO persistidos (BACKEND_GAPS.md)
+  El backend acepta el body completo (no devuelve 400) pero solo persiste los
+  planos. Estos sub-objetos quedan en deuda:
+  - `specs{}` (engine_number, axles, tires, transmission, …)
+  - `capacity{}` (max_weight_kg, max_pallets, gross/tare weight)
+  - `insurance{}` y `insurance_policies[]`
+  - `registration{}` (SUNARP)
+  - `documents[]` (SOAT, RT)
+
+  ## ⚠ Bug del backend
+  - `code` se envía pero el backend siempre lo devuelve `null`
+}

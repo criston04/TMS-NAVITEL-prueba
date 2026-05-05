@@ -32,6 +32,7 @@ import {
   StickyNote,
 } from 'lucide-react';
 import type { BitacoraEntry } from '@/types/bitacora';
+import { useEntityCache } from '@/contexts/entity-cache-context';
 
 interface EntryDetailModalProps {
   open: boolean;
@@ -99,6 +100,9 @@ export function EntryDetailModal({
   onOpenChange,
   entry,
 }: EntryDetailModalProps) {
+  // Hooks SIEMPRE al inicio — no se pueden llamar después del early return.
+  const { getVehiclePlate, getDriverName } = useEntityCache();
+
   if (!entry) return null;
 
   const statusConf = STATUS_CONFIG[entry.status] || STATUS_CONFIG.active;
@@ -333,8 +337,8 @@ export function EntryDetailModal({
             <Shield className="h-3 w-3" />
             ID: {entry.id}
           </div>
-          <span>Vehículo ID: {entry.vehicleId}</span>
-          {entry.driverId && <span>Conductor ID: {entry.driverId}</span>}
+          <span>Vehículo: {getVehiclePlate(entry.vehicleId)}</span>
+          {entry.driverId && <span>Conductor: {getDriverName(entry.driverId)}</span>}
         </div>
 
         <div className="flex justify-end">

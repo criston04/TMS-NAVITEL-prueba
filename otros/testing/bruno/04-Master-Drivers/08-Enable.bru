@@ -1,0 +1,35 @@
+meta {
+  name: Enable driver (workaround via PUT)
+  type: http
+  seq: 8
+}
+
+put {
+  url: {{baseUrl}}/master/drivers/{{lastDriverId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "active",
+    "availability": "available"
+  }
+}
+
+docs {
+  # Habilitar driver
+
+  **No existe endpoint dedicado `/enable`** (backend responde 404 Not Found).
+
+  En su lugar usamos el PUT genérico con `status: "active"`.
+  El frontend hace lo mismo en `driversService.enable()`.
+}

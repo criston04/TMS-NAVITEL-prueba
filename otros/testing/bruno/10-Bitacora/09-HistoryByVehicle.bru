@@ -1,0 +1,21 @@
+meta {
+  name: History by vehicle
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/bitacora/vehicle/{{lastVehicleId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /bitacora/vehicle/:vehicleId
+
+  Historial de entries filtrado por vehiculo. Envelope `{data: [...]}`.
+}

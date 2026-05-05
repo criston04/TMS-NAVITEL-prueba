@@ -1,0 +1,21 @@
+meta {
+  name: Notifications
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/operations/scheduling/notifications
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /operations/scheduling/notifications
+
+  Notificaciones del modulo de scheduling. Envelope `{data: []}`.
+}

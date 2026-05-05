@@ -186,11 +186,12 @@ function OrderStatsCardsComponent({
   activeStatus,
   className,
 }: Readonly<OrderStatsCardsProps>) {
-  // Calcular totales
+  // Calcular totales (defensivo: statusCounts puede llegar undefined si el backend no lo envia)
   const totals = useMemo(() => {
-    const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
-    const active = statusCounts.in_transit + statusCounts.at_milestone + statusCounts.assigned;
-    const attention = statusCounts.delayed + statusCounts.pending;
+    const counts = statusCounts ?? ({} as Record<string, number>);
+    const total = Object.values(counts).reduce((a, b) => (a ?? 0) + (b ?? 0), 0);
+    const active = (counts.in_transit ?? 0) + (counts.at_milestone ?? 0) + (counts.assigned ?? 0);
+    const attention = (counts.delayed ?? 0) + (counts.pending ?? 0);
     return { total, active, attention };
   }, [statusCounts]);
 

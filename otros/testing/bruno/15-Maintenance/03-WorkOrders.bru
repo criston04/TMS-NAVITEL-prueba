@@ -1,0 +1,27 @@
+meta {
+  name: Work orders
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/maintenance/work-orders?page=1&pageSize=20
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/work-orders
+
+  Ordenes de trabajo de mantenimiento.
+  Envelope `{data: [], meta: {total, page, pageSize}}`.
+}

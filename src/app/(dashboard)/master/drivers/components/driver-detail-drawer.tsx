@@ -240,7 +240,10 @@ export function DriverDetailDrawer({
   const driverLicenseNumber = driver.license?.number || (driverAny.licenseNumber as string) || "";
   const driverLicenseExpiry = driver.license?.expiryDate || (driverAny.licenseExpiry as string);
 
-  const statusConfig = STATUS_CONFIG[driver.status];
+  // 2026-05-03 (issue HIGH #19): fallback a "inactive" si llega un status no
+  // listado (ej. el backend agrega un valor nuevo y la UI no se actualizó).
+  // Antes el código crasheaba con "Cannot read property 'bgLight' of undefined".
+  const statusConfig = STATUS_CONFIG[driver.status] ?? STATUS_CONFIG.inactive;
   const initials = driverFullName.split(" ").map(n => n[0]).join("").slice(0, 2);
 
   // Calcular estado de documentos

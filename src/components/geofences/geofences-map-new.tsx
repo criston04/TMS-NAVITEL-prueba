@@ -158,16 +158,25 @@ export const GeofencesMapNew = forwardRef<GeofencesMapNewRef, GeofencesMapNewPro
       createGeofenceLayers();
     }, [isMapReady, createGeofenceLayers]);
     
-    // Zoom a geocerca
+    // Zoom a geocerca (defensivo: skip si no hay bounds validos — geofences sin geometria)
     const zoomToGeofence = useCallback((id: string) => {
       const layer = geofenceLayersRef.current.get(id);
       if (layer && leafletMap) {
-        if ("getBounds" in layer) {
-          leafletMap.fitBounds((layer as L.Polygon).getBounds(), { padding: [50, 50] });
-        } else if ("getLatLng" in layer) {
-          const circle = layer as L.Circle;
-          const center = circle.getLatLng();
-          leafletMap.setView(center, 14);
+        try {
+          if ("getBounds" in layer) {
+            const bounds = (layer as L.Polygon).getBounds();
+            if (bounds.isValid()) {
+              leafletMap.fitBounds(bounds, { padding: [50, 50] });
+            } else {
+              console.warn(`[GeofencesMap] Geocerca ${id} no tiene geometria valida, skip zoom`);
+            }
+          } else if ("getLatLng" in layer) {
+            const circle = layer as L.Circle;
+            const center = circle.getLatLng();
+            leafletMap.setView(center, 14);
+          }
+        } catch (err) {
+          console.warn(`[GeofencesMap] Error al hacer zoom a ${id}:`, err);
         }
       }
     }, [leafletMap]);
@@ -189,10 +198,17 @@ export const GeofencesMapNew = forwardRef<GeofencesMapNewRef, GeofencesMapNewPro
         leafletMap.addLayer(layer);
         currentEditingLayerRef.current = layer;
         enableEditing(layer);
-        
-        // Zoom a la geocerca
-        if ("getBounds" in layer) {
-          leafletMap.fitBounds((layer as L.Polygon).getBounds(), { padding: [50, 50] });
+
+        // Zoom a la geocerca (defensivo: skip si bounds invalidos)
+        try {
+          if ("getBounds" in layer) {
+            const bounds = (layer as L.Polygon).getBounds();
+            if (bounds.isValid()) {
+              leafletMap.fitBounds(bounds, { padding: [50, 50] });
+            }
+          }
+        } catch (err) {
+          console.warn(`[GeofencesMap] No se pudo hacer zoom al editar ${id}:`, err);
         }
       }
     }, [geofences, leafletMap, createLayerFromGeofence, enableEditing]);

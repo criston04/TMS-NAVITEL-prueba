@@ -1,0 +1,81 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{rootUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "username": "{{username}}",
+    "password": "{{password}}"
+  }
+}
+
+script:post-response {
+  // v3 Rev3 response shape:
+  //   { success: true, data: { user: {...}, accessToken: "...", refreshToken: "..." } }
+  // Fallbacks por si volvemos a una respuesta legacy.
+  const body = res.getBody();
+  if (body) {
+    const data = body.data || body;
+    const accessToken = data.accessToken
+      || data.access_token
+      || data.token
+      || body.accessToken
+      || body.token;
+    const refreshToken = data.refreshToken
+      || data.refresh_token
+      || body.refreshToken;
+
+    if (accessToken) {
+      bru.setEnvVar("authToken", accessToken);
+      console.log("[Login] authToken (accessToken) guardado");
+    } else {
+      console.warn("[Login] No encontre accessToken en el body:", body);
+    }
+    if (refreshToken) {
+      bru.setEnvVar("refreshToken", refreshToken);
+      console.log("[Login] refreshToken guardado");
+    }
+  }
+}
+
+docs {
+  # POST /auth/login (v3 Rev3 — actualizado a v3 Rev3 — 2026-04-27)
+
+  Endpoint SIN prefijo `/api/v1` (sale del `rootUrl`).
+
+  ## Request
+  ```json
+  { "username": "admin", "password": "..." }
+  ```
+  Nota: el campo es `username`, NO `email`.
+
+  ## Response v3 Rev3
+  ```json
+  {
+    "success": true,
+    "data": {
+      "user": { "id": "...", "username": "...", "email": "...", "role": "..." },
+      "accessToken": "<jwt>",
+      "refreshToken": "<jwt>"
+    }
+  }
+  ```
+
+  El script post-response guarda:
+  - `authToken` ← `data.accessToken`
+  - `refreshToken` ← `data.refreshToken`
+
+  Si el access token expira el frontend hace `POST /auth/refresh` automáticamente — ver `Refresh.bru`.
+}

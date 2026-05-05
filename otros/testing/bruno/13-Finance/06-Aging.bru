@@ -1,0 +1,23 @@
+meta {
+  name: Accounts receivable aging
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/finance/aging
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/aging
+
+  Antigüedad de cuentas por cobrar.
+
+  Response: `{data: {current_amount, days_1_30, days_31_60, days_61_90, over_90_days, total}}`.
+}

@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils';
 interface SchedulingVehicle {
   id: string;
   plateNumber: string;
-  model: string;
+  model?: string;
   status?: string;
   type?: string;
   capacityKg?: number;
@@ -45,10 +45,10 @@ interface SchedulingVehicle {
 
 interface SchedulingDriver {
   id: string;
-  fullName: string;
+  fullName?: string;
   name: string;
-  status: string;
-  phone: string;
+  status?: string;
+  phone?: string;
 }
 
 interface AssignmentModalProps {
@@ -579,7 +579,7 @@ export const AssignmentModal: FC<Readonly<AssignmentModalProps>> = memo(function
                       <SelectItem key={vehicle.id} value={vehicle.id}>
                         <span className="flex items-center gap-2">
                           <span className="font-medium">{vehicle.plateNumber}</span>
-                          <span className="text-muted-foreground text-xs">{vehicle.model.split(' ')[0]}</span>
+                          <span className="text-muted-foreground text-xs">{(vehicle.model ?? '').split(' ')[0]}</span>
                         </span>
                       </SelectItem>
                     ))}

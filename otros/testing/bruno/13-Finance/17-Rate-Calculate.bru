@@ -1,0 +1,32 @@
+meta {
+  name: Calculate rate
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{baseUrl}}/finance/rates/calculate?originZone=Lima&destinationZone=Arequipa&weight=1000&volume=5
+  body: none
+  auth: bearer
+}
+
+params:query {
+  originZone: Lima
+  destinationZone: Arequipa
+  weight: 1000
+  volume: 5
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/rates/calculate
+
+  **Campos requeridos:** `originZone`, `destinationZone` (NO `originCity`/`destinationCity`).
+
+  Response: `{data: {rate: {...}|null, amount: number, message?: string}}`.
+
+  Si no hay tarifa activa para la ruta, devuelve `{rate: null, amount: 0, message: "No active rate found"}`.
+}

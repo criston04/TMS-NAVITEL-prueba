@@ -1,0 +1,36 @@
+meta {
+  name: KPIs (500 - backend bug)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/operations/scheduling/kpis
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /operations/scheduling/kpis
+
+  **ROTO: devuelve `500 Internal Server Error`** — bug en el handler del backend.
+
+  Frontend maneja el error con try/catch y usa KPIs en cero mientras se resuelve.
+
+  Cuando backend lo arregle, esperamos shape como:
+  ```json
+  {
+    "scheduledOrders": 0,
+    "pendingOrders": 0,
+    "inTransitOrders": 0,
+    "onTimeDeliveries": 0,
+    "lateDeliveries": 0,
+    "utilizationRate": 0,
+    ...
+  }
+  ```
+}

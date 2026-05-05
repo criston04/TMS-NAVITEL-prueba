@@ -1,0 +1,25 @@
+meta {
+  name: List workflows
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/workflows/definitions
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /workflows/definitions (actualizado a v3 Rev3 — 2026-04-27)
+
+  En v3 Rev3 el path movió de `/workflows` a `/workflows/definitions` para listar/CRUD
+  de definiciones. Las ejecuciones (antes `/workflows/.../apply`) ahora viven en
+  `/workflows/executions`.
+
+  **Envelope:** `{data: []}` (distinto al resto de master que usa `{items, meta}`).
+}

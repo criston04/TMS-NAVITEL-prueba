@@ -1,0 +1,127 @@
+meta {
+  name: Create payment
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/finance/payments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "invoiceId": "{{lastInvoiceId}}",
+    "amount": 500,
+    "method": "cash",
+    "paymentDate": "2026-04-22T00:00:00Z",
+    "referenceNumber": "PAG-BRU-001",
+    "bankName": null,
+    "accountNumber": null,
+    "checkNumber": null,
+    "notes": "Pago parcial registrado desde Bruno"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  // Response especial: { payment: {}, invoice: {} }
+  const payment = obj.payment ?? obj;
+  const invoice = obj.invoice;
+
+  const id = payment?.id;
+  if (id) bru.setEnvVar("lastPaymentId", id);
+
+  // Espejo de CreatePaymentDTO (src/types/finance.ts línea 433)
+  const sent = {
+    invoiceId: bru.getEnvVar("lastInvoiceId"),
+    amount: 500,
+    method: "cash",
+    paymentDate: "2026-04-22T00:00:00Z",
+    referenceNumber: "PAG-BRU-001",
+    notes: "Pago parcial registrado desde Bruno",
+  };
+
+  console.log("===================================================");
+  console.log("           VERIFICACION CREATE PAYMENT             ");
+  console.log("===================================================");
+  console.log("payment id:    ", id);
+  console.log("payment number:", payment?.paymentNumber ?? payment?.payment_number);
+  console.log("");
+  console.log("--- CAMPOS PLANOS PAYMENT ---");
+  for (const k of Object.keys(sent)) {
+    const altKey = k.replace(/[A-Z]/g, m => "_" + m.toLowerCase());
+    const got = payment[k] ?? payment[altKey];
+    if (got === null || got === undefined) {
+      console.log("  ❌", k.padEnd(20), "PERDIDO");
+    } else if (typeof got === "string" && typeof sent[k] === "string" && got.startsWith(sent[k])) {
+      console.log("  ✅", k.padEnd(20), JSON.stringify(got));
+    } else if (got === sent[k]) {
+      console.log("  ✅", k.padEnd(20), JSON.stringify(got));
+    } else {
+      console.log("  ⚠️ ", k.padEnd(20), "DIFIERE — env:", JSON.stringify(sent[k]), "rec:", JSON.stringify(got));
+    }
+  }
+
+  if (invoice) {
+    console.log("");
+    console.log("--- INVOICE ACTUALIZADA AUTOMATICAMENTE ---");
+    console.log("  invoice id:        ", invoice.id);
+    console.log("  amountPaid:        ", invoice.amountPaid ?? invoice.amount_paid);
+    console.log("  amountDue:         ", invoice.amountDue ?? invoice.amount_due);
+    console.log("  status:            ", invoice.status, "(\"draft\"→\"partial\"→\"paid\")");
+  }
+
+  console.log("===================================================");
+}
+
+docs {
+  # POST /finance/payments — IDÉNTICO al CreatePaymentDTO del frontend
+
+  Refleja `src/types/finance.ts` línea 433 → `CreatePaymentDTO`.
+
+  ## Body shape
+  ```typescript
+  {
+    invoiceId: string,
+    amount: number,
+    method: PaymentMethod,        // "cash"|"transfer"|"check"|"card"|"other"
+    paymentDate: string,
+    referenceNumber?: string,     // ⚠ NO es `reference`
+    bankName?: string,
+    accountNumber?: string,
+    checkNumber?: string,
+    notes?: string,
+  }
+  ```
+
+  ## Cambio respecto a versión anterior del Bruno
+  - `reference` → `referenceNumber` (nombre correcto según DTO)
+  - Agregados `bankName`, `accountNumber`, `checkNumber`, `notes` (opcionales)
+
+  ## Response especial
+  Backend devuelve AMBOS:
+  ```json
+  {
+    "data": {
+      "payment": { id, paymentNumber, amount, status, ... },
+      "invoice": { id, amountPaid, amountDue, status, ... }  // actualizada
+    }
+  }
+  ```
+
+  El backend actualiza automáticamente la factura:
+  `draft → partial → paid` según el monto cubierto.
+}

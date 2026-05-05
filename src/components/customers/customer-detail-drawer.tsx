@@ -90,9 +90,9 @@ export function CustomerDetailDrawer({
             <div className="flex items-center gap-3">
               <div className={cn(
                 "h-12 w-12 rounded-full flex items-center justify-center",
-                customer.type === "empresa" ? "bg-primary/10" : "bg-blue-500/10"
+                customer.type === "company" ? "bg-primary/10" : "bg-blue-500/10"
               )}>
-                {customer.type === "empresa" 
+                {customer.type === "company" 
                   ? <Building2 className="h-6 w-6 text-primary" />
                   : <User className="h-6 w-6 text-blue-500" />
                 }

@@ -1,0 +1,37 @@
+meta {
+  name: Batch color
+  type: http
+  seq: 11
+}
+
+patch {
+  url: {{baseUrl}}/master/geofences/batch-color
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "ids": [
+      "{{lastGeofenceId}}"
+    ],
+    "color": "#FF0000"
+  }
+}
+
+docs {
+  # PATCH /geofences/batch-color — Color masivo
+
+  **Excel:** `Geofence | PATCH | /geofences/batch-color | Actualizar color para múltiples geocercas`
+
+  Cambia el color de varias geocercas en 1 request.
+  Body: `{ ids: string[], color: "#RRGGBB" }`
+}

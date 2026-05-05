@@ -1,0 +1,44 @@
+meta {
+  name: Create breakdown
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/maintenance/breakdowns
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "vehicleId": "{{lastVehicleId}}",
+    "severity": "medium",
+    "description": "Falla en motor - humo anormal",
+    "reportedAt": "2026-04-22T10:00:00Z"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const id = body && body.data && body.data.id;
+  if (id) bru.setEnvVar("lastBreakdownId", id);
+}
+
+docs {
+  # POST /maintenance/breakdowns
+
+  Reporta una averia.
+  Campos: `vehicleId`, `severity` (`low|medium|high|critical`), `description`, `reportedAt`.
+
+  Response 201 con shape completo incluyendo `reported_by` (auto = usuario del token),
+  `status: "reported"`, `work_order_id` (nullable, para vincular a WO despues).
+}

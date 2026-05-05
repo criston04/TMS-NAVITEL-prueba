@@ -111,7 +111,7 @@ export function RetransmissionRow({
             <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70 group-hover:text-primary" />
             <span className="max-w-[180px] truncate">{record.lastAddress}</span>
           </a>
-        ) : record.lastLocation ? (
+        ) : (record.lastLocation && typeof record.lastLocation.lat === "number" && typeof record.lastLocation.lng === "number") ? (
           <a
             href={`https://www.google.com/maps?q=${record.lastLocation.lat},${record.lastLocation.lng}`}
             target="_blank"

@@ -1,0 +1,27 @@
+meta {
+  name: Complete entry
+  type: http
+  seq: 13
+}
+
+put {
+  url: {{baseUrl}}/bitacora/{{lastBitacoraEntryId}}/complete
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # PUT /bitacora/:id/complete
+
+  Marca el entry como completado y **calcula `dwell_time_minutes`** automaticamente.
+
+  **Maquina de estados:**
+  - Solo permite desde `active` (no desde `reviewed` ni `dismissed`).
+  - Si el estado actual no es `active`, responde `409 "Cannot complete from status 'X'"`.
+
+  Response: entry completo actualizado.
+}

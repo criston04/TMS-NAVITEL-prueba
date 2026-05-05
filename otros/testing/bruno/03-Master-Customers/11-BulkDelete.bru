@@ -1,0 +1,33 @@
+meta {
+  name: Bulk delete
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/master/customers/bulk-delete
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "ids": [
+      "{{lastCustomerId}}"
+    ]
+  }
+}
+
+docs {
+  # POST /master/customers/bulk-delete
+  **Excel:** `POST /api/v1/master/customers/bulk-delete`
+  Soft-delete masivo. Body: `{ ids: string[] }`.
+}

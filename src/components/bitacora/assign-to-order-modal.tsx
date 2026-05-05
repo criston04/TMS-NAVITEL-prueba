@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import type { BitacoraEntry } from '@/types/bitacora';
 import type { Order } from '@/types/order';
+import { useEntityCache } from '@/contexts/entity-cache-context';
 
 interface AssignToOrderModalProps {
   open: boolean;
@@ -61,6 +62,9 @@ export function AssignToOrderModal({
   const [search, setSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Hidratamos FKs desde el cache en memoria
+  const { getVehiclePlate, getCustomerName } = useEntityCache();
 
   // Filtrar órdenes activas y por texto de búsqueda
   const filteredOrders = useMemo(() => {
@@ -177,7 +181,7 @@ export function AssignToOrderModal({
                       {order.vehicleId && (
                         <span className="flex items-center gap-1">
                           <Truck className="h-3 w-3" />
-                          {order.vehicleId}
+                          {getVehiclePlate(order.vehicleId)}
                         </span>
                       )}
                       {order.scheduledStartDate && (
@@ -187,7 +191,7 @@ export function AssignToOrderModal({
                         </span>
                       )}
                       {order.customerId && (
-                        <span className="truncate max-w-[150px]">{order.customerId}</span>
+                        <span className="truncate max-w-[150px]">{getCustomerName(order.customerId)}</span>
                       )}
                     </div>
                   </button>

@@ -1,0 +1,22 @@
+meta {
+  name: Alerts
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/maintenance/alerts
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/alerts
+
+  Alertas de mantenimiento (mantenimientos vencidos, kilometraje cercano, etc).
+  Envelope `{data: []}`.
+}

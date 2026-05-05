@@ -9,10 +9,16 @@ import { useOrder, useOrders } from '@/hooks/useOrders';
 import type { CreateOrderDTO } from '@/types/order';
 
 // Componentes
+import dynamic from 'next/dynamic';
 import { PageWrapper } from '@/components/page-wrapper';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { OrderFormWizard } from '@/components/orders';
+
+// Wizard de 1253 líneas — lazy-load
+const OrderFormWizard = dynamic(
+  () => import('@/components/orders').then(m => ({ default: m.OrderFormWizard })),
+  { ssr: false, loading: () => <div className="h-[600px] rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
+);
 import {
   Dialog,
   DialogContent,

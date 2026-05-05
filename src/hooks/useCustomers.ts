@@ -137,7 +137,14 @@ export function useCustomers(options: UseCustomersOptions = {}): UseCustomersRet
       const statsData = await customersService.getStats();
       setStats(statsData);
     } catch (err) {
-      console.error("[useCustomers] Error cargando stats:", err);
+      // Bug backend conocido: /stats devuelve 404 "Customer no encontrado" por routing mal ordenado.
+      // Ver: 10_BUGS_CONSOLIDADOS.md bug #1. Cuando backend arregle, este catch se vuelve no-op.
+      const status = (err as { status?: number }).status;
+      if (status === 404) {
+        console.warn("[useCustomers] Stats no disponibles todavia (backend routing bug #1)");
+      } else {
+        console.error("[useCustomers] Error cargando stats:", err);
+      }
     } finally {
       setIsLoadingStats(false);
     }
@@ -151,7 +158,15 @@ export function useCustomers(options: UseCustomersOptions = {}): UseCustomersRet
       const citiesData = await customersService.getCities();
       setCities(citiesData);
     } catch (err) {
-      console.error("[useCustomers] Error cargando ciudades:", err);
+      // 2026-05-03 (issue B.3): comentario actualizado. Antes hablaba de
+      // "backend routing bug #1" / "bug NGINX". Diagnóstico real: el backend
+      // tiene /cities OK en el Excel; si devuelve 404 puede ser temporal.
+      const status = (err as { status?: number }).status;
+      if (status === 404) {
+        console.warn("[useCustomers] /cities no disponible (404). Usando lista vacía.");
+      } else {
+        console.error("[useCustomers] Error cargando ciudades:", err);
+      }
     }
   }, []);
 

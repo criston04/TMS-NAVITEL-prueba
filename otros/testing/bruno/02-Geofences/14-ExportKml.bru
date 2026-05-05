@@ -1,0 +1,24 @@
+meta {
+  name: Export KML
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/master/geofences/export/kml
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /geofences/export/kml — Exportar a KML
+
+  **Excel:** `Geofence | GET | /geofences/export/kml | Exportar geocercas a KML`
+
+  Devuelve un archivo .kml con todas las geocercas.
+  En Bruno, click en "Save Response to File" para guardarlo.
+}

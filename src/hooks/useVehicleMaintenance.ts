@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { maintenanceService } from "@/services/master/maintenance.service";
+import { isBackendNotImplemented } from "@/services/missing-endpoint-helper";
 import type {
   MaintenanceRecord,
   MaintenanceSchedule,
@@ -356,6 +357,20 @@ export function useVehicleMaintenance(
         error: null,
       });
     } catch (err) {
+      // 2026-05-03 (issue B.1): el service `master/maintenance` está deprecated
+      // (usa endpoints inventados). Cuando el backend devuelva 404 mostramos
+      // estado vacío silenciosamente — la UI debería migrar a `maintenance/maintenance`.
+      if (isBackendNotImplemented(err)) {
+        setState(prev => ({
+          ...prev,
+          records: [],
+          schedules: [],
+          alerts: [],
+          isLoading: false,
+          error: null,
+        }));
+        return;
+      }
       const errorMessage = err instanceof Error ? err.message : "Error al cargar mantenimientos";
       setState(prev => ({
         ...prev,

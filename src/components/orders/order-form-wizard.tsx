@@ -48,6 +48,7 @@ import { cn } from '@/lib/utils';
 // Custom Components
 import { WizardNavigation, type WizardStep } from './wizard-navigation';
 import { MilestoneEditor, type MilestoneFormData } from './milestone-editor';
+import { MilestoneScheduling, type MilestoneScheduleData } from './milestone-scheduling';
 import { CarrierSelector } from './carrier-selector';
 import { ConflictWarning } from './conflict-warning';
 import { OrderNumberField } from './order-number-field';
@@ -57,18 +58,25 @@ import { OrderSummary, type OrderSummaryData } from './order-summary';
 import { WorkflowSelector } from './workflow-selector';
 import { WorkflowStepsPreview } from './workflow-steps-preview';
 
-// Mocks
-import { customersMock } from '@/mocks/master/customers.mock';
-import { geofencesMock } from '@/mocks/master/geofences.mock';
-import { vehiclesMock } from '@/mocks/master/vehicles.mock';
-import { driversMock } from '@/mocks/master/drivers.mock';
-import { operatorsMock } from '@/mocks/master/operators.mock';
-
 import { useResourceConflicts } from '@/hooks/orders/use-resource-conflicts';
+import { getOrderReadinessIssues } from '@/lib/validators/order-validators';
 
-// Services
+// Services (backend real)
+import {
+  customersService,
+  geofencesService,
+  vehiclesService,
+  driversService,
+  operatorsService,
+} from '@/services/master';
 import { moduleConnectorService } from '@/services/integration/module-connector.service';
 import { unifiedWorkflowService } from '@/services/workflow.service';
+
+// Tipos
+import type { Customer } from '@/types/models/customer';
+import type { Vehicle } from '@/types/models/vehicle';
+import type { Driver } from '@/types/models/driver';
+import type { Operator } from '@/types/models/operator';
 
 const RoutePreviewMapLazy = dynamic(
   () => import('./route-preview-map').then(mod => mod.RoutePreviewMap),
@@ -209,23 +217,63 @@ export function OrderFormWizard({
   const [vehicleId, setVehicleId] = useState(initialData?.vehicleId || '');
   const [driverId, setDriverId] = useState(initialData?.driverId || '');
   const [gpsOperatorId, setGpsOperatorId] = useState('');
-  const [scheduledStartDate, setScheduledStartDate] = useState(
-    initialData?.scheduledStartDate?.split('T')[0] || ''
-  );
-  const [scheduledStartTime, setScheduledStartTime] = useState(
-    initialData?.scheduledStartDate?.split('T')[1]?.substring(0, 5) || '08:00'
-  );
-  const [scheduledEndDate, setScheduledEndDate] = useState(
-    initialData?.scheduledEndDate?.split('T')[0] || ''
-  );
-  const [scheduledEndTime, setScheduledEndTime] = useState(
-    initialData?.scheduledEndDate?.split('T')[1]?.substring(0, 5) || '18:00'
-  );
+  const [milestoneSchedules, setMilestoneSchedules] = useState<MilestoneScheduleData[]>([]);
 
   // Paso 4: Adicional
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [tags, setTags] = useState<string[]>(initialData?.tags || []);
   const [tagInput, setTagInput] = useState('');
+
+  // 2026-05-03 Fix D: Fechas manuales independientes de los milestones.
+  // Si el usuario las rellena aquí, tienen prioridad sobre las derivadas
+  // de los hitos. Esto permite definir fechas sin necesidad de crear hitos
+  // primero (caso típico de orden draft programada para mañana).
+  const initialStart = initialData?.scheduledStartDate
+    ? initialData.scheduledStartDate.split('T')
+    : ['', ''];
+  const initialEnd = initialData?.scheduledEndDate
+    ? initialData.scheduledEndDate.split('T')
+    : ['', ''];
+  const [manualStartDate, setManualStartDate] = useState(initialStart[0] || '');
+  const [manualStartTime, setManualStartTime] = useState(
+    initialStart[1]?.substring(0, 5) || '08:00'
+  );
+  const [manualEndDate, setManualEndDate] = useState(initialEnd[0] || '');
+  const [manualEndTime, setManualEndTime] = useState(
+    initialEnd[1]?.substring(0, 5) || '18:00'
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CARGA DE DATOS MAESTROS DEL BACKEND REAL (reemplaza mocks)
+  // ═══════════════════════════════════════════════════════════════════════
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [geofences, setGeofences] = useState<Geofence[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [operators, setOperators] = useState<Operator[]>([]);
+
+  useEffect(() => {
+    // Cargamos en paralelo todas las listas maestras
+    const loadMasterData = async () => {
+      try {
+        const [custResp, geoResp, vehResp, drvResp, opList] = await Promise.all([
+          customersService.getAll({ pageSize: 200 }).catch(() => ({ items: [] })),
+          geofencesService.getAll({ pageSize: 200 }).catch(() => ({ items: [] })),
+          vehiclesService.getAll({ pageSize: 200 }).catch(() => ({ items: [] })),
+          driversService.getAll({ pageSize: 200 }).catch(() => ({ items: [] })),
+          operatorsService.getAll().catch(() => [] as Operator[]),
+        ]);
+        setCustomers((custResp as { items: Customer[] }).items ?? []);
+        setGeofences((geoResp as { items: Geofence[] }).items ?? []);
+        setVehicles((vehResp as { items: Vehicle[] }).items ?? []);
+        setDrivers((drvResp as { items: Driver[] }).items ?? []);
+        setOperators(Array.isArray(opList) ? opList : []);
+      } catch (err) {
+        console.warn("[OrderFormWizard] Error cargando datos maestros:", err);
+      }
+    };
+    loadMasterData();
+  }, []);
 
   // Tracking de cambios sin guardar
   const hasUnsavedChanges = useRef(false);
@@ -247,17 +295,80 @@ export function OrderFormWizard({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
+  // Sincronizar milestoneSchedules con milestones (mantener datos existentes, agregar nuevos, eliminar huérfanos)
+  useEffect(() => {
+    setMilestoneSchedules((prev) => {
+      const existingMap = new Map(prev.map((s) => [s.milestoneId, s]));
+      return milestones.map((m) => {
+        const existing = existingMap.get(m.id);
+        if (existing) return existing;
+        // Nuevo milestone — crear schedule por defecto usando datos del hito
+        const arrival = m.estimatedArrival ? new Date(m.estimatedArrival) : null;
+        const departure = m.estimatedDeparture ? new Date(m.estimatedDeparture) : null;
+        return {
+          milestoneId: m.id,
+          enabled: true,
+          arrivalDate: arrival && !isNaN(arrival.getTime()) ? arrival.toISOString().split('T')[0] : '',
+          arrivalTime: arrival && !isNaN(arrival.getTime()) ? arrival.toISOString().split('T')[1]?.substring(0, 5) : '08:00',
+          departureDate: departure && !isNaN(departure.getTime()) ? departure.toISOString().split('T')[0] : '',
+          departureTime: departure && !isNaN(departure.getTime()) ? departure.toISOString().split('T')[1]?.substring(0, 5) : '',
+        };
+      });
+    });
+  }, [milestones]);
+
+  // Derivar fechas globales de la orden.
+  // PRIORIDAD: 1) fechas manuales (Fix D); 2) derivadas de schedules de hitos.
+  const { derivedStartDate, derivedStartTime, derivedEndDate, derivedEndTime } = useMemo(() => {
+    // Si el usuario rellenó fechas manuales en el paso 1, ganan
+    if (manualStartDate || manualEndDate) {
+      return {
+        derivedStartDate: manualStartDate || '',
+        derivedStartTime: manualStartTime || '08:00',
+        derivedEndDate: manualEndDate || '',
+        derivedEndTime: manualEndTime || '18:00',
+      };
+    }
+
+    // Fallback: derivar de schedules de milestones
+    const enabledSchedules = milestoneSchedules.filter((s) => s.enabled && s.arrivalDate);
+    if (enabledSchedules.length === 0) {
+      return { derivedStartDate: '', derivedStartTime: '08:00', derivedEndDate: '', derivedEndTime: '18:00' };
+    }
+
+    const allDateTimes: string[] = [];
+    for (const s of enabledSchedules) {
+      if (s.arrivalDate) allDateTimes.push(`${s.arrivalDate}T${s.arrivalTime || '00:00'}`);
+      if (s.departureDate) allDateTimes.push(`${s.departureDate}T${s.departureTime || '23:59'}`);
+    }
+
+    if (allDateTimes.length === 0) {
+      return { derivedStartDate: '', derivedStartTime: '08:00', derivedEndDate: '', derivedEndTime: '18:00' };
+    }
+
+    allDateTimes.sort();
+    const earliest = allDateTimes[0];
+    const latest = allDateTimes[allDateTimes.length - 1];
+
+    return {
+      derivedStartDate: earliest.split('T')[0],
+      derivedStartTime: earliest.split('T')[1]?.substring(0, 5) || '08:00',
+      derivedEndDate: latest.split('T')[0],
+      derivedEndTime: latest.split('T')[1]?.substring(0, 5) || '18:00',
+    };
+  }, [milestoneSchedules, manualStartDate, manualStartTime, manualEndDate, manualEndTime]);
+
   // Verificar conflictos
   const { conflicts, isChecking: isCheckingConflicts } = useResourceConflicts({
     vehicleId: vehicleId || undefined,
     driverId: driverId || undefined,
-    startDate: scheduledStartDate ? `${scheduledStartDate}T${scheduledStartTime}:00.000Z` : undefined,
-    endDate: scheduledEndDate ? `${scheduledEndDate}T${scheduledEndTime}:00.000Z` : undefined,
+    startDate: derivedStartDate ? `${derivedStartDate}T${derivedStartTime}:00.000Z` : undefined,
+    endDate: derivedEndDate ? `${derivedEndDate}T${derivedEndTime}:00.000Z` : undefined,
   });
 
   // Obtener cliente seleccionado
   const selectedCustomer = useMemo((): CustomerInfo | null => {
-    const customer = customersMock.find(c => c.id === customerId);
+    const customer = customers.find(c => c.id === customerId);
     if (!customer) return null;
     
     const defaultAddress = customer.addresses?.find(a => a.isDefault) || customer.addresses?.[0];
@@ -354,7 +465,7 @@ export function OrderFormWizard({
 
           if (assignment.generatedMilestones?.length) {
             const mapped = assignment.generatedMilestones.map((milestone, index) => {
-              const geofence = geofencesMock.find(g => g.id === milestone.geofenceId);
+              const geofence = geofences.find(g => g.id === milestone.geofenceId);
               const coordinates = geofence
                 ? getGeofenceCoordinates(geofence)
                 : milestone.coordinates || { lat: 0, lng: 0 };
@@ -406,15 +517,27 @@ export function OrderFormWizard({
         break;
 
       case 1: // Workflow y Ruta
-        if (milestones.length < 2) errors.push('Agrega al menos origen y destino');
-        if (milestones.some(m => !m.geofenceId)) errors.push('Completa todas las ubicaciones');
+        // Los hitos son opcionales para permitir crear orden como borrador (draft).
+        // Si hay hitos agregados, deben estar completos — no se permiten a medias.
+        if (milestones.length > 0 && milestones.some(m => !m.geofenceId)) {
+          errors.push('Los hitos agregados deben tener ubicación asignada (o elimínalos)');
+        }
         break;
 
       case 2: // Asignación
-        if (!scheduledStartDate) errors.push('Selecciona fecha de inicio');
-        if (!scheduledEndDate) errors.push('Selecciona fecha de fin');
-        if (scheduledStartDate && scheduledEndDate && scheduledStartDate > scheduledEndDate) {
-          errors.push('La fecha de inicio debe ser anterior a la fecha de fin');
+        {
+          // Si el usuario activó programación, validamos que esté completa.
+          // Si no activó ninguna, también OK — la orden queda sin fechas (draft).
+          const enabledSchedules = milestoneSchedules.filter((s) => s.enabled);
+          if (enabledSchedules.length > 0) {
+            const missingDates = enabledSchedules.filter((s) => !s.arrivalDate);
+            if (missingDates.length > 0) {
+              errors.push('Completa la fecha de llegada en los hitos con programación activa');
+            }
+          }
+          if (derivedStartDate && derivedEndDate && derivedStartDate > derivedEndDate) {
+            errors.push('Las fechas de los hitos generan un rango inválido');
+          }
         }
         break;
 
@@ -425,7 +548,7 @@ export function OrderFormWizard({
 
     setStepErrors(prev => ({ ...prev, [currentStep]: errors }));
     return errors.length === 0;
-  }, [currentStep, customerId, cargoDescription, cargoWeight, milestones, scheduledStartDate, scheduledEndDate]);
+  }, [currentStep, customerId, cargoDescription, cargoWeight, milestones, milestoneSchedules, derivedStartDate, derivedEndDate]);
 
   // Verificar si el paso actual puede avanzar (validación en tiempo real)
   const canCurrentStepProceed = useMemo((): boolean => {
@@ -434,11 +557,17 @@ export function OrderFormWizard({
         return !!customerId && !!cargoDescription && !!cargoWeight && parseFloat(cargoWeight) > 0;
 
       case 1: // Workflow y Ruta
-        return milestones.length >= 2 && milestones.every(m => !!m.geofenceId);
+        // Permitir continuar sin hitos (draft). Si hay hitos, todos deben estar completos.
+        return milestones.every(m => !!m.geofenceId);
 
       case 2: // Asignación
-        if (!scheduledStartDate || !scheduledEndDate) return false;
-        return scheduledStartDate <= scheduledEndDate;
+        {
+          // Si el usuario activó programación, debe estar completa. Si no hay activadas, también OK.
+          const enabled = milestoneSchedules.filter(s => s.enabled);
+          if (enabled.length > 0 && enabled.some(s => !s.arrivalDate)) return false;
+          if (derivedStartDate && derivedEndDate && derivedStartDate > derivedEndDate) return false;
+          return true;
+        }
 
       case 3: // Confirmación
         return true;
@@ -446,7 +575,7 @@ export function OrderFormWizard({
       default:
         return true;
     }
-  }, [currentStep, customerId, cargoDescription, cargoWeight, milestones, scheduledStartDate, scheduledEndDate]);
+  }, [currentStep, customerId, cargoDescription, cargoWeight, milestones, milestoneSchedules, derivedStartDate, derivedEndDate]);
 
   // Limpiar errores cuando los datos cambian y son válidos
   useEffect(() => {
@@ -483,7 +612,7 @@ export function OrderFormWizard({
 
     if (generatedMilestones.length > 0) {
       const mapped = generatedMilestones.map((milestone, index) => {
-        const geofence = geofencesMock.find(g => g.id === milestone.geofenceId);
+        const geofence = geofences.find(g => g.id === milestone.geofenceId);
         const coordinates = geofence
           ? getGeofenceCoordinates(geofence)
           : milestone.coordinates || { lat: 0, lng: 0 };
@@ -523,8 +652,8 @@ export function OrderFormWizard({
   const summaryData = useMemo((): OrderSummaryData | null => {
     if (currentStep !== 3 || !selectedCustomer) return null;
 
-    const vehicle = vehiclesMock.find(v => v.id === vehicleId);
-    const driver = driversMock.find(d => d.id === driverId);
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    const driver = drivers.find(d => d.id === driverId);
 
     return {
       customer: {
@@ -554,16 +683,25 @@ export function OrderFormWizard({
         quantity: parseInt(cargoQuantity, 10) || 1,
         declaredValue: cargoDeclaredValue ? parseFloat(cargoDeclaredValue) : undefined,
       },
-      scheduledStart: `${scheduledStartDate}T${scheduledStartTime}:00.000Z`,
-      scheduledEnd: `${scheduledEndDate}T${scheduledEndTime}:00.000Z`,
-      milestones: milestones.map(m => ({
-        id: m.id,
-        sequence: m.sequence,
-        type: m.type,
-        geofenceName: m.geofenceName,
-        address: m.address,
-        estimatedArrival: m.estimatedArrival,
-      })),
+      scheduledStart: derivedStartDate ? `${derivedStartDate}T${derivedStartTime}:00.000Z` : '',
+      scheduledEnd: derivedEndDate ? `${derivedEndDate}T${derivedEndTime}:00.000Z` : '',
+      milestones: milestones.map(m => {
+        const schedule = milestoneSchedules.find(s => s.milestoneId === m.id);
+        return {
+          id: m.id,
+          sequence: m.sequence,
+          type: m.type,
+          geofenceName: m.geofenceName,
+          address: m.address,
+          estimatedArrival: schedule?.enabled && schedule.arrivalDate
+            ? `${schedule.arrivalDate}T${schedule.arrivalTime || '00:00'}:00.000Z`
+            : m.estimatedArrival,
+          estimatedDeparture: schedule?.enabled && schedule.departureDate
+            ? `${schedule.departureDate}T${schedule.departureTime || '00:00'}:00.000Z`
+            : undefined,
+          scheduleEnabled: schedule?.enabled ?? false,
+        };
+      }),
       assignment: {
         vehicle: vehicle ? {
           id: vehicle.id,
@@ -587,8 +725,8 @@ export function OrderFormWizard({
   }, [
     currentStep, selectedCustomer, orderContact, priority, orderNumber, autoGenerateNumber,
     externalReference, selectedWorkflow, isWorkflowAutoAssigned, cargoDescription, cargoType, cargoWeight, cargoVolume,
-    cargoQuantity, cargoDeclaredValue, scheduledStartDate, scheduledStartTime, scheduledEndDate,
-    scheduledEndTime, milestones, vehicleId, driverId, notes, tags, conflicts
+    cargoQuantity, cargoDeclaredValue, derivedStartDate, derivedStartTime, derivedEndDate,
+    derivedEndTime, milestones, milestoneSchedules, vehicleId, driverId, notes, tags, conflicts
   ]);
 
   // Enviar formulario
@@ -597,13 +735,38 @@ export function OrderFormWizard({
 
     isSubmittingRef.current = true;
 
-    const startDateTime = `${scheduledStartDate}T${scheduledStartTime}:00.000Z`;
-    const endDateTime = `${scheduledEndDate}T${scheduledEndTime}:00.000Z`;
+    const startDateTime = derivedStartDate ? `${derivedStartDate}T${derivedStartTime}:00.000Z` : '';
+    const endDateTime = derivedEndDate ? `${derivedEndDate}T${derivedEndTime}:00.000Z` : '';
 
-    const processedMilestones = milestones.map((m, i, arr) => ({
-      ...m,
-      type: (i === 0 ? 'origin' : i === arr.length - 1 ? 'destination' : 'waypoint') as 'origin' | 'waypoint' | 'destination',
-    }));
+    const processedMilestones = milestones.map((m, i, arr) => {
+      const schedule = milestoneSchedules.find(s => s.milestoneId === m.id);
+      return {
+        ...m,
+        type: (i === 0 ? 'origin' : i === arr.length - 1 ? 'destination' : 'waypoint') as 'origin' | 'waypoint' | 'destination',
+        estimatedArrival: schedule?.enabled && schedule.arrivalDate
+          ? `${schedule.arrivalDate}T${schedule.arrivalTime || '00:00'}:00.000Z`
+          : m.estimatedArrival,
+        estimatedDeparture: schedule?.enabled && schedule.departureDate
+          ? `${schedule.departureDate}T${schedule.departureTime || '00:00'}:00.000Z`
+          : m.estimatedDeparture,
+      };
+    });
+
+    // 2026-05-03 Fix A: Hidratar denormalizaciones (customer_name, vehicle_plate,
+    // driver_name). El backend acepta estos campos y los persiste, pero NO hace
+    // JOIN automático para resolverlos a partir del id. Si no los enviamos,
+    // quedan en NULL aunque el id sea válido.
+    const selectedCustomerObj = customers.find(c => c.id === customerId);
+    const selectedVehicleObj = vehicles.find(v => v.id === vehicleId);
+    const selectedDriverObj = drivers.find(d => d.id === driverId);
+
+    const customerDisplayName = selectedCustomerObj
+      ? (selectedCustomerObj.tradeName || selectedCustomerObj.name || undefined)
+      : undefined;
+    const vehiclePlate = selectedVehicleObj?.plate || undefined;
+    const driverFullName = selectedDriverObj
+      ? ([selectedDriverObj.firstName, selectedDriverObj.lastName].filter(Boolean).join(' ').trim() || undefined)
+      : undefined;
 
     const data: CreateOrderDTO = {
       customerId,
@@ -613,6 +776,16 @@ export function OrderFormWizard({
       workflowId: selectedWorkflow?.id || undefined,
       priority,
       serviceType,
+      // Denormalizaciones que el backend persiste (customer_name, vehicle_plate, driver_name)
+      ...(customerDisplayName && {
+        customer: { id: customerId, name: customerDisplayName },
+      }),
+      ...(vehiclePlate && {
+        vehicle: { id: vehicleId, plate: vehiclePlate },
+      }),
+      ...(driverFullName && {
+        driver: { id: driverId, fullName: driverFullName },
+      }),
       // Número de orden manual (si no es automático)
       ...((!autoGenerateNumber && orderNumber) && { orderNumber }),
       // Referencia externa
@@ -657,9 +830,10 @@ export function OrderFormWizard({
   }, [
     validateCurrentStep, customerId, carrierId, vehicleId, driverId, priority, serviceType,
     cargoDescription, cargoType, cargoWeight, cargoVolume, cargoQuantity, cargoDeclaredValue,
-    milestones, scheduledStartDate, scheduledStartTime, scheduledEndDate, scheduledEndTime,
+    milestones, milestoneSchedules, derivedStartDate, derivedStartTime, derivedEndDate, derivedEndTime,
     externalReference, notes, tags, selectedWorkflow, onSubmit, autoGenerateNumber, orderNumber,
-    gpsOperatorId, orderContact
+    gpsOperatorId, orderContact,
+    customers, vehicles, drivers, // <- nuevo: necesarios para hidratar denormalizaciones
   ]);
 
   // Ir a sección desde resumen
@@ -744,7 +918,7 @@ export function OrderFormWizard({
                       <SelectValue placeholder="Selecciona un cliente" />
                     </SelectTrigger>
                     <SelectContent>
-                      {customersMock.map(customer => (
+                      {customers.map(customer => (
                         <SelectItem key={customer.id} value={customer.id}>
                           <span className="font-medium">{customer.name}</span>
                           <span className="text-muted-foreground ml-2">({customer.tradeName})</span>
@@ -898,6 +1072,75 @@ export function OrderFormWizard({
               </div>
             </CardContent>
           </Card>
+
+          {/* Programación (Fix D 2026-05-03): fechas independientes de los hitos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span aria-hidden="true">📅</span>
+                Programación
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Define cuándo se debe recoger y entregar la orden. Si dejas estos campos vacíos,
+                las fechas se derivarán automáticamente de los hitos del paso 2.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="manualStartDate">Fecha de recojo (pickup)</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      id="manualStartDate"
+                      type="date"
+                      value={manualStartDate}
+                      onChange={(e) => setManualStartDate(e.target.value)}
+                    />
+                    <Input
+                      type="time"
+                      value={manualStartTime}
+                      onChange={(e) => setManualStartTime(e.target.value)}
+                      disabled={!manualStartDate}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="manualEndDate">Fecha de entrega (delivery)</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      id="manualEndDate"
+                      type="date"
+                      value={manualEndDate}
+                      onChange={(e) => setManualEndDate(e.target.value)}
+                      min={manualStartDate || undefined}
+                    />
+                    <Input
+                      type="time"
+                      value={manualEndTime}
+                      onChange={(e) => setManualEndTime(e.target.value)}
+                      disabled={!manualEndDate}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {manualStartDate && manualEndDate && manualStartDate > manualEndDate && (
+                <p className="text-sm text-destructive">
+                  La fecha de entrega debe ser igual o posterior a la fecha de recojo.
+                </p>
+              )}
+
+              {!manualStartDate && !manualEndDate && (derivedStartDate || derivedEndDate) && (
+                <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+                  Fechas actuales (derivadas de los hitos):{' '}
+                  <strong>{derivedStartDate} {derivedStartTime}</strong>
+                  {' → '}
+                  <strong>{derivedEndDate} {derivedEndTime}</strong>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -955,7 +1198,7 @@ export function OrderFormWizard({
               <MilestoneEditor
                 milestones={milestones}
                 onChange={setMilestones}
-                geofences={geofencesMock}
+                geofences={geofences}
               />
 
               {/* Mapa de preview */}
@@ -990,54 +1233,12 @@ export function OrderFormWizard({
             />
           )}
 
-          {/* Fechas */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Programación
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Fecha de Inicio *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={scheduledStartDate}
-                    onChange={(e) => setScheduledStartDate(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Input
-                    type="time"
-                    value={scheduledStartTime}
-                    onChange={(e) => setScheduledStartTime(e.target.value)}
-                    className="w-24 sm:w-28"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endDate">Fecha de Fin *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={scheduledEndDate}
-                    onChange={(e) => setScheduledEndDate(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Input
-                    type="time"
-                    value={scheduledEndTime}
-                    onChange={(e) => setScheduledEndTime(e.target.value)}
-                    className="w-24 sm:w-28"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Programación por Hito */}
+          <MilestoneScheduling
+            milestones={milestones}
+            schedules={milestoneSchedules}
+            onChange={setMilestoneSchedules}
+          />
 
           {/* Asignación de Recursos */}
           <Card>
@@ -1055,7 +1256,7 @@ export function OrderFormWizard({
                 {/* Transportista */}
                 <CarrierSelector
                   selectedCarrierId={carrierId || null}
-                  carriers={operatorsMock}
+                  carriers={operators}
                   onSelect={(id) => setCarrierId(id || '')}
                 />
 
@@ -1068,7 +1269,7 @@ export function OrderFormWizard({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin asignar</SelectItem>
-                      {vehiclesMock.map(vehicle => (
+                      {vehicles.map(vehicle => (
                         <SelectItem key={vehicle.id} value={vehicle.id}>
                           <span className="font-medium">{vehicle.plate}</span>
                           <span className="text-muted-foreground ml-2">
@@ -1089,7 +1290,7 @@ export function OrderFormWizard({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin asignar</SelectItem>
-                      {driversMock.map(driver => (
+                      {drivers.map(driver => (
                         <SelectItem key={driver.id} value={driver.id}>
                           {driver.fullName || `${driver.firstName} ${driver.lastName}`}
                         </SelectItem>
@@ -1170,10 +1371,89 @@ export function OrderFormWizard({
 
       {/* PASO 4: Confirmación */}
       {currentStep === 3 && summaryData && (
-        <OrderSummary
-          data={summaryData}
-          onEditSection={handleEditSection}
-        />
+        <>
+          {/* Banner de advertencias: campos faltantes para programación */}
+          {(() => {
+            const startDateTime = derivedStartDate ? `${derivedStartDate}T${derivedStartTime}:00.000Z` : '';
+            const endDateTime = derivedEndDate ? `${derivedEndDate}T${derivedEndTime}:00.000Z` : '';
+            const previewDto = {
+              customerId,
+              priority,
+              serviceType,
+              cargo: {
+                description: cargoDescription,
+                type: cargoType,
+                weightKg: parseFloat(cargoWeight) || 0,
+                volumeM3: cargoVolume ? parseFloat(cargoVolume) : undefined,
+                quantity: parseInt(cargoQuantity, 10) || 1,
+              },
+              milestones: milestones.map(m => ({
+                geofenceId: m.geofenceId,
+                geofenceName: m.geofenceName,
+                type: m.type,
+                sequence: m.sequence,
+                address: m.address,
+                coordinates: m.coordinates,
+              })),
+              scheduledStartDate: startDateTime,
+              scheduledEndDate: endDateTime,
+            };
+            const readinessIssues = getOrderReadinessIssues(previewDto);
+
+            if (readinessIssues.length === 0) return null;
+            return (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl leading-none">⚠️</span>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-amber-900 dark:text-amber-200">
+                      La orden se creará como borrador (draft)
+                    </h4>
+                    <p className="mt-1 text-sm text-amber-800 dark:text-amber-300/90">
+                      Faltan datos requeridos para programar/asignar esta orden.
+                      Podrás guardarla así, pero antes de pasar a estados posteriores deberás completar:
+                    </p>
+                    <ul className="mt-2 list-disc list-inside text-sm text-amber-800 dark:text-amber-300/90 space-y-0.5">
+                      {readinessIssues.map((issue, idx) => (
+                        <li key={idx}>{issue}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Aviso de campos no soportados por backend (Fix E) */}
+          {(carrierId || tags.length > 0 || (cargoDeclaredValue && parseFloat(cargoDeclaredValue) > 0)) && (
+            <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl leading-none">ℹ️</span>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-200">
+                    Algunos campos no se persisten en el backend todavía
+                  </h4>
+                  <p className="mt-1 text-sm text-blue-800 dark:text-blue-300/90">
+                    Los siguientes datos los rellenaste pero el backend actual no los soporta.
+                    Se preservan localmente y en notas internas:
+                  </p>
+                  <ul className="mt-2 list-disc list-inside text-sm text-blue-800 dark:text-blue-300/90 space-y-0.5">
+                    {carrierId && <li>Transportista (carrier) — el backend no soporta este campo aún</li>}
+                    {tags.length > 0 && <li>Etiquetas/Tags — el backend no implementa tags todavía</li>}
+                    {cargoDeclaredValue && parseFloat(cargoDeclaredValue) > 0 && (
+                      <li>Valor declarado de carga — se preserva en notas internas como referencia</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <OrderSummary
+            data={summaryData}
+            onEditSection={handleEditSection}
+          />
+        </>
       )}
     </div>
   );

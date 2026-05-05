@@ -1,0 +1,39 @@
+meta {
+  name: Metrics (maintenance KPIs)
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/maintenance/metrics
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/metrics
+
+  Metricas del modulo. **Funciona bien** (no tiene el BUG #1).
+
+  Response:
+  ```json
+  {
+    "data": {
+      "totalWorkOrders": 0,
+      "activeWorkOrders": null,
+      "completedWorkOrders": null,
+      "totalCosts": 0,
+      "mttr": 0,               // Mean Time To Repair
+      "totalBreakdowns": 0,
+      "activeBreakdowns": null,
+      "overdueSchedules": 0,
+      "vehiclesInMaintenance": 0,
+      "mtbf": null             // Mean Time Between Failures
+    }
+  }
+  ```
+}

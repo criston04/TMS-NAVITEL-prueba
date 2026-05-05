@@ -1,0 +1,21 @@
+meta {
+  name: Maintenance schedules
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/maintenance/schedules
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/schedules
+
+  Programacion de mantenimientos preventivos. Envelope `{data: []}`.
+}

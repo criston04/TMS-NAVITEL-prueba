@@ -1,0 +1,35 @@
+meta {
+  name: Assign to existing order
+  type: http
+  seq: 14
+}
+
+put {
+  url: {{baseUrl}}/bitacora/{{lastBitacoraEntryId}}/assign-order
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "orderId": "{{lastOrderId}}"
+  }
+}
+
+docs {
+  # PUT /bitacora/:id/assign-order
+
+  Asocia el entry a una orden existente (se guarda en `created_order_id` del entry).
+
+  **Validacion:** el backend valida que `orderId` existe — responde 404 si no.
+
+  **Requisito:** correr antes `08-Orders/01-List.bru` o `02-Create.bru` para setear `lastOrderId`.
+}

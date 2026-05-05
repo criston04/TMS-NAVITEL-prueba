@@ -1,0 +1,41 @@
+meta {
+  name: Generate report (create)
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/reports/generate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "definitionId": "fleet-summary",
+    "format": "pdf",
+    "parameters": {
+      "dateFrom": "2026-04-01",
+      "dateTo": "2026-04-22"
+    }
+  }
+}
+
+docs {
+  # POST /reports/generate
+
+  **Path correcto es `/generate` (NO `/generated`).** El `/generated` es solo GET.
+
+  Requiere `definitionId` existente — si no, 404 `DEFINITION_NOT_FOUND`.
+  Actualmente el backend tiene 0 definitions sembradas, probar con una real cuando existan.
+
+  `format`: `pdf`, `xlsx`, `csv`.
+}

@@ -6,7 +6,7 @@ import { Truck, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import type { OnRouteVehicle } from "@/mocks/dashboard.mock";
+import type { OnRouteVehicle } from "@/hooks/useDashboard";
 
 interface OnRouteVehiclesProps {
   vehicles?: OnRouteVehicle[];
@@ -26,16 +26,9 @@ const statusLabels: Record<string, string> = {
 };
 
 export function OnRouteVehicles({ vehicles: vehiclesProp, total: totalProp }: OnRouteVehiclesProps) {
-  const defaultVehicles = [
-    { id: "v-001", plate: "VEH-468031", driver: "-", route: "Lima, Perú → Arequipa, Perú", status: "on-time" as const, progress: 49, eta: "14:30", speed: 65 },
-    { id: "v-002", plate: "VEH-302781", driver: "-", route: "Trujillo, Perú → Chiclayo, Perú", status: "delayed" as const, progress: 24, eta: "18:15", speed: 48 },
-    { id: "v-003", plate: "VEH-715822", driver: "-", route: "Cusco, Perú → Puno, Perú", status: "ahead" as const, progress: 7, eta: "11:45", speed: 72 },
-    { id: "v-004", plate: "VEH-451430", driver: "-", route: "Piura, Perú → Tumbes, Perú", status: "on-time" as const, progress: 95, eta: "20:00", speed: 60 },
-    { id: "v-005", plate: "VEH-921577", driver: "-", route: "Huancayo, Perú → Lima, Perú", status: "on-time" as const, progress: 65, eta: "10:30", speed: 58 },
-  ];
-
-  const vehicles = vehiclesProp ?? defaultVehicles;
-  const totalCount = totalProp ?? 25;
+  // Sin defaults hardcodeados: si el backend no devuelve nada se muestra vacío.
+  const vehicles: OnRouteVehicle[] = vehiclesProp ?? [];
+  const totalCount = totalProp ?? 0;
   return (
     <Card className="rounded-2xl border-none shadow-sm bg-white dark:bg-card/50">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -58,7 +51,9 @@ export function OnRouteVehicles({ vehicles: vehiclesProp, total: totalProp }: On
             
             <div className="divide-y min-w-[700px]">
             {vehicles.map((v) => {
-                const [origin, dest] = (v.route || "").split("→").map(s => s.trim());
+                const origin = v.origin ?? "";
+                const dest = v.destination ?? "";
+                const status = v.status ?? "on-time";
                 return (
                 <div key={v.id} className="grid grid-cols-[30px_50px_1fr_1.5fr_1.5fr_1fr_1.5fr] gap-4 py-4 px-4 items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors min-w-[700px]">
                     <div className="flex items-center">
@@ -71,8 +66,8 @@ export function OnRouteVehicles({ vehicles: vehiclesProp, total: totalProp }: On
                     <div className="text-sm text-slate-500">{origin || "-"}</div>
                     <div className="text-sm text-slate-500">{dest || "-"}</div>
                     <div>
-                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${statusColors[v.status] || statusColors["on-time"]}`}>
-                            {statusLabels[v.status] || v.status}
+                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${statusColors[status] || statusColors["on-time"]}`}>
+                            {statusLabels[status] || status}
                          </span>
                     </div>
                     <div className="flex items-center gap-3">

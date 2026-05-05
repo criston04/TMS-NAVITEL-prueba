@@ -1,0 +1,70 @@
+meta {
+  name: Update vehicle
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/master/vehicles/{{lastVehicleId}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "plate": "ABC-123",
+    "brand": "Mercedes-Benz",
+    "model": "Actros 2546 ACTUALIZADO",
+    "year": 2024,
+    "type": "truck",
+    "fuel_type": "diesel",
+    "capacity_kg": 26000,
+    "capacity_m3": 62,
+    "color": "Blanco",
+    "vin": "WDB9632031L123456",
+    "operator_id": "{{lastOperatorId}}",
+    "insurance": {
+      "type": "SOAT",
+      "policy_number": "POL-002",
+      "insurer": "Pacífico",
+      "start_date": "2026-01-01",
+      "end_date": "2027-01-01",
+      "coverage_amount": 150000
+    },
+    "specs": {
+      "engine_type": "diesel",
+      "engine_displacement": 12.8,
+      "axles": 3,
+      "tires": 10
+    },
+    "capacity": {
+      "max_weight_kg": 26000,
+      "max_volume_m3": 62,
+      "max_pallets": 24
+    }
+  }
+}
+
+docs {
+  # PUT /master/vehicles/:id (actualizado a v3 Rev3 — 2026-04-27)
+
+  Partial update con shape v3 Rev3:
+  - Planos al raíz: `plate`, `brand`, `model`, `year`, `type`, `fuel_type`, `capacity_kg`,
+    `capacity_m3`, `color`, `vin`, `operator_id`.
+  - `specs{engine_type, engine_displacement, axles, tires}`.
+  - `capacity{max_weight_kg, max_volume_m3, max_pallets}`.
+  - `insurance{type, policy_number, insurer, start_date, end_date, coverage_amount}`.
+
+  **Workarounds para endpoints que no existen:**
+  - Enable:  `{"status": "active", "operational_status": "available"}`
+  - Block:   `{"status": "blocked"}`
+  - Assign driver: usar PUT en `/master/drivers/:id` con `assigned_vehicle_id`, no al revés.
+}

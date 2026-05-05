@@ -1,0 +1,29 @@
+meta {
+  name: Geofence events
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/monitoring/geofence-events?page=1&pageSize=20
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /monitoring/geofence-events
+
+  Eventos de entrada/salida de geocercas registrados por GPS.
+  Envelope: `{data: [], total, page, pageSize}`.
+
+  Filtros opcionales: `vehicleId`, `geofenceId`, `startDate`, `endDate`, `eventType`.
+}

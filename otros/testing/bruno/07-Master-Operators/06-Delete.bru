@@ -1,0 +1,21 @@
+meta {
+  name: Delete operator
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/master/operators/{{lastOperatorId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # DELETE /master/operators/:id
+
+  Soft-delete. No probado aun (bloqueado por BUG #4).
+}

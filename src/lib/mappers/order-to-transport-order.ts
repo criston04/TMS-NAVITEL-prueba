@@ -83,11 +83,25 @@ function inferZone(city: string): string {
 }
 
 /**
+ * Resolver opcional para hidratar FKs (customer_name, vehicle_plate, etc.)
+ * Cuando el backend no envía el nombre del cliente en el payload de la orden,
+ * este resolver permite buscarlo en el cache frontend (EntityCache).
+ */
+export interface OrderMapperContext {
+  getCustomerName?: (id?: string | null) => string;
+  getCustomerPhone?: (id?: string | null) => string;
+}
+
+/**
  * Convierte una Order del módulo Orders en una TransportOrder del Route Planner
  * @param order - Orden del módulo Orders
+ * @param ctx - Resolvers opcionales para hidratar FKs que no vengan en el payload
  * @returns TransportOrder compatible con el Route Planner
  */
-export function orderToTransportOrder(order: Order): TransportOrder | null {
+export function orderToTransportOrder(
+  order: Order,
+  ctx?: OrderMapperContext
+): TransportOrder | null {
   const origin = findMilestone(order.milestones, 'origin');
   const destination = findMilestone(order.milestones, 'destination');
 
@@ -99,14 +113,26 @@ export function orderToTransportOrder(order: Order): TransportOrder | null {
     return null;
   }
 
+  // Resolver nombre de cliente: payload → cache → fallback legible
+  const resolvedCustomerName =
+    order.customer?.name
+    || ctx?.getCustomerName?.(order.customerId)
+    || (order.customerId ? `Cliente ${order.customerId.slice(0, 8)}…` : 'Sin cliente');
+
+  const resolvedCustomerPhone =
+    order.driver?.phone
+    || order.customer?.email
+    || ctx?.getCustomerPhone?.(order.customerId)
+    || '';
+
   return {
     id: order.id,
     orderNumber: order.orderNumber,
 
-    // Cliente: Order.customer → TransportOrder.client
+    // Cliente: Order.customer → TransportOrder.client (hidratado desde cache si falta)
     client: {
-      name: order.customer?.name || `Cliente ${order.customerId}`,
-      phone: order.driver?.phone || order.customer?.email || '',
+      name: resolvedCustomerName,
+      phone: resolvedCustomerPhone,
     },
 
     // Origen: milestone type=origin → pickup
@@ -156,13 +182,16 @@ export function orderToTransportOrder(order: Order): TransportOrder | null {
  * @param orders - Array de órdenes del módulo Orders
  * @returns Array de TransportOrders válidas para planificación
  */
-export function ordersToTransportOrders(orders: Order[]): TransportOrder[] {
+export function ordersToTransportOrders(
+  orders: Order[],
+  ctx?: OrderMapperContext
+): TransportOrder[] {
   // Filtrar solo órdenes que se pueden planificar
   const plannable = orders.filter((o) =>
     ['draft', 'pending', 'assigned'].includes(o.status)
   );
 
   return plannable
-    .map(orderToTransportOrder)
+    .map(o => orderToTransportOrder(o, ctx))
     .filter((o): o is TransportOrder => o !== null);
 }

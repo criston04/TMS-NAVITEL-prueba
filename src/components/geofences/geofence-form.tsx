@@ -35,7 +35,32 @@ import {
   GeofenceAlerts,
   GeofenceAddress 
 } from "@/types/models/geofence";
-import { geofenceCategories, geofenceColors } from "@/mocks/master/geofences.mock";
+// Categorías y colores de geocercas (antes importadas de mocks)
+const geofenceCategories: Array<{
+  value: GeofenceCategory;
+  label: string;
+  description: string;
+  color: string;
+}> = [
+  { value: "warehouse", label: "Almacén", description: "Centro de almacenamiento", color: "#6366f1" },
+  { value: "customer", label: "Cliente", description: "Ubicación de cliente", color: "#10b981" },
+  { value: "plant", label: "Planta", description: "Planta industrial", color: "#f59e0b" },
+  { value: "port", label: "Puerto", description: "Puerto marítimo", color: "#0ea5e9" },
+  { value: "checkpoint", label: "Punto de control", description: "Checkpoint", color: "#8b5cf6" },
+  { value: "restricted", label: "Restringida", description: "Zona restringida", color: "#ef4444" },
+  { value: "delivery", label: "Entrega", description: "Zona de entrega", color: "#14b8a6" },
+  { value: "other", label: "Otra", description: "Otra categoría", color: "#64748b" },
+];
+const geofenceColors: Array<{ name: string; value: string }> = [
+  { name: "Indigo", value: "#6366f1" },
+  { name: "Esmeralda", value: "#10b981" },
+  { name: "Ámbar", value: "#f59e0b" },
+  { name: "Cielo", value: "#0ea5e9" },
+  { name: "Violeta", value: "#8b5cf6" },
+  { name: "Rojo", value: "#ef4444" },
+  { name: "Cian", value: "#06b6d4" },
+  { name: "Rosa", value: "#ec4899" },
+];
 
 /**
  * Iconos por categoría

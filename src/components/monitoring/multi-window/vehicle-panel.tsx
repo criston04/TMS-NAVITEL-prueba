@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
-import { X, MapPin, Clock, Maximize2, Minimize2 } from "lucide-react";
+import { X, MapPin, Clock, Maximize2, Minimize2, SatelliteDish } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConnectionStatusBadge } from "../common/connection-status-badge";
 import { MovementStatusBadge } from "../common/movement-status-badge";
@@ -33,10 +33,14 @@ interface VehiclePanelProps {
 }
 
 /**
- * Formatea timestamp para mostrar
+ * Formatea timestamp para mostrar. Si es invalido (vehiculo sin reporte GPS)
+ * devuelve null para que el componente sepa que debe mostrar el estado "sin señal".
  */
-function formatTime(timestamp: string): string {
-  return new Date(timestamp).toLocaleTimeString("es-PE", {
+function formatTime(timestamp: string | null | undefined): string | null {
+  if (!timestamp) return null;
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleTimeString("es-PE", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -44,10 +48,24 @@ function formatTime(timestamp: string): string {
 }
 
 /**
- * Formatea coordenadas
+ * Formatea coordenadas. Devuelve null si son invalidas (0,0 o no-finitas)
+ * que es la señal tipica de vehiculo sin GPS activo.
  */
-function formatCoords(lat: number, lng: number): string {
-  return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+function formatCoords(lat: number | null | undefined, lng: number | null | undefined): string | null {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  // 0,0 es el "null island" — ningun vehiculo real opera ahi, asi que lo tratamos como sin señal
+  if (lat === 0 && lng === 0) return null;
+  return `${(lat as number).toFixed(5)}, ${(lng as number).toFixed(5)}`;
+}
+
+/**
+ * Detecta si el vehiculo realmente no tiene señal GPS activa.
+ * Criterios: coords invalidas/0,0 + timestamp invalido/vacio.
+ */
+function hasNoGpsSignal(vehicle: TrackedVehicle): boolean {
+  const coords = formatCoords(vehicle.position?.lat, vehicle.position?.lng);
+  const time = formatTime(vehicle.lastUpdate);
+  return coords === null && time === null;
 }
 
 /**
@@ -60,9 +78,16 @@ export function VehiclePanel({
   className,
 }: VehiclePanelProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
+
+  // Detecta si el vehiculo no tiene senal GPS (no hay dispositivo o nunca ha reportado)
+  const noGps = hasNoGpsSignal(vehicle);
+  const coordsStr = formatCoords(vehicle.position?.lat, vehicle.position?.lng);
+  const timeStr = formatTime(vehicle.lastUpdate);
+
   // Determine if vehicle has active alert (speed > 80 or disconnected)
-  const hasAlert = vehicle.speed > 80 || vehicle.connectionStatus === "disconnected";
+  // Si no tiene GPS no mostramos borde rojo de alerta porque no es "algo esta mal en la ruta",
+  // es "no hay data que monitorear" — estado distinto, UX distinto.
+  const hasAlert = !noGps && (vehicle.speed > 80 || vehicle.connectionStatus === "disconnected");
 
   return (
     <div
@@ -111,40 +136,66 @@ export function VehiclePanel({
         </div>
       </div>
 
-      {/* Mini mapa */}
-      <VehicleMiniMap
-        position={vehicle.position}
-        movementStatus={vehicle.movementStatus}
-        connectionStatus={vehicle.connectionStatus}
-        className={isFullscreen ? "h-[400px]" : undefined}
-      />
+      {/* Mini mapa — solo si hay GPS. Si no, placeholder visual amigable */}
+      {noGps ? (
+        <div
+          className={cn(
+            "flex flex-col items-center justify-center gap-2 bg-muted/40 px-4 text-center",
+            isFullscreen ? "h-[400px]" : "h-[150px]"
+          )}
+        >
+          <SatelliteDish className="h-8 w-8 text-muted-foreground/60" />
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium text-muted-foreground">Sin señal GPS</p>
+            <p className="text-[10px] text-muted-foreground/80">
+              Este vehículo no tiene dispositivo GPS activo<br />
+              o aún no ha reportado su posición
+            </p>
+          </div>
+        </div>
+      ) : (
+        <VehicleMiniMap
+          position={vehicle.position}
+          movementStatus={vehicle.movementStatus}
+          connectionStatus={vehicle.connectionStatus}
+          className={isFullscreen ? "h-[400px]" : undefined}
+        />
+      )}
 
       {/* Info */}
       <div className="flex-1 space-y-2 p-3">
-        {/* Estado de movimiento + Sparkline */}
-        <div className="flex items-center justify-between">
-          <MovementStatusBadge
-            status={vehicle.movementStatus}
-            speed={vehicle.position.speed}
-            size="sm"
-          />
-          {speedHistory && speedHistory.length > 1 && (
-            <SpeedSparkline speeds={speedHistory} speedLimit={80} />
-          )}
-        </div>
+        {/* Estado de movimiento + Sparkline (solo si hay GPS) */}
+        {!noGps && (
+          <div className="flex items-center justify-between">
+            <MovementStatusBadge
+              status={vehicle.movementStatus}
+              speed={vehicle.position.speed}
+              size="sm"
+            />
+            {speedHistory && speedHistory.length > 1 && (
+              <SpeedSparkline speeds={speedHistory} speedLimit={80} />
+            )}
+          </div>
+        )}
 
         {/* Posición */}
         <div className="flex items-start gap-1.5 text-xs">
           <MapPin className="mt-0.5 h-3 w-3 text-muted-foreground" />
-          <span className="font-mono text-muted-foreground">
-            {formatCoords(vehicle.position.lat, vehicle.position.lng)}
-          </span>
+          {coordsStr ? (
+            <span className="font-mono text-muted-foreground">{coordsStr}</span>
+          ) : (
+            <span className="italic text-muted-foreground/70">Sin posición</span>
+          )}
         </div>
 
         {/* Última actualización */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Clock className="h-3 w-3" />
-          <span>Actualizado: {formatTime(vehicle.lastUpdate)}</span>
+          {timeStr ? (
+            <span>Actualizado: {timeStr}</span>
+          ) : (
+            <span className="italic text-muted-foreground/70">Nunca ha reportado</span>
+          )}
         </div>
 
         {/* Orden activa */}

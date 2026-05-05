@@ -1,0 +1,35 @@
+meta {
+  name: Validate HOS (Hours of Service)
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/operations/scheduling/validate-hos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "driverId": "{{lastDriverId}}",
+    "date": "2026-04-22T00:00:00Z",
+    "estimatedDuration": 4
+  }
+}
+
+docs {
+  # POST /operations/scheduling/validate-hos
+
+  Valida si el conductor puede cumplir las horas estimadas segun FMCSA (11h diarias, 60h semanales).
+
+  Response `{data: {isValid, remainingHoursToday, weeklyHoursUsed, remainingHoursWeekly, violations: [], warnings: []}}`.
+}

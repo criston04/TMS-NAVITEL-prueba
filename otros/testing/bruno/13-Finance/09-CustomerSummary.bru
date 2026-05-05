@@ -1,0 +1,23 @@
+meta {
+  name: Customer financial summary
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/finance/clientes/{{lastCustomerId}}/summary
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/clientes/:customerId/summary
+
+  Resumen financiero por cliente. **Path en espanol** (`clientes`, no `customers`).
+
+  Devuelve totales de invoices, payments, costs y margen para ese cliente en particular.
+}

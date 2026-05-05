@@ -33,13 +33,26 @@ import {
   Filter,
   X,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { driversService, vehiclesService } from "@/services/master";
+import { isBackendNotImplemented } from "@/services/missing-endpoint-helper";
 import { useService } from "@/hooks/use-service";
+import { useEntityCache } from "@/contexts/entity-cache-context";
 import { Driver, DriverStats, DriverStatus, DriverAvailability, LicenseCategory, DriverDocumentType, Vehicle } from "@/types/models";
+import type { EmergencyContact, LicenseRestrictions } from "@/types/models/driver";
 import { exportToExcel, EXPORT_CONFIGS } from "@/lib/excel-utils";
-import { DriverFormModal } from "./components/driver-form-modal";
 import type { DriverFormData } from "./components/driver-form-modal";
-import { DriverDetailDrawer } from "./components/driver-detail-drawer";
+
+// Modal de 1077 líneas — lazy-load
+const DriverFormModal = dynamic(
+  () => import("./components/driver-form-modal").then(m => ({ default: m.DriverFormModal })),
+  { ssr: false }
+);
+// Drawer pesado — también lazy
+const DriverDetailDrawer = dynamic(
+  () => import("./components/driver-detail-drawer").then(m => ({ default: m.DriverDetailDrawer })),
+  { ssr: false }
+);
 import {
   Select,
   SelectContent,
@@ -232,9 +245,102 @@ function CardsSkeleton() {
 const STATS_SKELETON_KEYS = ['stat-1', 'stat-2', 'stat-3', 'stat-4', 'stat-5', 'stat-6'] as const;
 
 /**
+ * Mapper FormData → Driver.
+ *
+ * El form de driver usa nombres distintos al type del dominio (legacy):
+ *   form.secondaryPhone        → driver.alternativePhone
+ *   form.emergencyContacts[]   → driver.emergencyContact + additionalEmergencyContacts[]
+ *   form.license.issuingEntity → driver.license.issuingAuthority
+ *   form.license.restrictions  → driver.license.restrictions (string[] → object)
+ *   form.city                  → driver.province  (lo que el form llama "city" es province)
+ *
+ * Sin este mapper el `mapDriverToBackend` recibe un objeto con claves equivocadas
+ * y descarta silenciosamente más de la mitad de los campos del formulario.
+ */
+function mapDriverFormToDriver(data: DriverFormData): Partial<Driver> {
+  // 1. Convertir restrictions: string[] → LicenseRestrictions object
+  const restrArr = data.license.restrictions || [];
+  const licenseRestrictions: LicenseRestrictions = {
+    requiresGlasses: restrArr.includes("Requiere lentes correctivos"),
+    requiresHearingAid: restrArr.includes("Requiere audífonos"),
+    automaticOnly: restrArr.includes("Solo transmisión automática"),
+    otherRestrictions: restrArr.filter(
+      (r) =>
+        ![
+          "Requiere lentes correctivos",
+          "Requiere audífonos",
+          "Solo transmisión automática",
+        ].includes(r)
+    ),
+  };
+
+  // 2. Convertir emergencyContacts[] → emergencyContact (singular) + additionalEmergencyContacts
+  const ecList = data.emergencyContacts || [];
+  const [primaryEC, ...additionalEC] = ecList;
+  const emergencyContact: EmergencyContact | undefined = primaryEC
+    ? {
+        name: primaryEC.name,
+        relationship: primaryEC.relationship as EmergencyContact["relationship"],
+        phone: primaryEC.phone,
+        alternativePhone: primaryEC.secondaryPhone || undefined,
+        address: primaryEC.address || undefined,
+      }
+    : undefined;
+  const additionalEmergencyContacts: EmergencyContact[] = additionalEC.map((ec) => ({
+    name: ec.name,
+    relationship: ec.relationship as EmergencyContact["relationship"],
+    phone: ec.phone,
+    alternativePhone: ec.secondaryPhone || undefined,
+    address: ec.address || undefined,
+  }));
+
+  return {
+    firstName: data.firstName,
+    lastName: data.lastName,
+    email: data.email,
+    phone: data.phone,
+    alternativePhone: data.secondaryPhone || undefined,
+    documentType: data.documentType,
+    documentNumber: data.documentNumber,
+    birthDate: data.birthDate,
+    bloodType: data.bloodType,
+    photoUrl: data.photoUrl || undefined,
+    address: data.address,
+    district: data.district || undefined,
+    province: data.city || undefined,             // form llama "city" a province
+    department: data.department || undefined,
+    nationality: "PE",                              // default si el form no lo captura
+    license: {
+      number: data.license.number,
+      category: data.license.category,
+      issueDate: data.license.issueDate,
+      expiryDate: data.license.expiryDate,
+      issuingAuthority: data.license.issuingEntity,
+      issuingCountry: "PE",
+      points: data.license.points,
+      maxPoints: 100,
+      restrictions: licenseRestrictions,
+      verificationStatus: "pending",
+      fileUrl: data.license.fileUrl || undefined,
+    },
+    emergencyContact,
+    additionalEmergencyContacts:
+      additionalEmergencyContacts.length > 0 ? additionalEmergencyContacts : undefined,
+    status: data.status,
+    hireDate: data.hireDate || undefined,
+    operatorId: data.operatorId || undefined,
+    operatorName: data.operatorName || undefined,
+    notes: data.notes || undefined,
+    availability: "available",
+    isEnabled: data.status === "active",
+  } as Partial<Driver>;
+}
+
+/**
  * Página principal de Conductores
  */
 export default function DriversPage() {
+  const { getOperatorName, operators } = useEntityCache();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<DriverStatus | "all">("all");
   const [availabilityFilter, setAvailabilityFilter] = useState<DriverAvailability | "all">("all");
@@ -307,17 +413,26 @@ export default function DriversPage() {
     }) ?? [];
   }, [driversRaw, statusFilter, availabilityFilter, licenseFilter, operatorFilter]);
 
-  // Operadores/empresas transportistas únicos para filtro
+  // Operadores/empresas transportistas únicos para filtro.
+  // Fuente de verdad: el EntityCache. Si está vacío (backend devolvió 404 o nada),
+  // derivamos del listado de conductores como fallback.
   const operatorOptions = useMemo(() => {
+    if (operators.length > 0) {
+      return operators.map(op => ({
+        value: op.id,
+        label: op.tradeName || op.businessName || op.code || op.id,
+      }));
+    }
+    // Fallback: derivar de los drivers cargados
     if (!driversRaw) return [];
-    const operators = new Map<string, string>();
+    const map = new Map<string, string>();
     driversRaw.forEach(d => {
-      if (d.operatorId && d.operatorName) {
-        operators.set(d.operatorId, d.operatorName);
+      if (d.operatorId) {
+        map.set(d.operatorId, d.operatorName || getOperatorName(d.operatorId));
       }
     });
-    return Array.from(operators.entries()).map(([id, name]) => ({ value: id, label: name }));
-  }, [driversRaw]);
+    return Array.from(map.entries()).map(([id, name]) => ({ value: id, label: name }));
+  }, [operators, driversRaw, getOperatorName]);
 
   // Calcular paginación
   const totalItems = filteredDrivers.length;
@@ -403,13 +518,15 @@ export default function DriversPage() {
   const handleFormSubmit = useCallback(async (data: DriverFormData) => {
     setIsSubmitting(true);
     try {
+      // Convertir el shape del form al shape del dominio (Driver) antes de enviar.
+      // Sin esto, el transformer recibe claves equivocadas y descarta campos.
+      const driverPayload = mapDriverFormToDriver(data);
+
       if (selectedDriver) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await driversService.update(selectedDriver.id, data as any);
+        await driversService.update(selectedDriver.id, driverPayload);
         toast.success("Conductor actualizado correctamente");
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await driversService.create(data as any);
+        await driversService.create(driverPayload as Parameters<typeof driversService.create>[0]);
         toast.success("Conductor creado correctamente");
       }
       setIsFormModalOpen(false);
@@ -486,8 +603,16 @@ export default function DriversPage() {
       await driversService.assignVehicle(driverId, vehicleId);
       toast.success("Vehículo asignado correctamente");
       handleRefresh();
-    } catch {
-      toast.error("Error al asignar vehículo");
+    } catch (err) {
+      // 2026-05-03 (issue HIGH #8/#9): mostrar mensaje claro cuando el backend
+      // no implementó el endpoint en lugar de "Error" genérico.
+      if (isBackendNotImplemented(err)) {
+        toast.warning("Asignación de vehículo pendiente del backend", {
+          description: "El equipo backend aún no implementó este endpoint.",
+        });
+      } else {
+        toast.error("Error al asignar vehículo");
+      }
     }
   }, [handleRefresh]);
 
@@ -496,8 +621,14 @@ export default function DriversPage() {
       await driversService.unassignVehicle(driverId, vehicleId);
       toast.success("Vehículo desasignado correctamente");
       handleRefresh();
-    } catch {
-      toast.error("Error al desasignar vehículo");
+    } catch (err) {
+      if (isBackendNotImplemented(err)) {
+        toast.warning("Desasignación de vehículo pendiente del backend", {
+          description: "El equipo backend aún no implementó este endpoint.",
+        });
+      } else {
+        toast.error("Error al desasignar vehículo");
+      }
     }
   }, [handleRefresh]);
 
@@ -662,7 +793,8 @@ export default function DriversPage() {
                       <TableCell>{driver.documentNumber}</TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {driver.operatorName || "Sin asignar"}
+                          {driver.operatorName
+                            || (driver.operatorId ? getOperatorName(driver.operatorId) : "Sin asignar")}
                         </span>
                       </TableCell>
                       <TableCell>

@@ -1,0 +1,36 @@
+meta {
+  name: Change status (PATCH)
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/workflows/{{lastWorkflowId}}/status
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "active"
+  }
+}
+
+docs {
+  # PATCH /workflows/:id/status
+
+  Cambia el estado. Response minimo:
+  ```
+  {"data": {"id": "...", "status": "active"}}
+  ```
+
+  Valores validos: `"draft"`, `"active"` (posiblemente `"inactive"` — verificar).
+}

@@ -483,7 +483,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
 
                 {activeTab === 'history' && (
                   <div className="space-y-3">
-                    {order.statusHistory.map((history, index) => (
+                    {/* 2026-05-03 (issue HIGH #21): guard contra statusHistory undefined */}
+                    {(order.statusHistory ?? []).map((history, index) => (
                       <div
                         key={history.id || index}
                         className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"

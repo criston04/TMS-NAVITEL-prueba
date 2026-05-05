@@ -59,6 +59,10 @@ export interface Product extends BaseEntity {
   dimensions?: ProductDimensions;
   /** Condiciones de transporte */
   transportConditions: TransportConditions;
+  /** Carga peligrosa (mapea a `is_hazardous` en el backend) */
+  isDangerous?: boolean;
+  /** Clasificación de carga peligrosa (ADR/IMDG/etc) */
+  hazardousClass?: string;
   /** Estado */
   status: EntityStatus;
   /** Código de barras */

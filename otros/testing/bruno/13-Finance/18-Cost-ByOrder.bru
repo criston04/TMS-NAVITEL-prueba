@@ -1,0 +1,21 @@
+meta {
+  name: Costs by order
+  type: http
+  seq: 18
+}
+
+get {
+  url: {{baseUrl}}/finance/costs/by-order/{{lastOrderId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/costs/by-order/:orderId
+
+  Devuelve todos los costos asociados a una orden. Envelope `{data: [...]}`.
+}

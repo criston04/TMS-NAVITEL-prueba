@@ -550,24 +550,20 @@ export function useOrderFilters(initialFilters: OrderFilters = {}) {
   const [gpsOperators, setGPSOperators] = useState<Array<{ id: string; name: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Cargar datos de filtros
+  // Cargar datos de filtros — usamos allSettled para que el fallo de uno
+  // (ej. backend 429 en customers) no afecte a los demás filtros.
   useEffect(() => {
     const loadFilterData = async () => {
       setIsLoading(true);
-      try {
-        const [customersData, carriersData, gpsData] = await Promise.all([
-          orderService.getCustomers(),
-          orderService.getCarriers(),
-          orderService.getGPSOperators(),
-        ]);
-        setCustomers(customersData);
-        setCarriers(carriersData);
-        setGPSOperators(gpsData);
-      } catch (error) {
-        console.error('Error loading filter data:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      const [customersRes, carriersRes, gpsRes] = await Promise.allSettled([
+        orderService.getCustomers(),
+        orderService.getCarriers(),
+        orderService.getGPSOperators(),
+      ]);
+      setCustomers(customersRes.status === "fulfilled" ? customersRes.value : []);
+      setCarriers(carriersRes.status === "fulfilled" ? carriersRes.value : []);
+      setGPSOperators(gpsRes.status === "fulfilled" ? gpsRes.value : []);
+      setIsLoading(false);
     };
 
     loadFilterData();

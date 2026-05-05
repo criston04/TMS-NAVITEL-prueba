@@ -143,10 +143,13 @@ export interface ImportError {
 }
 
 /**
- * Opciones de exportación
+ * Opciones de exportación.
+ *
+ * NOTA: el backend Rev3 acepta solo: "pdf", "excel", "csv", "json", "html".
+ * NO acepta "xlsx" — usa "excel" para Excel. Verificado contra producción 2026-05-01.
  */
 export interface ExportOptions {
-  format: "xlsx" | "csv";
+  format: "excel" | "csv" | "pdf" | "json" | "html";
   columns?: string[];
   filters?: Record<string, unknown>;
 }

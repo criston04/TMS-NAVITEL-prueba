@@ -1,0 +1,21 @@
+meta {
+  name: Maintenance settings
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/maintenance/settings
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/settings
+
+  Configuracion del modulo de mantenimiento. Envelope `{data: {}}`.
+}

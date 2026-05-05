@@ -61,6 +61,9 @@ const productFormSchema = z.object({
   handlingInstructions: z.string().optional(),
   stackable: z.boolean().default(true),
   maxStackHeight: z.coerce.number().min(0).optional(),
+  // Carga peligrosa (deriva de category="peligroso" pero también permite override explícito)
+  isDangerous: z.boolean().default(false),
+  hazardousClass: z.string().optional(),
   // Otros
   customerId: z.string().optional(),
   notes: z.string().optional(),

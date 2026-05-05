@@ -167,7 +167,7 @@ export function RouteDeviationPanel({
                         dev.severity === "major" ? "text-red-500" : "text-amber-500"
                       )}
                     >
-                      +{dev.distanceFromPlannedKm.toFixed(2)} km
+                      +{(dev.distanceFromPlannedKm ?? 0).toFixed(2)} km
                     </span>
                   </div>
                 </button>

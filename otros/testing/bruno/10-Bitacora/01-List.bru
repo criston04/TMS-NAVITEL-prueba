@@ -1,0 +1,40 @@
+meta {
+  name: List entries
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/bitacora?page=1&pageSize=20
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /bitacora
+
+  Envelope: `{data: [...], meta: {total, page, pageSize, totalPages}}` — **mixto**
+  (usa `data` como array, no `items`).
+
+  Shape de cada entry:
+  - `id, tenant_id, event_type, status, severity, source`
+  - `vehicle_id, vehicle_plate (null)` — backend NO hidrata plate
+  - `driver_id, driver_name (null)` — backend NO hidrata name
+  - `geofence_id, geofence_name`
+  - `lat, lng, address, speed`
+  - `start_timestamp, end_timestamp, dwell_time_minutes`
+  - `was_expected (0|1)`
+  - `description, operator_notes`
+  - `reviewed_by, reviewed_at`
+  - `created_order_id`
+  - `created_at, updated_at`
+}

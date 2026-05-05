@@ -1,0 +1,25 @@
+meta {
+  name: Profitability analysis
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/finance/profitability
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/profitability
+
+  Analisis de rentabilidad.
+
+  Response: `{data: {totalRevenue, totalCosts, grossProfit, grossMarginPercent, byCustomer: [...]}}`.
+
+  Filtros opcionales: `dateFrom`, `dateTo`, `customerId`.
+}

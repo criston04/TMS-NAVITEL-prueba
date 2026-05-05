@@ -1,0 +1,142 @@
+meta {
+  name: Create work order
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/maintenance/work-orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "vehicleId": "{{lastVehicleId}}",
+    "type": "preventive",
+    "maintenanceType": "oil_change",
+    "priority": "normal",
+    "title": "Cambio aceite y filtros 5000km",
+    "description": "Mantenimiento preventivo programado: cambio de aceite, filtro de aceite y filtro de aire",
+    "status": "pending",
+    "scheduledDate": "2026-05-05T08:00:00Z",
+    "workshopId": "{{lastWorkshopId}}",
+    "technicianId": null,
+    "mileageAtService": 5000,
+    "estimatedCost": 350,
+    "estimatedLaborHours": 2,
+    "scheduleId": "{{lastScheduleId}}",
+    "breakdownId": null,
+    "partsUsed": [
+      {
+        "partId": "{{lastPartId}}",
+        "partNumber": "OIL-15W40",
+        "partName": "Aceite 15W-40 25L",
+        "quantity": 1,
+        "unitCost": 280,
+        "totalCost": 280
+      }
+    ],
+    "notes": "Programado en taller central"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastWorkOrderId", id);
+
+  const sent = {
+    vehicleId: bru.getEnvVar("lastVehicleId"),
+    type: "preventive",
+    maintenanceType: "oil_change",
+    priority: "normal",
+    title: "Cambio aceite y filtros 5000km",
+    description: "Mantenimiento preventivo programado: cambio de aceite, filtro de aceite y filtro de aire",
+    status: "pending",
+    mileageAtService: 5000,
+    estimatedCost: 350,
+    estimatedLaborHours: 2,
+    notes: "Programado en taller central",
+  };
+
+  console.log("===================================================");
+  console.log("        VERIFICACION CREATE WORK ORDER             ");
+  console.log("===================================================");
+  console.log("work order id:    ", id);
+  console.log("work order number:", obj.workOrderNumber ?? obj.work_order_number ?? obj.orderNumber);
+  console.log("");
+  for (const k of Object.keys(sent)) {
+    const altKey = k.replace(/[A-Z]/g, m => "_" + m.toLowerCase());
+    const got = obj[k] ?? obj[altKey];
+    if (got === null || got === undefined) {
+      console.log("  ❌", k.padEnd(22), "PERDIDO — env:", JSON.stringify(sent[k]));
+    } else {
+      console.log("  ", got === sent[k] ? "✅" : "⚠️", k.padEnd(22), JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- PARTS USADAS ---");
+  if (Array.isArray(obj.partsUsed) || Array.isArray(obj.parts_used)) {
+    const parts = obj.partsUsed ?? obj.parts_used;
+    console.log("  ", "✅ persistidas (" + parts.length + " repuestos)");
+  } else {
+    console.log("  ", "❌ DESCARTADO");
+  }
+
+  console.log("");
+  console.log("--- CAMPOS LIFECYCLE (esperado null hasta completar) ---");
+  for (const k of ["startedDate", "started_at", "completedDate", "completed_at", "actualCost", "actual_cost", "actualLaborHours", "actual_labor_hours", "completedBy", "completed_by", "workDone", "work_done", "recommendations"]) {
+    if (k in obj) console.log("  ", k.padEnd(22), "=", obj[k] === null ? "null (esperado)" : JSON.stringify(obj[k]));
+  }
+  console.log("===================================================");
+}
+
+docs {
+  # POST /maintenance/work-orders — alineado con WorkOrder del frontend
+
+  ## Body shape (src/types/maintenance.ts línea 166)
+  ```typescript
+  {
+    vehicleId: string,
+    type: WorkOrderType,             // "preventive"|"corrective"|"inspection"|"emergency"
+    maintenanceType?: MaintenanceType,
+    priority: WorkOrderPriority,     // "low"|"normal"|"high"|"urgent"
+    title: string,
+    description: string,
+    status: WorkOrderStatus,         // "pending" inicial
+    scheduledDate?: string,
+    workshopId?: string,
+    technicianId?: string,
+    mileageAtService?: number,
+    estimatedCost?: number,
+    estimatedLaborHours?: number,
+    partsUsed: WorkOrderPart[],
+    scheduleId?: string,             // si viene de schedule preventivo
+    breakdownId?: string,             // si viene de falla
+    notes?: string,
+  }
+  ```
+
+  ## Cambios respecto a versión anterior
+  - `priority` valores correctos: `low|normal|high|urgent` (no `medium`)
+  - Agregados: `title`, `status`, `maintenanceType`, `workshopId`, `technicianId`,
+    `mileageAtService`, `estimatedCost`, `estimatedLaborHours`, `partsUsed`,
+    `scheduleId`, `breakdownId`, `notes`
+
+  ## Campos lifecycle (null al crear, se llenan al completar)
+  - `startedDate`, `completedDate`, `actualCost`, `actualLaborHours`
+  - `workDone`, `recommendations`, `completedBy`
+}

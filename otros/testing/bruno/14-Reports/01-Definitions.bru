@@ -1,0 +1,22 @@
+meta {
+  name: Report definitions
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/reports/definitions
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /reports/definitions
+
+  Definiciones de reportes (tipos de reportes disponibles).
+  Envelope `{data: []}`.
+}

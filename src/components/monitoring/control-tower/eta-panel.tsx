@@ -50,7 +50,7 @@ export function ETAPanel({ eta, className }: ETAPanelProps) {
             <MapPin className="h-3 w-3" />
             {eta.milestoneName}
           </span>
-          <span className="font-mono font-semibold">{eta.distanceRemainingKm.toFixed(1)} km</span>
+          <span className="font-mono font-semibold">{(eta.distanceRemainingKm ?? 0).toFixed(1)} km</span>
         </div>
 
         <div className="flex items-center justify-between text-xs">
@@ -66,7 +66,7 @@ export function ETAPanel({ eta, className }: ETAPanelProps) {
             <TrendingUp className="h-3 w-3" />
             Vel. promedio
           </span>
-          <span className="font-mono">{eta.avgSpeedKmh.toFixed(0)} km/h</span>
+          <span className="font-mono">{(eta.avgSpeedKmh ?? 0).toFixed(0)} km/h</span>
         </div>
       </div>
 

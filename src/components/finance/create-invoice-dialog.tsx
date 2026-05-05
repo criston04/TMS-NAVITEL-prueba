@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2, Calculator } from "lucide-react";
 import {
   Dialog,
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useFinance } from "@/hooks/useFinance";
-import { customersMock } from "@/mocks/master/customers.mock";
+import { customersService } from "@/services/master";
 
 interface CreateInvoiceDialogProps {
   open: boolean;
@@ -50,7 +50,15 @@ export function CreateInvoiceDialog({ open, onOpenChange }: CreateInvoiceDialogP
     { id: "1", description: "", quantity: 1, unitPrice: 0, total: 0 },
   ]);
 
-  const customers = customersMock.map(c => ({ id: c.id, name: c.tradeName || c.name }));
+  // Clientes del backend real (se carga al montar)
+  const [customers, setCustomers] = useState<Array<{ id: string; name: string }>>([]);
+  useEffect(() => {
+    customersService.getAll({ pageSize: 200 })
+      .then(resp => {
+        setCustomers(resp.items.map(c => ({ id: c.id, name: c.tradeName || c.name })));
+      })
+      .catch(err => console.warn("[CreateInvoiceDialog] Error cargando clientes:", err));
+  }, []);
 
   const addLineItem = () => {
     setLineItems([

@@ -765,12 +765,18 @@ export interface Vehicle extends ActivatableEntity {
   /* --- Asignaciones --- */
   /** ID del operador logístico propietario */
   operatorId?: string;
-  
+
   operatorName?: string;
   /** ID del conductor asignado actualmente */
   currentDriverId?: string;
   /** Nombre del conductor asignado */
   currentDriverName?: string;
+
+  /* --- Bloqueo --- */
+  /** Fecha de bloqueo (ISO) — devuelta por el backend tras /block */
+  blockedAt?: string;
+  /** Motivo de bloqueo */
+  blockedReason?: string;
 
   /* --- Documentación legacy (para checklist) --- */
   /** Checklist de documentos */

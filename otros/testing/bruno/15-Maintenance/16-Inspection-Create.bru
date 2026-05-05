@@ -1,0 +1,44 @@
+meta {
+  name: Create inspection
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/maintenance/inspections
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "vehicleId": "{{lastVehicleId}}",
+    "type": "technical",
+    "inspectionDate": "2026-04-22T00:00:00Z",
+    "inspectorName": "Juan Tecnico",
+    "result": "passed",
+    "nextInspectionDate": "2027-04-22T00:00:00Z"
+  }
+}
+
+docs {
+  # POST /maintenance/inspections
+
+  **Campos requeridos:** `vehicleId`, `type`, `inspectionDate`, `inspectorName`,
+  `result`, `nextInspectionDate`.
+
+  Si faltan campos responde **500 Internal Server Error** (no un 400 claro).
+
+  `type`: `technical`, `visual`, `pre_trip`, `post_trip`.
+  `result`: `passed`, `failed`, `conditional`.
+
+  Response 201 shape minimo `{data: {id, result}}`.
+}

@@ -185,11 +185,11 @@ export function CustomerTable({
                   <div className="flex items-center gap-3">
                     <div className={cn(
                       "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
-                      customer.type === "empresa" 
+                      customer.type === "company" 
                         ? "bg-primary/10" 
                         : "bg-blue-500/10"
                     )}>
-                      {customer.type === "empresa" 
+                      {customer.type === "company" 
                         ? <Building2 className="h-5 w-5 text-primary" />
                         : <User className="h-5 w-5 text-blue-500" />
                       }

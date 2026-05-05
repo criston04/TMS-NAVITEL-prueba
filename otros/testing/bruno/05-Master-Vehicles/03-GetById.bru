@@ -1,0 +1,24 @@
+meta {
+  name: Get vehicle by id
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/master/vehicles/{{lastVehicleId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/vehicles/:id
+
+  Devuelve envelope `{data: {...}}` con el vehicle completo.
+
+  Shape del backend:
+  `{id, tenant_id, plate, type, brand, model, year, vin, color, fuel_type, operational_status, status, current_mileage, notes, operator_id, created_at, updated_at, deleted_at}`
+}

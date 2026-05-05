@@ -1,0 +1,25 @@
+meta {
+  name: Mark as reviewed
+  type: http
+  seq: 11
+}
+
+put {
+  url: {{baseUrl}}/bitacora/{{lastBitacoraEntryId}}/review
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # PUT /bitacora/:id/review
+
+  Marca un entry como revisado. No requiere body.
+  Response: entry completo con `status: "reviewed"` y `reviewed_at` poblado.
+
+  **Maquina de estados:** `active` → `reviewed`.
+  Una vez `reviewed` no se puede ir a `completed` directamente (backend responde 409).
+}

@@ -1,8 +1,19 @@
 /**
  * @fileoverview Servicio de Mantenimiento de Flota
- * Gestión integral de mantenimiento vehicular
+ *
+ * Conecta contra `/api/v1/maintenance/*` del backend Rev3.
+ *
+ * Patrón defensivo:
+ *  - GETs: si el endpoint devuelve 404 (no implementado todavía en backend),
+ *    retornamos lista vacía / null. La UI muestra empty state en vez de crash.
+ *  - Mutations (POST/PATCH/DELETE): propagan el error al caller. Si el endpoint
+ *    no existe, el caller mostrará un toast con el mensaje del backend.
  */
 
+import { apiClient } from '@/lib/api';
+import { API_ENDPOINTS } from '@/config/api.config';
+import { tmsEventBus } from '@/services/integration/event-bus.service';
+import { snakeToCamel } from '@/lib/case-converter';
 import type {
   MaintenanceVehicle,
   MaintenanceSchedule,
@@ -18,11 +29,39 @@ import type {
   VehicleMaintenanceHistory,
   MaintenanceSettings,
 } from '@/types/maintenance';
-import { tmsEventBus } from '@/services/integration/event-bus.service';
+
+const ENDPOINTS = API_ENDPOINTS.maintenance;
+
+/**
+ * Helper: llama apiClient.get y devuelve fallback (típicamente []) si el
+ * endpoint responde 404. Otros errores se propagan.
+ */
+async function getOrEmpty<T>(url: string, fallback: T, params?: Record<string, unknown>): Promise<T> {
+  try {
+    const res = await apiClient.get<unknown>(url, { params: params as Record<string, string> | undefined });
+    // 2026-05-03 (UI bug fix): el backend de maintenance devuelve campos en
+    // snake_case (`vehicle_id`, `created_at`, `work_order_id`, etc.). Aplicamos
+    // snakeToCamel para que el frontend reciba camelCase como espera.
+    // Aceptar shapes { items, data, meta } o array directo
+    if (Array.isArray(res)) return snakeToCamel<T>(res);
+    if (res && typeof res === 'object') {
+      const obj = res as Record<string, unknown>;
+      if (Array.isArray(obj.items)) return snakeToCamel<T>(obj.items);
+      if (Array.isArray(obj.data)) return snakeToCamel<T>(obj.data);
+      // Si fallback es array y no hay items/data, devolver fallback
+      if (Array.isArray(fallback)) return fallback;
+      // Si es objeto puro, devolverlo con conversion snake→camel
+      return snakeToCamel<T>(res);
+    }
+    return fallback;
+  } catch (err) {
+    const status = (err as { status?: number })?.status;
+    if (status === 404) return fallback;
+    throw err;
+  }
+}
 
 class MaintenanceService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-
   // ==================== VEHÍCULOS ====================
 
   async getVehicles(filters?: {
@@ -30,59 +69,24 @@ class MaintenanceService {
     type?: string;
     search?: string;
   }): Promise<MaintenanceVehicle[]> {
-    // TODO: Reemplazar con llamada real al backend
-    const { mockVehicles } = await import('@/mocks/maintenance/vehicles');
-    let vehicles = [...mockVehicles];
-
-    if (filters?.status) {
-      vehicles = vehicles.filter(v => v.status === filters.status);
-    }
-    if (filters?.type) {
-      vehicles = vehicles.filter(v => v.type === filters.type);
-    }
-    if (filters?.search) {
-      const search = filters.search.toLowerCase();
-      vehicles = vehicles.filter(v =>
-        v.plate.toLowerCase().includes(search) ||
-        v.brand.toLowerCase().includes(search) ||
-        v.model.toLowerCase().includes(search)
-      );
-    }
-
-    return vehicles;
+    return getOrEmpty<MaintenanceVehicle[]>(ENDPOINTS.vehicles, [], filters as Record<string, unknown>);
   }
 
   async getVehicleById(id: string): Promise<MaintenanceVehicle | null> {
-    const { mockVehicles } = await import('@/mocks/maintenance/vehicles');
-    return mockVehicles.find(v => v.id === id) || null;
+    return apiClient.getOptional<MaintenanceVehicle>(`${ENDPOINTS.vehicles}/${id}`);
   }
 
   async createVehicle(data: Omit<MaintenanceVehicle, 'id' | 'createdAt' | 'updatedAt'>): Promise<MaintenanceVehicle> {
-    // TODO: Implementar llamada al backend
-    const newVehicle: MaintenanceVehicle = {
-      ...data,
-      id: `vehicle-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return newVehicle;
+    return apiClient.post<MaintenanceVehicle>(ENDPOINTS.vehicles, data);
   }
 
   async updateVehicle(id: string, data: Partial<MaintenanceVehicle>): Promise<MaintenanceVehicle> {
-    // TODO: Implementar llamada al backend
-    const vehicle = await this.getVehicleById(id);
-    if (!vehicle) throw new Error('Vehicle not found');
-    
-    return {
-      ...vehicle,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
+    // 2026-05-03: cambiado PATCH → PUT por alineación con Excel oficial.
+    return apiClient.put<MaintenanceVehicle>(`${ENDPOINTS.vehicles}/${id}`, data);
   }
 
   async deleteVehicle(id: string): Promise<void> {
-    // TODO: Implementar llamada al backend
-    console.log('Deleting vehicle:', id);
+    await apiClient.delete(`${ENDPOINTS.vehicles}/${id}`);
   }
 
   async updateVehicleMileage(id: string, mileage: number): Promise<MaintenanceVehicle> {
@@ -95,42 +99,29 @@ class MaintenanceService {
   // ==================== MANTENIMIENTO PREVENTIVO ====================
 
   async getMaintenanceSchedules(vehicleId?: string): Promise<MaintenanceSchedule[]> {
-    const { mockMaintenanceSchedules } = await import('@/mocks/maintenance/schedules');
-    if (vehicleId) {
-      return mockMaintenanceSchedules.filter(s => s.vehicleId === vehicleId);
-    }
-    return mockMaintenanceSchedules;
+    return getOrEmpty<MaintenanceSchedule[]>(
+      ENDPOINTS.schedules,
+      [],
+      vehicleId ? { vehicleId } : undefined
+    );
   }
 
   async createMaintenanceSchedule(
     data: Omit<MaintenanceSchedule, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<MaintenanceSchedule> {
-    const newSchedule: MaintenanceSchedule = {
-      ...data,
-      id: `schedule-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return newSchedule;
+    return apiClient.post<MaintenanceSchedule>(ENDPOINTS.schedules, data);
   }
 
   async updateMaintenanceSchedule(
     id: string,
     data: Partial<MaintenanceSchedule>
   ): Promise<MaintenanceSchedule> {
-    const { mockMaintenanceSchedules } = await import('@/mocks/maintenance/schedules');
-    const schedule = mockMaintenanceSchedules.find(s => s.id === id);
-    if (!schedule) throw new Error('Schedule not found');
-    
-    return {
-      ...schedule,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
+    // 2026-05-03: PATCH → PUT por alineación con Excel oficial.
+    return apiClient.put<MaintenanceSchedule>(`${ENDPOINTS.schedules}/${id}`, data);
   }
 
   async deleteMaintenanceSchedule(id: string): Promise<void> {
-    console.log('Deleting schedule:', id);
+    await apiClient.delete(`${ENDPOINTS.schedules}/${id}`);
   }
 
   // ==================== MANTENIMIENTO CORRECTIVO ====================
@@ -140,44 +131,18 @@ class MaintenanceService {
     status?: string;
     severity?: string;
   }): Promise<Breakdown[]> {
-    const { mockBreakdowns } = await import('@/mocks/maintenance/breakdowns');
-    let breakdowns = [...mockBreakdowns];
-
-    if (filters?.vehicleId) {
-      breakdowns = breakdowns.filter(b => b.vehicleId === filters.vehicleId);
-    }
-    if (filters?.status) {
-      breakdowns = breakdowns.filter(b => b.status === filters.status);
-    }
-    if (filters?.severity) {
-      breakdowns = breakdowns.filter(b => b.severity === filters.severity);
-    }
-
-    return breakdowns;
+    return getOrEmpty<Breakdown[]>(ENDPOINTS.breakdowns, [], filters as Record<string, unknown>);
   }
 
   async createBreakdown(
     data: Omit<Breakdown, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<Breakdown> {
-    const newBreakdown: Breakdown = {
-      ...data,
-      id: `breakdown-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return newBreakdown;
+    return apiClient.post<Breakdown>(ENDPOINTS.breakdowns, data);
   }
 
   async updateBreakdown(id: string, data: Partial<Breakdown>): Promise<Breakdown> {
-    const { mockBreakdowns } = await import('@/mocks/maintenance/breakdowns');
-    const breakdown = mockBreakdowns.find(b => b.id === id);
-    if (!breakdown) throw new Error('Breakdown not found');
-    
-    return {
-      ...breakdown,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
+    // 2026-05-03: PATCH → PUT por alineación con Excel oficial.
+    return apiClient.put<Breakdown>(`${ENDPOINTS.breakdowns}/${id}`, data);
   }
 
   // ==================== ÓRDENES DE TRABAJO ====================
@@ -189,62 +154,22 @@ class MaintenanceService {
     dateFrom?: string;
     dateTo?: string;
   }): Promise<WorkOrder[]> {
-    const { mockWorkOrders } = await import('@/mocks/maintenance/work-orders');
-    let workOrders = [...mockWorkOrders];
-
-    if (filters?.vehicleId) {
-      workOrders = workOrders.filter(w => w.vehicleId === filters.vehicleId);
-    }
-    if (filters?.status) {
-      workOrders = workOrders.filter(w => w.status === filters.status);
-    }
-    if (filters?.type) {
-      workOrders = workOrders.filter(w => w.type === filters.type);
-    }
-
-    return workOrders;
+    return getOrEmpty<WorkOrder[]>(ENDPOINTS.workOrders, [], filters as Record<string, unknown>);
   }
 
   async getWorkOrderById(id: string): Promise<WorkOrder | null> {
-    const { mockWorkOrders } = await import('@/mocks/maintenance/work-orders');
-    return mockWorkOrders.find(w => w.id === id) || null;
+    return apiClient.getOptional<WorkOrder>(`${ENDPOINTS.workOrders}/${id}`);
   }
 
   async createWorkOrder(
     data: Omit<WorkOrder, 'id' | 'orderNumber' | 'createdDate' | 'updatedAt'>
   ): Promise<WorkOrder> {
-    const orderNumber = `OT-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
-    const newWorkOrder: WorkOrder = {
-      ...data,
-      id: `work-order-${Date.now()}`,
-      orderNumber,
-      createdDate: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Publicar evento: vehículo entra en mantenimiento
-    tmsEventBus.publish('maintenance:started', {
-      maintenanceId: newWorkOrder.id,
-      vehicleId: data.vehicleId,
-      vehiclePlate: '',
-      maintenanceType: data.type || 'corrective',
-      status: 'in_progress',
-      estimatedCompletion: data.scheduledDate,
-    }, 'maintenance-service');
-
-    return newWorkOrder;
+    return apiClient.post<WorkOrder>(ENDPOINTS.workOrders, data);
   }
 
   async updateWorkOrder(id: string, data: Partial<WorkOrder>): Promise<WorkOrder> {
-    const { mockWorkOrders } = await import('@/mocks/maintenance/work-orders');
-    const workOrder = mockWorkOrders.find(w => w.id === id);
-    if (!workOrder) throw new Error('Work order not found');
-    
-    return {
-      ...workOrder,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
+    // 2026-05-03: PATCH → PUT por alineación con Excel oficial.
+    return apiClient.put<WorkOrder>(`${ENDPOINTS.workOrders}/${id}`, data);
   }
 
   async completeWorkOrder(
@@ -278,37 +203,22 @@ class MaintenanceService {
   // ==================== TALLERES ====================
 
   async getWorkshops(isActive?: boolean): Promise<Workshop[]> {
-    const { mockWorkshops } = await import('@/mocks/maintenance/workshops');
-    if (isActive !== undefined) {
-      return mockWorkshops.filter(w => w.isActive === isActive);
-    }
-    return mockWorkshops;
+    return getOrEmpty<Workshop[]>(
+      ENDPOINTS.workshops,
+      [],
+      typeof isActive === 'boolean' ? { isActive: String(isActive) } : undefined
+    );
   }
 
   async createWorkshop(
     data: Omit<Workshop, 'id' | 'createdAt' | 'updatedAt' | 'totalWorkOrders' | 'totalCost'>
   ): Promise<Workshop> {
-    const newWorkshop: Workshop = {
-      ...data,
-      id: `workshop-${Date.now()}`,
-      totalWorkOrders: 0,
-      totalCost: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return newWorkshop;
+    return apiClient.post<Workshop>(ENDPOINTS.workshops, data);
   }
 
   async updateWorkshop(id: string, data: Partial<Workshop>): Promise<Workshop> {
-    const { mockWorkshops } = await import('@/mocks/maintenance/workshops');
-    const workshop = mockWorkshops.find(w => w.id === id);
-    if (!workshop) throw new Error('Workshop not found');
-    
-    return {
-      ...workshop,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
+    // 2026-05-03: PATCH → PUT por alineación con Excel oficial.
+    return apiClient.put<Workshop>(`${ENDPOINTS.workshops}/${id}`, data);
   }
 
   // ==================== REPUESTOS ====================
@@ -318,56 +228,40 @@ class MaintenanceService {
     lowStock?: boolean;
     search?: string;
   }): Promise<Part[]> {
-    const { mockParts } = await import('@/mocks/maintenance/parts');
-    let parts = [...mockParts];
-
-    if (filters?.category) {
-      parts = parts.filter(p => p.category === filters.category);
-    }
-    if (filters?.lowStock) {
-      parts = parts.filter(p => p.currentStock <= p.minStock);
-    }
-    if (filters?.search) {
-      const search = filters.search.toLowerCase();
-      parts = parts.filter(p =>
-        p.name.toLowerCase().includes(search) ||
-        p.partNumber.toLowerCase().includes(search)
-      );
-    }
-
-    return parts;
+    return getOrEmpty<Part[]>(ENDPOINTS.parts, [], filters as Record<string, unknown>);
   }
 
-  async createPart(
-    data: Omit<Part, 'id' | 'createdAt' | 'updatedAt'>
-  ): Promise<Part> {
-    const newPart: Part = {
-      ...data,
-      id: `part-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return newPart;
+  async createPart(data: Omit<Part, 'id' | 'createdAt' | 'updatedAt'>): Promise<Part> {
+    return apiClient.post<Part>(ENDPOINTS.parts, data);
   }
 
   async updatePart(id: string, data: Partial<Part>): Promise<Part> {
-    const { mockParts } = await import('@/mocks/maintenance/parts');
-    const part = mockParts.find(p => p.id === id);
-    if (!part) throw new Error('Part not found');
-    
-    return {
-      ...part,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
+    // 2026-05-03: PATCH → PUT por alineación con Excel oficial.
+    return apiClient.put<Part>(`${ENDPOINTS.parts}/${id}`, data);
   }
 
+  /**
+   * Lista transacciones de un repuesto.
+   *
+   * 2026-05-03: corregido. Excel oficial: GET /maintenance/parts/:id/transactions
+   * (requiere :id). Antes el frontend usaba /maintenance/parts/transactions con
+   * partId como query param, lo cual NO está en el Excel.
+   *
+   * Si no se provee partId, devolvemos [] sin llamar al backend (el endpoint
+   * exige :id).
+   */
   async getPartTransactions(partId?: string): Promise<PartTransaction[]> {
-    const { mockPartTransactions } = await import('@/mocks/maintenance/parts');
-    if (partId) {
-      return mockPartTransactions.filter(t => t.partId === partId);
+    if (!partId) {
+      console.warn(
+        "[maintenanceService.getPartTransactions] partId requerido " +
+        "según Excel oficial. Devolviendo [] sin llamar al backend."
+      );
+      return [];
     }
-    return mockPartTransactions;
+    return getOrEmpty<PartTransaction[]>(
+      `${ENDPOINTS.parts}/${partId}/transactions`,
+      []
+    );
   }
 
   // ==================== INSPECCIONES ====================
@@ -377,40 +271,37 @@ class MaintenanceService {
     type?: string;
     status?: string;
   }): Promise<Inspection[]> {
-    const { mockInspections } = await import('@/mocks/maintenance/inspections');
-    let inspections = [...mockInspections];
-
-    if (filters?.vehicleId) {
-      inspections = inspections.filter(i => i.vehicleId === filters.vehicleId);
-    }
-    if (filters?.type) {
-      inspections = inspections.filter(i => i.type === filters.type);
-    }
-    if (filters?.status) {
-      inspections = inspections.filter(i => i.status === filters.status);
-    }
-
-    return inspections;
+    return getOrEmpty<Inspection[]>(ENDPOINTS.inspections, [], filters as Record<string, unknown>);
   }
 
   async createInspection(
     data: Omit<Inspection, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<Inspection> {
-    const newInspection: Inspection = {
-      ...data,
-      id: `inspection-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    return newInspection;
+    return apiClient.post<Inspection>(ENDPOINTS.inspections, data);
   }
 
-  async getInspectionChecklists(type?: string): Promise<InspectionChecklist[]> {
-    const { mockInspectionChecklists } = await import('@/mocks/maintenance/inspections');
-    if (type) {
-      return mockInspectionChecklists.filter(c => c.type === type);
+  /**
+   * Lista checklists de una inspección.
+   *
+   * 2026-05-03: corregido. Excel oficial: GET /maintenance/inspections/:id/checklists
+   * (requiere :id). Antes el frontend pegaba a /maintenance/inspections/checklists
+   * con type como query, lo cual no está en el Excel.
+   *
+   * Cambio de signatura: ahora recibe inspectionId en lugar de type.
+   * Si no se provee, devolvemos [] sin llamar al backend.
+   */
+  async getInspectionChecklists(inspectionId?: string): Promise<InspectionChecklist[]> {
+    if (!inspectionId) {
+      console.warn(
+        "[maintenanceService.getInspectionChecklists] inspectionId requerido " +
+        "según Excel oficial. Devolviendo [] sin llamar al backend."
+      );
+      return [];
     }
-    return mockInspectionChecklists;
+    return getOrEmpty<InspectionChecklist[]>(
+      `${ENDPOINTS.inspections}/${inspectionId}/checklists`,
+      []
+    );
   }
 
   // ==================== ALERTAS ====================
@@ -420,28 +311,15 @@ class MaintenanceService {
     severity?: string;
     unreadOnly?: boolean;
   }): Promise<Alert[]> {
-    const { mockAlerts } = await import('@/mocks/maintenance/alerts');
-    let alerts = [...mockAlerts];
-
-    if (filters?.type) {
-      alerts = alerts.filter(a => a.type === filters.type);
-    }
-    if (filters?.severity) {
-      alerts = alerts.filter(a => a.severity === filters.severity);
-    }
-    if (filters?.unreadOnly) {
-      alerts = alerts.filter(a => !a.isRead);
-    }
-
-    return alerts;
+    return getOrEmpty<Alert[]>(ENDPOINTS.alerts, [], filters as Record<string, unknown>);
   }
 
   async markAlertAsRead(id: string): Promise<void> {
-    console.log('Marking alert as read:', id);
+    await apiClient.patch<void>(`${ENDPOINTS.alerts}/${id}/read`, {});
   }
 
   async dismissAlert(id: string): Promise<void> {
-    console.log('Dismissing alert:', id);
+    await apiClient.patch<void>(`${ENDPOINTS.alerts}/${id}/dismiss`, {});
   }
 
   // ==================== MÉTRICAS Y REPORTES ====================
@@ -451,30 +329,71 @@ class MaintenanceService {
     periodStart?: string,
     periodEnd?: string
   ): Promise<MaintenanceMetrics> {
-    const { mockMaintenanceMetrics } = await import('@/mocks/maintenance/metrics');
-    // TODO: Filtrar por vehículo y período
-    return mockMaintenanceMetrics;
+    const fallback = {
+      totalVehicles: 0,
+      vehiclesInMaintenance: 0,
+      vehiclesOperational: 0,
+      scheduledMaintenances: 0,
+      overdueMaintenances: 0,
+      upcomingMaintenances: 0,
+      activeBreakdowns: 0,
+      pendingWorkOrders: 0,
+      inProgressWorkOrders: 0,
+      completedWorkOrders: 0,
+      totalMaintenanceCost: 0,
+      averageRepairTime: 0,
+      averageDowntime: 0,
+      preventiveCompliance: 0,
+      topFailures: [],
+    } as unknown as MaintenanceMetrics;
+
+    const params = {
+      ...(vehicleId ? { vehicleId } : {}),
+      ...(periodStart ? { periodStart } : {}),
+      ...(periodEnd ? { periodEnd } : {}),
+    };
+
+    return getOrEmpty<MaintenanceMetrics>(ENDPOINTS.metrics, fallback, params);
   }
 
   async getVehicleHistory(vehicleId: string): Promise<VehicleMaintenanceHistory> {
-    const { mockVehicleHistory } = await import('@/mocks/maintenance/metrics');
-    return mockVehicleHistory;
+    const fallback = {
+      vehicleId,
+      totalMaintenances: 0,
+      totalCost: 0,
+      averageCost: 0,
+      lastMaintenanceDate: null,
+      workOrders: [],
+      breakdowns: [],
+      inspections: [],
+    } as unknown as VehicleMaintenanceHistory;
+
+    return getOrEmpty<VehicleMaintenanceHistory>(
+      `${ENDPOINTS.vehicles}/${vehicleId}/history`,
+      fallback
+    );
   }
 
   // ==================== CONFIGURACIÓN ====================
 
   async getSettings(): Promise<MaintenanceSettings> {
-    const { mockMaintenanceSettings } = await import('@/mocks/maintenance/settings');
-    return mockMaintenanceSettings;
+    const fallback = {
+      alertDaysBefore: 7,
+      alertKmBefore: 1000,
+      autoCreateWorkOrder: false,
+      notifyEmail: '',
+      enableNotifications: true,
+    } as unknown as MaintenanceSettings;
+
+    return getOrEmpty<MaintenanceSettings>(ENDPOINTS.settings, fallback);
   }
 
   async updateSettings(data: Partial<MaintenanceSettings>): Promise<MaintenanceSettings> {
-    const settings = await this.getSettings();
-    return {
-      ...settings,
-      ...data,
-    };
+    // 2026-05-03: PATCH → PUT por alineación con Excel oficial.
+    // Excel: PUT /api/v1/maintenance/settings (Upsert).
+    return apiClient.put<MaintenanceSettings>(ENDPOINTS.settings, data);
   }
 }
 
 export const maintenanceService = new MaintenanceService();
+export default maintenanceService;

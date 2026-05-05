@@ -1,0 +1,960 @@
+{
+  "total": 95,
+  "ok": 0,
+  "auth_errors": 95,
+  "not_found": 0,
+  "server_errors": 0,
+  "other_errors": 0,
+  "details": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "description": "Health check",
+      "status": 401,
+      "latency": 697,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/stats",
+      "description": "Dashboard KPIs",
+      "status": 401,
+      "latency": 228,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/vehicles/overview",
+      "description": "Fleet overview",
+      "status": 401,
+      "latency": 153,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/shipments",
+      "description": "Shipment stats",
+      "status": 401,
+      "latency": 167,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/vehicles/on-route",
+      "description": "On-route vehicles",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/customers",
+      "description": "List customers",
+      "status": 401,
+      "latency": 171,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/customers/stats",
+      "description": "Customer stats",
+      "status": 401,
+      "latency": 227,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/customers/cities",
+      "description": "Customer cities",
+      "status": 401,
+      "latency": 156,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/drivers",
+      "description": "List drivers",
+      "status": 401,
+      "latency": 172,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/drivers/stats",
+      "description": "Driver stats",
+      "status": 401,
+      "latency": 155,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/drivers/expiring-licenses",
+      "description": "Expiring licenses",
+      "status": 401,
+      "latency": 171,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/vehicles",
+      "description": "List vehicles",
+      "status": 401,
+      "latency": 224,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/vehicles/stats",
+      "description": "Vehicle stats",
+      "status": 401,
+      "latency": 161,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/vehicles/expiring-documents",
+      "description": "Expiring docs",
+      "status": 401,
+      "latency": 158,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/vehicles/needing-maintenance",
+      "description": "Needs maintenance",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/products",
+      "description": "List products",
+      "status": 401,
+      "latency": 162,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/products/stats",
+      "description": "Product stats",
+      "status": 401,
+      "latency": 158,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/operators",
+      "description": "List operators",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/operators/stats",
+      "description": "Operator stats",
+      "status": 401,
+      "latency": 167,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/geofences",
+      "description": "List geofences (root)",
+      "status": 401,
+      "latency": 154,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/geofences",
+      "description": "List geofences (master)",
+      "status": 401,
+      "latency": 158,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/orders",
+      "description": "List orders",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/orders/stats",
+      "description": "Order stats",
+      "status": 401,
+      "latency": 145,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/orders/status-counts",
+      "description": "Status counts (custom)",
+      "status": 401,
+      "latency": 243,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/orders",
+      "description": "List orders (FE path)",
+      "status": 401,
+      "latency": 150,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/tracking",
+      "description": "Vehicle tracking",
+      "status": 401,
+      "latency": 165,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/stats",
+      "description": "Monitoring stats",
+      "status": 401,
+      "latency": 179,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/alerts",
+      "description": "Alerts",
+      "status": 401,
+      "latency": 165,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/alert-rules",
+      "description": "Alert rules",
+      "status": 401,
+      "latency": 168,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/retransmission",
+      "description": "Retransmission",
+      "status": 401,
+      "latency": 149,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/retransmission/stats",
+      "description": "Retransmission stats",
+      "status": 401,
+      "latency": 155,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/geofence-events",
+      "description": "Geofence events",
+      "status": 401,
+      "latency": 177,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/geofence-events/stats",
+      "description": "Geofence event stats",
+      "status": 401,
+      "latency": 231,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/multi-window/panels",
+      "description": "Multi-window panels",
+      "status": 401,
+      "latency": 152,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/finance/invoices",
+      "description": "List invoices",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/finance/payments",
+      "description": "List payments",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/finance/costs",
+      "description": "List costs",
+      "status": 401,
+      "latency": 159,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/finance/rates",
+      "description": "List rates",
+      "status": 401,
+      "latency": 161,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/finance/stats",
+      "description": "Finance stats",
+      "status": 401,
+      "latency": 159,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/finance/aging",
+      "description": "Aging",
+      "status": 401,
+      "latency": 162,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/finance/profitability",
+      "description": "Profitability",
+      "status": 401,
+      "latency": 158,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/finance/cash-flow",
+      "description": "Cash flow",
+      "status": 401,
+      "latency": 186,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/orders",
+      "description": "Schedulable orders",
+      "status": 401,
+      "latency": 213,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/calendar",
+      "description": "Calendar",
+      "status": 401,
+      "latency": 161,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/conflicts",
+      "description": "Conflicts",
+      "status": 401,
+      "latency": 178,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/kpis",
+      "description": "Scheduling KPIs",
+      "status": 401,
+      "latency": 152,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/blocked-days",
+      "description": "Blocked days",
+      "status": 401,
+      "latency": 148,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/audit-logs",
+      "description": "Audit logs",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/routes",
+      "description": "List routes",
+      "status": 401,
+      "latency": 159,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/depots",
+      "description": "Depots",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/vehicles",
+      "description": "Available vehicles",
+      "status": 401,
+      "latency": 158,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/drivers",
+      "description": "Available drivers",
+      "status": 401,
+      "latency": 170,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/route-templates",
+      "description": "Route templates",
+      "status": 401,
+      "latency": 164,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/routing/calculate",
+      "description": "Routing calculate (FE path)",
+      "status": 401,
+      "latency": 157,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/routing/geocode",
+      "description": "Geocode (FE path)",
+      "status": 401,
+      "latency": 152,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/stats",
+      "description": "Maintenance stats",
+      "status": 401,
+      "latency": 158,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/work-orders",
+      "description": "Work orders",
+      "status": 401,
+      "latency": 188,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/schedules",
+      "description": "Schedules",
+      "status": 401,
+      "latency": 212,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/breakdowns",
+      "description": "Breakdowns",
+      "status": 401,
+      "latency": 171,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/vehicles",
+      "description": "Maintenance vehicles",
+      "status": 401,
+      "latency": 157,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/workshops",
+      "description": "Workshops",
+      "status": 401,
+      "latency": 165,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/parts",
+      "description": "Parts",
+      "status": 401,
+      "latency": 226,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/inspections",
+      "description": "Inspections",
+      "status": 401,
+      "latency": 166,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/alerts",
+      "description": "Alerts",
+      "status": 401,
+      "latency": 154,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/metrics",
+      "description": "Metrics",
+      "status": 401,
+      "latency": 159,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/definitions",
+      "description": "Report definitions",
+      "status": 401,
+      "latency": 161,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/templates",
+      "description": "Templates",
+      "status": 401,
+      "latency": 159,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/generated",
+      "description": "Generated reports",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/schedules",
+      "description": "Schedules",
+      "status": 401,
+      "latency": 159,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/data/operational",
+      "description": "Operational data",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/data/financial",
+      "description": "Financial data",
+      "status": 401,
+      "latency": 164,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/usage-stats",
+      "description": "Usage stats",
+      "status": 401,
+      "latency": 159,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/settings",
+      "description": "All settings",
+      "status": 401,
+      "latency": 159,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/settings/overview",
+      "description": "Settings overview",
+      "status": 401,
+      "latency": 157,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/settings/roles",
+      "description": "Roles",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/settings/integrations",
+      "description": "Integrations",
+      "status": 401,
+      "latency": 172,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/settings/integrations/health",
+      "description": "Integrations health",
+      "status": 401,
+      "latency": 164,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/settings/audit",
+      "description": "Audit log",
+      "status": 401,
+      "latency": 166,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/platform/tenants",
+      "description": "Platform tenants",
+      "status": 401,
+      "latency": 197,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/platform/users",
+      "description": "Platform users",
+      "status": 401,
+      "latency": 181,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/platform/transfers",
+      "description": "Vehicle transfers",
+      "status": 401,
+      "latency": 167,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/platform/dashboard",
+      "description": "Platform dashboard",
+      "status": 401,
+      "latency": 153,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/platform/activity",
+      "description": "Platform activity",
+      "status": 401,
+      "latency": 161,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/workflows",
+      "description": "List workflows",
+      "status": 401,
+      "latency": 200,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/workflows/active",
+      "description": "Active workflows",
+      "status": 401,
+      "latency": 198,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/workflows/default",
+      "description": "Default workflow",
+      "status": 401,
+      "latency": 184,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/bitacora",
+      "description": "Bitacora entries",
+      "status": 401,
+      "latency": 149,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/bitacora/stats",
+      "description": "Bitacora stats",
+      "status": 401,
+      "latency": 154,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/bitacora/summary/vehicles",
+      "description": "By vehicle",
+      "status": 401,
+      "latency": 185,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/bitacora/summary/geofences",
+      "description": "By geofence",
+      "status": 401,
+      "latency": 208,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/notifications",
+      "description": "NOTIFICATIONS (no implementado)",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/notifications/stats",
+      "description": "NOTIFICATIONS stats (no implementado)",
+      "status": 401,
+      "latency": 176,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/medical-exams/stats",
+      "description": "MEDICAL EXAMS (no implementado)",
+      "status": 401,
+      "latency": 174,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/assignments",
+      "description": "ASSIGNMENTS (no implementado)",
+      "status": 401,
+      "latency": 209,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/audit",
+      "description": "MASTER AUDIT (no implementado)",
+      "status": 401,
+      "latency": 160,
+      "ok": false,
+      "category": "auth_errors",
+      "body_preview": "{\"message\":\"Authentication Error\"}"
+    }
+  ]
+}

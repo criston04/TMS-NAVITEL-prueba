@@ -1,18 +1,24 @@
-import { apiConfig, API_ENDPOINTS } from "@/config/api.config";
+import { API_ENDPOINTS } from "@/config/api.config";
 import { apiClient } from "@/lib/api";
-import type { 
-  Operator, 
-  OperatorStats, 
+import type {
+  Operator,
+  OperatorStats,
   OperatorContact,
   OperatorValidationChecklist,
-  OperatorDocument 
+  OperatorDocument
 } from "@/types/models/operator";
-import { operatorsMock, filterOperators } from "@/mocks/master/operators.mock";
+import {
+  mapOperatorFromBackend,
+  mapOperatorToBackend,
+  type BackendOperator,
+} from "@/lib/transformers/operator.transformer";
 
-// Simulación de delay de red
+// Simulación de delay de red (usado por métodos legacy que combinan fetch+update)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-let operatorsState = [...operatorsMock];
+// Cache module-scope para getStats (mitiga rate-limit 429 del backend)
+const STATS_CACHE_MS = 60_000; // 1 minuto
+let operatorsStatsCache: { value: OperatorStats; timestamp: number } | null = null;
 
 /**
  * Filtros para operadores
@@ -66,37 +72,24 @@ export interface OperatorsResponse {
  * Servicio de Operadores Logísticos
  */
 class OperatorsService {
-  private readonly useMocks: boolean;
-
-  constructor() {
-    this.useMocks = apiConfig.useMocks;
-  }
-
   /**
    * Obtiene todos los operadores con filtros opcionales
    */
   async getAll(filters?: OperatorFilters): Promise<Operator[]> {
-    if (this.useMocks) {
-      await delay(300);
+    return this.fetchListFromBackend(filters as Record<string, unknown>);
+  }
 
-      let result = [...operatorsState];
-
-      if (filters) {
-        result = filterOperators(result, {
-          search: filters.search,
-          type: filters.type,
-          status: filters.status,
-        });
-
-        if (filters.checklistComplete !== undefined) {
-          result = result.filter(op => op.checklist.isComplete === filters.checklistComplete);
-        }
-      }
-
-      return result;
-    }
-
-    return apiClient.get(API_ENDPOINTS.master.operators, { params: filters as unknown as Record<string, string> });
+  /**
+   * Helper: GET backend con envelope {items|data} + transformer aplicado
+   */
+  private async fetchListFromBackend(params?: Record<string, unknown>): Promise<Operator[]> {
+    const response = await apiClient.get<Record<string, unknown>>(
+      API_ENDPOINTS.master.operators,
+      { params: params as Record<string, string> }
+    );
+    const rawList = ((response.items ?? response.data ?? []) as unknown[])
+      .filter((x): x is BackendOperator => typeof x === "object" && x !== null);
+    return rawList.map(mapOperatorFromBackend);
   }
 
   /**
@@ -107,351 +100,290 @@ class OperatorsService {
     page: number = 1,
     pageSize: number = 10
   ): Promise<OperatorsResponse> {
-    if (this.useMocks) {
-      await delay(300);
+    const response = await apiClient.get<Record<string, unknown>>(
+      API_ENDPOINTS.master.operators,
+      { params: { ...filters, page, pageSize } as unknown as Record<string, string> }
+    );
+    const rawList = ((response.items ?? response.data ?? []) as unknown[])
+      .filter((x): x is BackendOperator => typeof x === "object" && x !== null);
+    const data = rawList.map(mapOperatorFromBackend);
 
-      const all = await this.getAll(filters);
-      const total = all.length;
-      const totalPages = Math.ceil(total / pageSize);
-      const start = (page - 1) * pageSize;
-      const data = all.slice(start, start + pageSize);
+    const meta = (response.meta ?? response.pagination ?? {}) as Record<string, number>;
+    const total = meta.total ?? meta.totalItems ?? data.length;
+    const totalPages = meta.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
 
-      return {
-        data,
-        total,
-        page,
-        pageSize,
-        totalPages,
-      };
-    }
-
-    return apiClient.get(API_ENDPOINTS.master.operators, { params: { ...filters, page, pageSize } as unknown as Record<string, string> });
+    return {
+      data,
+      total,
+      page: meta.page ?? page,
+      pageSize: meta.pageSize ?? pageSize,
+      totalPages,
+    };
   }
 
   /**
    * Obtiene un operador por ID
    */
   async getById(id: string): Promise<Operator | null> {
-    if (this.useMocks) {
-      await delay(200);
-      return operatorsState.find(op => op.id === id) || null;
-    }
-
-    return apiClient.get(`${API_ENDPOINTS.master.operators}/${id}`);
+    return this.withMissingEndpointDetection(
+      "Detalle operador (GET /master/operators/:id)",
+      async () => {
+        const response = await apiClient.get<Record<string, unknown>>(`${API_ENDPOINTS.master.operators}/${id}`);
+        const raw = (response.data ?? response) as BackendOperator;
+        if (!raw || typeof raw !== "object") return null;
+        return mapOperatorFromBackend(raw);
+      }
+    );
   }
 
   /**
-   * Obtiene un operador por código
+   * 2026-05-03: Helper privado para detectar endpoints no implementados.
+   *
+   * IMPORTANTE: cambio de diagnóstico. Antes este helper se llamaba
+   * `withIdBugDetection` y atribuía los 404 al "bug NGINX". Investigación
+   * profunda confirmó que NGINX NO está bloqueando nada (proxea todo al
+   * backend). El "Not Found" plain text 9 bytes es el handler 404 default
+   * del framework backend cuando la ruta NO está implementada.
+   */
+  private async withMissingEndpointDetection<T>(
+    operation: string,
+    fn: () => Promise<T>
+  ): Promise<T> {
+    try {
+      return await fn();
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 404) {
+        const explanatory = new Error(
+          `${operation} no está disponible: el backend devuelve 404 porque ` +
+          `esta ruta NO está implementada en producción.`
+        ) as Error & { status?: number; backendNotImplemented?: boolean };
+        explanatory.status = 404;
+        explanatory.backendNotImplemented = true;
+        throw explanatory;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Obtiene un operador por código.
+   *
+   * 2026-05-03: NO está en el Excel oficial pero el backend SI lo tiene
+   * implementado y devuelve 200 en producción (verificado). Es un endpoint
+   * implementado pero no documentado — gap del Excel oficial.
    */
   async getByCode(code: string): Promise<Operator | null> {
-    if (this.useMocks) {
-      await delay(200);
-      return operatorsState.find(op => op.code === code) || null;
-    }
-
-    return apiClient.get(`${API_ENDPOINTS.master.operators}/by-code/${code}`);
+    return apiClient.getOptional<Operator>(`${API_ENDPOINTS.master.operators}/by-code/${code}`);
   }
 
   /**
-   * Obtiene un operador por RUC
+   * Obtiene un operador por RUC.
+   *
+   * 2026-05-03: NO está en el Excel oficial pero el backend SI lo tiene
+   * implementado y devuelve 200 en producción (verificado).
    */
   async getByRuc(ruc: string): Promise<Operator | null> {
-    if (this.useMocks) {
-      await delay(200);
-      return operatorsState.find(op => op.ruc === ruc) || null;
-    }
-
-    return apiClient.get(`${API_ENDPOINTS.master.operators}/by-ruc/${ruc}`);
+    return apiClient.getOptional<Operator>(`${API_ENDPOINTS.master.operators}/by-ruc/${ruc}`);
   }
 
   /**
    * Crea un nuevo operador
    */
   async create(data: CreateOperatorDTO): Promise<Operator> {
-    if (this.useMocks) {
-      await delay(400);
-
-      // Validar RUC único
-      const existing = operatorsState.find(op => op.ruc === data.ruc);
-      if (existing) {
-        throw new Error("Ya existe un operador con ese RUC");
-      }
-
-      const now = new Date().toISOString();
-      const newId = `op-${String(operatorsState.length + 1).padStart(3, "0")}`;
-      const code = data.code || `OPL-${String(operatorsState.length + 1).padStart(3, "0")}`;
-
-      const newOperator: Operator = {
-        id: newId,
-        code,
-        ruc: data.ruc,
-        businessName: data.businessName,
-        tradeName: data.tradeName,
-        type: data.type,
-        email: data.email,
-        phone: data.phone,
-        fiscalAddress: data.fiscalAddress,
-        contacts: data.contacts || [],
-        checklist: {
-          items: [
-            { id: "chk-1", label: "RUC vigente", checked: false },
-            { id: "chk-2", label: "Licencia de funcionamiento", checked: false },
-            { id: "chk-3", label: "Póliza de seguro", checked: false },
-            { id: "chk-4", label: "Certificado de inscripción MTC", checked: false },
-            { id: "chk-5", label: "Contrato firmado", checked: false },
-          ],
-          isComplete: false,
-          lastUpdated: now,
-        },
-        documents: [
-          { id: "doc-1", name: "Ficha RUC", required: true, uploaded: false },
-          { id: "doc-2", name: "Póliza de Seguro", required: true, uploaded: false },
-          { id: "doc-3", name: "Licencia de Funcionamiento", required: true, uploaded: false },
-          { id: "doc-4", name: "Certificado MTC", required: true, uploaded: false },
-        ],
-        driversCount: 0,
-        vehiclesCount: 0,
-        contractStartDate: data.contractStartDate,
-        contractEndDate: data.contractEndDate,
-        notes: data.notes,
-        status: "pending",
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      operatorsState = [...operatorsState, newOperator];
-      return newOperator;
+    // Auto-generar code si no viene del form. El backend lo exige obligatorio
+    // y devuelve 400 si falta.
+    if (!data.code) {
+      const ts = Date.now().toString(36).toUpperCase();
+      data = { ...data, code: `OPL-${ts}` };
     }
 
-    return apiClient.post(API_ENDPOINTS.master.operators, data);
+    const payload = mapOperatorToBackend(data as Partial<Operator>);
+    try {
+      const response = await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.master.operators, payload);
+      const raw = (response.data ?? response) as BackendOperator;
+      // Invalidar cache de stats — al crear cambia el total
+      operatorsStatsCache = null;
+      return mapOperatorFromBackend(raw);
+    } catch (err) {
+      // Logging para diagnóstico — el backend muchas veces devuelve mensajes
+      // poco específicos. Imprimimos el body que enviamos.
+      console.error("[operatorsService.create] Error al crear operador. Payload enviado:", payload);
+      console.error("[operatorsService.create] Error original:", err);
+      throw err;
+    }
   }
 
   /**
    * Actualiza un operador existente
    */
   async update(id: string, data: UpdateOperatorDTO): Promise<Operator> {
-    if (this.useMocks) {
-      await delay(400);
-
-      const index = operatorsState.findIndex(op => op.id === id);
-      if (index === -1) {
-        throw new Error("Operador no encontrado");
+    const payload = mapOperatorToBackend(data as Partial<Operator>);
+    return this.withMissingEndpointDetection(
+      "Actualizar operador (PUT /master/operators/:id)",
+      async () => {
+        const response = await apiClient.put<Record<string, unknown>>(`${API_ENDPOINTS.master.operators}/${id}`, payload);
+        const raw = (response.data ?? response) as BackendOperator;
+        return mapOperatorFromBackend(raw);
       }
-
-      // Validar RUC único si se está cambiando
-      if (data.ruc && data.ruc !== operatorsState[index].ruc) {
-        const existing = operatorsState.find(op => op.ruc === data.ruc);
-        if (existing) {
-          throw new Error("Ya existe un operador con ese RUC");
-        }
-      }
-
-      const now = new Date().toISOString();
-      const updated: Operator = {
-        ...operatorsState[index],
-        ...data,
-        updatedAt: now,
-      };
-
-      // Verificar si checklist está completo
-      if (data.checklist) {
-        updated.checklist.isComplete = data.checklist.items.every(item => item.checked);
-        updated.checklist.lastUpdated = now;
-      }
-
-      operatorsState = [
-        ...operatorsState.slice(0, index),
-        updated,
-        ...operatorsState.slice(index + 1),
-      ];
-
-      return updated;
-    }
-
-    return apiClient.put(`${API_ENDPOINTS.master.operators}/${id}`, data);
+    );
   }
 
   /**
    * Elimina un operador
    */
   async delete(id: string): Promise<boolean> {
-    if (this.useMocks) {
-      await delay(300);
-
-      const index = operatorsState.findIndex(op => op.id === id);
-      if (index === -1) {
-        throw new Error("Operador no encontrado");
-      }
-
-      // Validar que no tenga vehículos o conductores asignados
-      const operator = operatorsState[index];
-      if (operator.driversCount > 0 || operator.vehiclesCount > 0) {
-        throw new Error("No se puede eliminar un operador con conductores o vehículos asignados");
-      }
-
-      operatorsState = [
-        ...operatorsState.slice(0, index),
-        ...operatorsState.slice(index + 1),
-      ];
-
-      return true;
-    }
-
-    return apiClient.delete(`${API_ENDPOINTS.master.operators}/${id}`);
+    return this.withMissingEndpointDetection(
+      "Eliminar operador (DELETE /master/operators/:id)",
+      () => apiClient.delete(`${API_ENDPOINTS.master.operators}/${id}`)
+    );
   }
 
   /**
    * Cambia el estado de un operador
    */
   async changeStatus(id: string, status: "enabled" | "blocked" | "pending"): Promise<Operator> {
-    if (this.useMocks) {
-      return this.update(id, { status });
-    }
-
-    return apiClient.patch(`${API_ENDPOINTS.master.operators}/${id}/status`, { status });
+    // Backend NO tiene PATCH /:id/status. Usamos el endpoint update generico PUT /:id.
+    return this.update(id, { status });
   }
 
   /**
    * Actualiza el checklist de un operador
    */
   async updateChecklist(id: string, checklist: OperatorValidationChecklist): Promise<Operator> {
-    if (this.useMocks) {
-      return this.update(id, { checklist });
-    }
-
-    return apiClient.put(`${API_ENDPOINTS.master.operators}/${id}/checklist`, { checklist });
+    // Backend NO tiene PUT /:id/checklist. Usamos update generico.
+    return this.update(id, { checklist });
   }
 
   /**
    * Marca un ítem del checklist
+   * Backend NO tiene endpoints dedicados — fetch + modify + update generico.
    */
   async checkItem(id: string, itemId: string, checked: boolean): Promise<Operator> {
-    if (this.useMocks) {
-      await delay(200);
+    await delay(200);
 
-      const operator = await this.getById(id);
-      if (!operator) {
-        throw new Error("Operador no encontrado");
-      }
-
-      const now = new Date().toISOString();
-      const updatedItems = operator.checklist.items.map(item =>
-        item.id === itemId ? { ...item, checked, date: checked ? now.split("T")[0] : undefined } : item
-      );
-
-      const isComplete = updatedItems.every(item => item.checked);
-
-      return this.update(id, {
-        checklist: {
-          items: updatedItems,
-          isComplete,
-          lastUpdated: now,
-        },
-      });
+    const operator = await this.getById(id);
+    if (!operator) {
+      throw new Error("Operador no encontrado");
     }
 
-    return apiClient.patch(`${API_ENDPOINTS.master.operators}/${id}/checklist/${itemId}`, { checked });
+    const now = new Date().toISOString();
+    const updatedItems = operator.checklist.items.map(item =>
+      item.id === itemId ? { ...item, checked, date: checked ? now.split("T")[0] : undefined } : item
+    );
+
+    const isComplete = updatedItems.every(item => item.checked);
+
+    return this.update(id, {
+      checklist: {
+        items: updatedItems,
+        isComplete,
+        lastUpdated: now,
+      },
+    });
   }
 
   /**
    * Agrega un documento a un operador
+   * Backend NO tiene POST /:id/documents — fetch + append + update generico.
    */
   async addDocument(id: string, document: OperatorDocument): Promise<Operator> {
-    if (this.useMocks) {
-      await delay(300);
+    await delay(300);
 
-      const operator = await this.getById(id);
-      if (!operator) {
-        throw new Error("Operador no encontrado");
-      }
-
-      const documents = [...operator.documents, document];
-      return this.update(id, { documents });
+    const operator = await this.getById(id);
+    if (!operator) {
+      throw new Error("Operador no encontrado");
     }
 
-    return apiClient.post(`${API_ENDPOINTS.master.operators}/${id}/documents`, document);
+    const documents = [...operator.documents, document];
+    return this.update(id, { documents });
   }
 
   /**
    * Agrega un contacto a un operador
+   * Backend NO tiene POST /:id/contacts — fetch + append + update generico.
    */
   async addContact(id: string, contact: OperatorContact): Promise<Operator> {
-    if (this.useMocks) {
-      await delay(300);
+    await delay(300);
 
-      const operator = await this.getById(id);
-      if (!operator) {
-        throw new Error("Operador no encontrado");
-      }
-
-      const contacts = [...operator.contacts, contact];
-      return this.update(id, { contacts } as UpdateOperatorDTO);
+    const operator = await this.getById(id);
+    if (!operator) {
+      throw new Error("Operador no encontrado");
     }
 
-    return apiClient.post(`${API_ENDPOINTS.master.operators}/${id}/contacts`, contact);
+    const contacts = [...operator.contacts, contact];
+    return this.update(id, { contacts } as UpdateOperatorDTO);
   }
 
   /**
    * Obtiene estadísticas de operadores
    */
   async getStats(): Promise<OperatorStats> {
-    if (this.useMocks) {
-      await delay(200);
-    
-      const total = operatorsState.length;
-      const enabled = operatorsState.filter(o => o.status === "enabled").length;
-      const blocked = operatorsState.filter(o => o.status === "blocked").length;
-      const pendingValidation = operatorsState.filter(
-        o => o.status === "pending" || !o.checklist.isComplete
-      ).length;
-      const propios = operatorsState.filter(o => o.type === "propio").length;
-      const terceros = operatorsState.filter(o => o.type === "tercero").length;
-
-      return {
-        total,
-        enabled,
-        blocked,
-        pendingValidation,
-        propios,
-        terceros,
-      };
+    // BUG #1 backend: /stats devuelve 404 porque el router resuelve /:id antes.
+    // BUG #2: el backend tiene rate limit agresivo y devuelve 429 con frecuencia
+    //          para los endpoints /stats. Cacheamos client-side para no spamear.
+    const now = Date.now();
+    if (operatorsStatsCache && now - operatorsStatsCache.timestamp < STATS_CACHE_MS) {
+      return operatorsStatsCache.value;
     }
 
-    return apiClient.get(`${API_ENDPOINTS.master.operators}/stats`);
+    try {
+      const fresh = await apiClient.get<OperatorStats>(`${API_ENDPOINTS.master.operators}/stats`);
+      operatorsStatsCache = { value: fresh, timestamp: now };
+      return fresh;
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 404) {
+        console.warn("[operatorsService.getStats] backend 404 (BUG #1). Calculando stats client-side.");
+        const fallback = await this.computeStatsFromList();
+        operatorsStatsCache = { value: fallback, timestamp: now };
+        return fallback;
+      }
+      if (status === 429) {
+        console.warn("[operatorsService.getStats] backend 429 Too Many Requests. Calculando stats client-side y cacheando 60s.");
+        const fallback = await this.computeStatsFromList();
+        operatorsStatsCache = { value: fallback, timestamp: now };
+        return fallback;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Calcula stats a partir del listado real (fallback cuando backend /stats falla)
+   */
+  private async computeStatsFromList(): Promise<OperatorStats> {
+    try {
+      const items = await this.fetchListFromBackend({ pageSize: 200 });
+      return {
+        total: items.length,
+        enabled: items.filter(o => o.status === "enabled").length,
+        blocked: items.filter(o => o.status === "blocked").length,
+        pendingValidation: items.filter(o => o.status === "pending").length,
+        propios: items.filter(o => o.type === "propio").length,
+        terceros: items.filter(o => o.type === "tercero").length,
+      };
+    } catch {
+      return {
+        total: 0, enabled: 0, blocked: 0,
+        pendingValidation: 0, propios: 0, terceros: 0,
+      };
+    }
   }
 
   /**
    * Obtiene operadores habilitados (para selects)
    */
   async getEnabled(): Promise<Operator[]> {
-    if (this.useMocks) {
-      await delay(200);
-      return operatorsState.filter(op => op.status === "enabled");
-    }
-
-    return apiClient.get(API_ENDPOINTS.master.operators, { params: { status: "active" } });
+    return this.fetchListFromBackend({ status: "active" });
   }
 
   /**
    * Busca operadores por texto
    */
   async search(query: string): Promise<Operator[]> {
-    if (this.useMocks) {
-      await delay(200);
-
-      if (!query || query.length < 2) return [];
-
-      const queryLower = query.toLowerCase();
-      return operatorsState.filter(
-        op =>
-          op.businessName.toLowerCase().includes(queryLower) ||
-          op.tradeName?.toLowerCase().includes(queryLower) ||
-          op.ruc.includes(query) ||
-          op.code.toLowerCase().includes(queryLower)
-      );
-    }
-
-    return apiClient.get(`${API_ENDPOINTS.master.operators}/search`, { params: { q: query } });
+    // NOTE: backend NO expone /search dedicado. Usamos GET /master/operators con filtro search.
+    return this.fetchListFromBackend({ search: query });
   }
 }
 

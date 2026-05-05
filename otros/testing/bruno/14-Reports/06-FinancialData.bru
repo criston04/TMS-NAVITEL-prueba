@@ -1,0 +1,28 @@
+meta {
+  name: Financial data (requires date range)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/reports/data/financial?startDate=2026-04-01T00:00:00Z&endDate=2026-04-22T23:59:59Z
+  body: none
+  auth: bearer
+}
+
+params:query {
+  startDate: 2026-04-01T00:00:00Z
+  endDate: 2026-04-22T23:59:59Z
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /reports/data/financial
+
+  Datos financieros precalculados para reportes.
+
+  **Campos obligatorios:** `startDate` + `endDate` ISO 8601. Mismo formato que operational.
+}

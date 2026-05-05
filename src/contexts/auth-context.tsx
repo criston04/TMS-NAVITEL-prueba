@@ -27,6 +27,15 @@ import {
   ROLE_GROUPS,
 } from "@/types/auth";
 import type { SystemModuleCode, UserScope } from "@/types/platform";
+import {
+  getStoredUser,
+  setStoredUser,
+  clearAuthSession,
+  getAccessToken,
+  getRefreshToken,
+  type StoredUser,
+} from "@/lib/auth-storage";
+import { refreshAccessToken } from "@/lib/api";
 
 // ════════════════════════════════════════════════════════
 // TIPOS DEL CONTEXTO
@@ -102,6 +111,37 @@ function isPlatformUser(user: AuthUser | PlatformUser): user is PlatformUser {
   return user.tier === "platform";
 }
 
+/**
+ * Pide un nuevo access token al backend usando el refresh token guardado.
+ * Lo guarda en memoria (auth-storage).
+ *
+ * 2026-05-03 (UI bug fix): antes esta función hacía SU PROPIA llamada a
+ * `/auth/refresh` con `fetch()` directo. Eso causaba race condition con
+ * `apiClient.refreshAccessToken()` (en api.ts) cuando ambos disparaban
+ * en paralelo al hacer F5: el primero gastaba el refresh-token (que el
+ * backend invalida tras un solo uso) y el segundo recibía 401 → todas las
+ * páginas mostraban error de autenticación.
+ *
+ * Ahora usamos la función exportada `refreshAccessToken` de api.ts que
+ * tiene `inflightRefresh` lock — si dos puntos del código llaman al mismo
+ * tiempo, ambos reciben la MISMA promesa (1 sola request real al backend).
+ */
+async function prefetchAccessToken(): Promise<void> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return;
+
+  try {
+    const newAccess = await refreshAccessToken();
+    if (!newAccess) {
+      // refresh falló (401, 403, o cualquier otro error): limpiar sesión
+      clearAuthSession();
+    }
+    // Si OK, ya está persistido en memoria por persistTokens dentro del helper.
+  } catch (err) {
+    console.warn("[AuthProvider.prefetchAccessToken] error:", err);
+  }
+}
+
 // ════════════════════════════════════════════════════════
 // PROVIDER
 // ════════════════════════════════════════════════════════
@@ -113,23 +153,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [platformUser, setPlatformUser] = useState<PlatformUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verificar sesión al cargar
+  // Verificar sesión al cargar (lee desde sessionStorage via auth-storage).
+  //
+  // FLUJO CRÍTICO post-F5:
+  //  1. El access token vive solo en memoria → tras F5 está null.
+  //  2. El refresh token persiste en sessionStorage.
+  //  3. Si tenemos refresh sin access, hacemos pre-refresh ANTES de que las
+  //     páginas hagan sus primeras queries. Sin esto, todas las queries
+  //     iniciales fallan con 401 (aunque luego se reintentan vía interceptor,
+  //     duplica latencia y rompe queries que no toleran retry).
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        const storedUser = localStorage.getItem("tms_user");
-        if (storedUser) {
-          const parsed = JSON.parse(storedUser);
-          if (isPlatformUser(parsed)) {
-            setPlatformUser(parsed);
+        const parsed = getStoredUser() as (AuthUser | PlatformUser) | null;
+        if (parsed) {
+          // Normalizar role uppercase → lowercase
+          const normalized = { ...parsed } as AuthUser | PlatformUser;
+          if (typeof (normalized as { role?: string }).role === "string") {
+            (normalized as { role: string }).role = (normalized as { role: string }).role.toLowerCase();
+          }
+          if (isPlatformUser(normalized)) {
+            setPlatformUser(normalized);
             setUser(null);
           } else {
-            setUser(parsed);
+            setUser(normalized);
             setPlatformUser(null);
+          }
+
+          // Pre-refresh: si hay refresh token pero no access token, pedir uno
+          // nuevo ANTES de que las páginas disparen queries.
+          if (!getAccessToken() && getRefreshToken()) {
+            await prefetchAccessToken();
           }
         }
       } catch {
-        localStorage.removeItem("tms_user");
+        clearAuthSession();
       } finally {
         setIsLoading(false);
       }
@@ -205,22 +263,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const canTransferVehiclesFlag = useMemo(() => !!currentRole && canTransferVehicles(currentRole), [currentRole]);
 
   const login = useCallback((userData: AuthUser | PlatformUser) => {
-    if (isPlatformUser(userData)) {
-      setPlatformUser(userData);
+    // Normalizar role aquí también (no solo al rehidratar). Sin esto, en la
+    // sesión recién creada el role queda UPPERCASE y hasPermission falla.
+    const normalized = { ...userData } as AuthUser | PlatformUser;
+    if (typeof (normalized as { role?: string }).role === "string") {
+      (normalized as { role: string }).role = (normalized as { role: string }).role.toLowerCase();
+    }
+
+    if (isPlatformUser(normalized)) {
+      setPlatformUser(normalized);
       setUser(null);
     } else {
-      setUser(userData);
+      setUser(normalized);
       setPlatformUser(null);
     }
-    localStorage.setItem("tms_user", JSON.stringify(userData));
+    setStoredUser(normalized as unknown as StoredUser);
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     setPlatformUser(null);
-    localStorage.removeItem("tms_user");
-    localStorage.removeItem("tms_access_token");
-    localStorage.removeItem("tms_refresh_token");
+    clearAuthSession();
     router.push("/login");
   }, [router]);
 
@@ -228,7 +291,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) {
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
-      localStorage.setItem("tms_user", JSON.stringify(updatedUser));
+      setStoredUser(updatedUser as unknown as StoredUser);
     }
   }, [user]);
 
@@ -320,9 +383,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasModuleEnabledFn, enabledModules, currentScope, restrictions, requiresPasswordChange,
   ]);
 
+  // 2026-05-03 (UI bug fix): bloquear children mientras `isLoading=true`
+  // EN RUTAS PROTEGIDAS para evitar race condition tras F5.
+  //
+  // Antes: las páginas se renderizaban en paralelo con `prefetchAccessToken()`
+  // y disparaban queries SIN token, recibiendo 401. El interceptor las
+  // reintentaba con el nuevo token (que sí funcionaba), pero quedaban N
+  // requests rojas en Network y duplicado de latencia.
+  //
+  // Ahora: durante `isLoading=true` mostramos un spinner. Cuando el AuthProvider
+  // termina (token en memoria listo), recién se montan las páginas y sus
+  // queries salen YA con el token. Una sola request por endpoint, todas 200.
+  //
+  // Excepción: rutas públicas (/login, /register, /forgot-password) renderizan
+  // sin bloqueo porque no necesitan auth.
+  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+
   return (
     <AuthContext.Provider value={contextValue}>
-      {children}
+      {isLoading && !isPublicRoute ? (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <p className="text-sm text-muted-foreground">Cargando sesión...</p>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

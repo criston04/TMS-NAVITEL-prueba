@@ -179,7 +179,7 @@ export function StopsHeatMap({
                   </span>
                 </div>
                 <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                  {stop.lat.toFixed(5)}, {stop.lng.toFixed(5)}
+                  {(stop.lat ?? 0).toFixed(5)}, {(stop.lng ?? 0).toFixed(5)}
                 </p>
               </div>
 

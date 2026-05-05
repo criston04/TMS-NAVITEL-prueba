@@ -1,0 +1,26 @@
+meta {
+  name: Geofence breaches
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/bitacora/geofence-breaches?page=1&pageSize=20
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /bitacora/geofence-breaches
+
+  Lista especifica de violaciones de geocerca. Envelope `{data: [], meta: {...}}`.
+}

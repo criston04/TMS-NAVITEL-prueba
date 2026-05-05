@@ -1,0 +1,24 @@
+meta {
+  name: Helper - available customers
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/workflows/helpers/available-customers
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /workflows/helpers/available-customers
+
+  Devuelve los clientes que pueden asociarse a un workflow (cuando el workflow es por cliente).
+  Envelope `{data: [...]}`. Cada item: `{id, code, name, tradeName, type}`.
+
+  **Ojo:** Todos los clientes devuelven `type: ""` — confirma BUG #3 (customer type no persiste).
+}

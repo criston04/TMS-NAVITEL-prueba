@@ -1,0 +1,29 @@
+meta {
+  name: Operational data (requires date range)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/reports/data/operational?startDate=2026-04-01T00:00:00Z&endDate=2026-04-22T23:59:59Z
+  body: none
+  auth: bearer
+}
+
+params:query {
+  startDate: 2026-04-01T00:00:00Z
+  endDate: 2026-04-22T23:59:59Z
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /reports/data/operational
+
+  Datos operacionales precalculados para reportes.
+
+  **Campos obligatorios:** `startDate` + `endDate` en formato ISO 8601.
+  Si faltan, responde `400 INVALID_DATE_RANGE`.
+}

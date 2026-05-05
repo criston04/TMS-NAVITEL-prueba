@@ -1,0 +1,34 @@
+meta {
+  name: Block driver (workaround via PUT)
+  type: http
+  seq: 9
+}
+
+put {
+  url: {{baseUrl}}/master/drivers/{{lastDriverId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "blocked"
+  }
+}
+
+docs {
+  # Bloquear driver
+
+  **No existe endpoint dedicado `/block`** (backend responde 404 Not Found).
+
+  En su lugar usamos el PUT genérico con `status: "blocked"`.
+  Si backend se hiciera custom, idealmente aceptaria un `reason` — pendiente.
+}

@@ -1,0 +1,29 @@
+meta {
+  name: Find by document (BUG #1 - actualmente 404)
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/master/drivers/find-by-document?documentNumber=46820188
+  body: none
+  auth: bearer
+}
+
+params:query {
+  documentNumber: 46820188
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/drivers/find-by-document?documentNumber=X
+
+  **ACTUALMENTE ROTO (mismo BUG #1):**
+  `404 "Driver no encontrado"` — el router captura `find-by-document` como si fuera un `:id`.
+
+  **Mientras tanto workaround frontend:**
+  Usar `GET /master/drivers?search=<docNumber>` y filtrar el resultado client-side.
+}

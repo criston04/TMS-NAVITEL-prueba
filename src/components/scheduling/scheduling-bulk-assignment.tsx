@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import type { Order } from '@/types/order';
 import type { BulkAssignmentResult } from '@/types/scheduling';
-import type { MockVehicle } from '@/mocks/scheduling';
+import type { MockVehicle } from '@/hooks/use-scheduling';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';

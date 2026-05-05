@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  dashboardServiceMock,
-  type DashboardStats,
-  type VehicleOverviewData,
-  type ShipmentDataPoint,
-  type OnRouteVehicle,
-  mockDashboardTrends,
-  mockSparklineData,
-} from "@/mocks/dashboard.mock";
+import { dashboardService } from "@/services/dashboard.service";
+import { useIsMounted } from "@/hooks/use-is-mounted";
+import type {
+  DashboardStats,
+  VehicleOverviewData,
+  ShipmentDataPoint,
+  OnRouteVehicle,
+} from "@/types/dashboard";
+
+// Re-export para mantener compat con consumers que importaban del hook
+export type { DashboardStats, VehicleOverviewData, ShipmentDataPoint, OnRouteVehicle };
+
+const emptyTrends: Record<string, unknown> = {};
+const emptySparklines: Record<string, number[]> = {};
 
 export interface UseDashboardReturn {
   stats: DashboardStats | null;
@@ -16,8 +21,8 @@ export interface UseDashboardReturn {
   shipmentTotal: number;
   onRouteVehicles: OnRouteVehicle[];
   onRouteTotal: number;
-  trends: typeof mockDashboardTrends;
-  sparklines: typeof mockSparklineData;
+  trends: typeof emptyTrends;
+  sparklines: typeof emptySparklines;
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -35,16 +40,22 @@ export function useDashboard(): UseDashboardReturn {
   const [error, setError] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<string>("");
 
+  const isMounted = useIsMounted();
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [statsResult, overviewResult, shipmentResult, vehiclesResult] = await Promise.all([
-        dashboardServiceMock.getStats(dateFilter),
-        dashboardServiceMock.getVehicleOverview(),
-        dashboardServiceMock.getShipmentData(),
-        dashboardServiceMock.getOnRouteVehicles(),
+        dashboardService.getStats(dateFilter),
+        dashboardService.getVehicleOverview(),
+        dashboardService.getShipmentData(),
+        dashboardService.getOnRouteVehicles(),
       ]);
+
+      // Guard: si el componente se desmontó mientras los fetch estaban en
+      // vuelo, no setear estado (evita warning React + memory leak).
+      if (!isMounted.current) return;
 
       setStats(statsResult);
       setVehicleOverview(overviewResult);
@@ -53,12 +64,13 @@ export function useDashboard(): UseDashboardReturn {
       setOnRouteVehicles(vehiclesResult.vehicles);
       setOnRouteTotal(vehiclesResult.total);
     } catch (err) {
+      if (!isMounted.current) return;
       const message = err instanceof Error ? err.message : "Error al cargar dashboard";
       setError(message);
     } finally {
-      setLoading(false);
+      if (isMounted.current) setLoading(false);
     }
-  }, [dateFilter]);
+  }, [dateFilter, isMounted]);
 
   useEffect(() => {
     fetchAll();
@@ -71,8 +83,8 @@ export function useDashboard(): UseDashboardReturn {
     shipmentTotal,
     onRouteVehicles,
     onRouteTotal,
-    trends: mockDashboardTrends,
-    sparklines: mockSparklineData,
+    trends: emptyTrends,
+    sparklines: emptySparklines,
     loading,
     error,
     refresh: fetchAll,

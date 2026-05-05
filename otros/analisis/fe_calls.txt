@@ -1,0 +1,323 @@
+src/services/base.service.ts:110:    const response = await apiClient.get<Record<string, unknown>>(this.endpoint, { params: queryParams });
+src/services/base.service.ts:149:    return apiClient.get<T>(`${this.endpoint}/${id}`);
+src/services/base.service.ts:168:    return apiClient.post<T>(this.endpoint, data);
+src/services/base.service.ts:190:    return apiClient.put<T>(`${this.endpoint}/${id}`, data);
+src/services/base.service.ts:207:    return apiClient.delete(`${this.endpoint}/${id}`);
+src/services/base.service.ts:286:    return apiClient.post<ImportResult>(`${this.endpoint}/import`, formData, {
+src/services/base.service.ts:326:    return apiClient.post(`${this.endpoint}/bulk-delete`, { ids });
+src/services/finance.service.ts:160:    return apiClient.get<{ data: Invoice[]; total: number; page: number; pageSize: number }>(API_ENDPOINTS.finance.invoices, {
+src/services/finance.service.ts:172:    return apiClient.get<Invoice | null>(`${API_ENDPOINTS.finance.invoices}/${id}`);
+src/services/finance.service.ts:246:    return apiClient.post<Invoice>(API_ENDPOINTS.finance.invoices, data);
+src/services/finance.service.ts:267:    return apiClient.patch<Invoice>(`${API_ENDPOINTS.finance.invoices}/${id}/status`, { status });
+src/services/finance.service.ts:332:    return apiClient.get<{ data: Payment[]; total: number; page: number; pageSize: number }>(API_ENDPOINTS.finance.payments, {
+src/services/finance.service.ts:397:    return apiClient.post<Payment>(API_ENDPOINTS.finance.payments, data);
+src/services/finance.service.ts:407:    return apiClient.get<Payment[]>(`${API_ENDPOINTS.finance.payments}`, {
+src/services/finance.service.ts:464:    return apiClient.get<{ data: TransportCost[]; total: number; page: number; pageSize: number }>(API_ENDPOINTS.finance.costs, {
+src/services/finance.service.ts:502:    return apiClient.post<TransportCost>(API_ENDPOINTS.finance.costs, data);
+src/services/finance.service.ts:524:    return apiClient.post<TransportCost>(`${API_ENDPOINTS.finance.costs}/${id}/approve`, {});
+src/services/finance.service.ts:534:    return apiClient.get<TransportCost[]>(`${API_ENDPOINTS.finance.costs}/by-order/${orderId}`);
+src/services/finance.service.ts:544:    return apiClient.get<TransportCost[]>(`${API_ENDPOINTS.finance.costs}/by-vehicle/${vehicleId}`);
+src/services/finance.service.ts:573:    return apiClient.get<ServiceRate[]>(API_ENDPOINTS.finance.rates, {
+src/services/finance.service.ts:585:    return apiClient.get<ServiceRate | null>(`${API_ENDPOINTS.finance.rates}/${id}`);
+src/services/finance.service.ts:620:    return apiClient.get<{ rate: ServiceRate | null; amount: number }>(`${API_ENDPOINTS.finance.rates}/calculate`, {
+src/services/finance.service.ts:683:    return apiClient.get<FinanceStats>(API_ENDPOINTS.finance.stats, {
+src/services/finance.service.ts:734:    return apiClient.get<CustomerFinancialSummary>(`${API_ENDPOINTS.finance.customerSummary}/${customerId}/summary`);
+src/services/finance.service.ts:779:    return apiClient.get<AccountsReceivableAging>(API_ENDPOINTS.finance.aging);
+src/services/finance.service.ts:835:    return apiClient.get<ProfitabilityAnalysis>(API_ENDPOINTS.finance.profitability, {
+src/services/finance.service.ts:879:    return apiClient.get<CashFlowSummary>(API_ENDPOINTS.finance.cashFlow, {
+src/services/master/assignment.service.ts:530:    return apiClient.post<AssignmentValidationResult>(`${API_ENDPOINTS.master.assignments}/validate`, { driverId: driver.id, vehicleId: vehicle.id });
+src/services/master/assignment.service.ts:552:    return apiClient.get<Assignment[]>(API_ENDPOINTS.master.assignments, { params: filters as unknown as Record<string, string> });
+src/services/master/assignment.service.ts:563:    return apiClient.get<Assignment | null>(`${API_ENDPOINTS.master.assignments}/${id}`);
+src/services/master/assignment.service.ts:576:    return apiClient.get<Assignment | null>(`${API_ENDPOINTS.master.assignments}/by-driver/${driverId}`);
+src/services/master/assignment.service.ts:589:    return apiClient.get<Assignment | null>(`${API_ENDPOINTS.master.assignments}/by-vehicle/${vehicleId}`);
+src/services/master/assignment.service.ts:660:    return apiClient.post<Assignment>(API_ENDPOINTS.master.assignments, request);
+src/services/master/assignment.service.ts:696:    return apiClient.delete<void>(`${API_ENDPOINTS.master.assignments}/${assignmentId}`, { params: reason ? { reason } : undefined });
+src/services/master/assignment.service.ts:768:    return apiClient.post<Assignment>(`${API_ENDPOINTS.master.assignments}/transfer`, { vehicleId, newDriverId, reason });
+src/services/master/assignment.service.ts:798:    return apiClient.get<AssignmentStats>(`${API_ENDPOINTS.master.assignments}/stats`);
+src/services/master/assignment.service.ts:838:    return apiClient.get<AssignmentHistory[]>(`${API_ENDPOINTS.master.assignments}/history`, { params: filters as unknown as Record<string, string> });
+src/services/master/assignment.service.ts:860:    return apiClient.get<{ driver: Driver; compatibility: CompatibilityResult; eligibility: DriverEligibilityResult }[]>(`${API_ENDPOINTS.master.assignments}/compatible-drivers/${vehicle.id}`);
+src/services/master/assignment.service.ts:882:    return apiClient.get<{ vehicle: Vehicle; compatibility: CompatibilityResult; eligibility: VehicleEligibilityResult }[]>(`${API_ENDPOINTS.master.assignments}/compatible-vehicles/${driver.id}`);
+src/services/master/audit.service.ts:225:      return apiClient.post<AuditEntry>(API_ENDPOINTS.master.audit, entry);
+src/services/master/audit.service.ts:247:      return apiClient.get<AuditEntry[]>(API_ENDPOINTS.master.audit, { params: filters as unknown as Record<string, string> });
+src/services/master/audit.service.ts:289:      return apiClient.get<AuditEntry[]>(`${API_ENDPOINTS.master.audit}/entity/${entityType}/${entityId}`);
+src/services/master/audit.service.ts:300:      return apiClient.get<AuditStats>(`${API_ENDPOINTS.master.audit}/stats`);
+src/services/master/customers.service.ts:498:        return apiClient.get<T>(endpoint);
+src/services/master/customers.service.ts:500:        return apiClient.post<T>(endpoint, data);
+src/services/master/customers.service.ts:502:        return apiClient.put<T>(endpoint, data);
+src/services/master/customers.service.ts:504:        return apiClient.patch<T>(endpoint, data);
+src/services/master/customers.service.ts:506:        return apiClient.delete(endpoint) as T;
+src/services/master/customers.service.ts:508:        return apiClient.get<T>(endpoint);
+src/services/master/drivers.service.ts:168:        return apiClient.get<T>(endpoint);
+src/services/master/drivers.service.ts:170:        return apiClient.post<T>(endpoint, data);
+src/services/master/drivers.service.ts:172:        return apiClient.get<T>(endpoint);
+src/services/master/geofences.service.ts:68:      return await apiClient.post<Geofence>(this.endpoint, data);
+src/services/master/maintenance.service.ts:224:      return apiClient.get<MaintenanceRecord[]>(`${API_ENDPOINTS.master.maintenance}/by-vehicle/${vehicleId}`);
+src/services/master/maintenance.service.ts:236:      return apiClient.get<MaintenanceRecord[]>(API_ENDPOINTS.master.maintenance, { params: filters as unknown as Record<string, string> });
+src/services/master/maintenance.service.ts:269:      return apiClient.get<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}`);
+src/services/master/maintenance.service.ts:283:      return apiClient.post<MaintenanceRecord>(API_ENDPOINTS.master.maintenance, data);
+src/services/master/maintenance.service.ts:318:      return apiClient.put<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}`, data);
+src/services/master/maintenance.service.ts:353:      return apiClient.post<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}/complete`, completionData);
+src/services/master/maintenance.service.ts:401:      return apiClient.post<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}/cancel`, { reason });
+src/services/master/maintenance.service.ts:426:      await apiClient.delete(`${API_ENDPOINTS.master.maintenance}/${id}`);
+src/services/master/maintenance.service.ts:447:      return apiClient.get<MaintenanceSchedule[]>(`${API_ENDPOINTS.master.maintenance}/schedules/by-vehicle/${vehicleId}`);
+src/services/master/maintenance.service.ts:461:      return apiClient.post<MaintenanceSchedule>(`${API_ENDPOINTS.master.maintenance}/schedules`, data);
+src/services/master/maintenance.service.ts:483:      return apiClient.put<MaintenanceSchedule>(`${API_ENDPOINTS.master.maintenance}/schedules/${id}`, data);
+src/services/master/maintenance.service.ts:502:      await apiClient.delete(`${API_ENDPOINTS.master.maintenance}/schedules/${id}`);
+src/services/master/maintenance.service.ts:523:      return apiClient.get<MaintenanceStats>(`${API_ENDPOINTS.master.maintenance}/stats`);
+src/services/master/maintenance.service.ts:591:      return apiClient.get<MaintenanceSchedule[]>(`${API_ENDPOINTS.master.maintenance}/upcoming`, { params: daysAhead ? { daysAhead } : undefined });
+src/services/master/maintenance.service.ts:612:      return apiClient.get<MaintenanceSchedule[]>(`${API_ENDPOINTS.master.maintenance}/overdue`);
+src/services/master/maintenance.service.ts:634:      return apiClient.get<{ total: number; byMonth: { month: string; cost: number }[]; byType: { type: MaintenanceType; cost: number }[] }>(`${API_ENDPOINTS.master.maintenance}/costs/by-vehicle/${vehicleId}`, { params: year ? { year } : undefined });
+src/services/master/medical-exams.service.ts:165:      return apiClient.get<MedicalExam[]>(`${API_ENDPOINTS.master.medicalExams}/medical/by-driver/${driverId}`);
+src/services/master/medical-exams.service.ts:178:      return apiClient.get<MedicalExam>(`${API_ENDPOINTS.master.medicalExams}/medical/${id}`);
+src/services/master/medical-exams.service.ts:193:      return apiClient.post<MedicalExam>(`${API_ENDPOINTS.master.medicalExams}/medical`, { ...data, driverId });
+src/services/master/medical-exams.service.ts:216:      return apiClient.put<MedicalExam>(`${API_ENDPOINTS.master.medicalExams}/medical/${id}`, data);
+src/services/master/medical-exams.service.ts:235:      await apiClient.delete(`${API_ENDPOINTS.master.medicalExams}/medical/${id}`);
+src/services/master/medical-exams.service.ts:256:      return apiClient.get<PsychologicalExam[]>(`${API_ENDPOINTS.master.medicalExams}/psychological/by-driver/${driverId}`);
+src/services/master/medical-exams.service.ts:268:      return apiClient.get<PsychologicalExam>(`${API_ENDPOINTS.master.medicalExams}/psychological/${id}`);
+src/services/master/medical-exams.service.ts:283:      return apiClient.post<PsychologicalExam>(`${API_ENDPOINTS.master.medicalExams}/psychological`, { ...data, driverId });
+src/services/master/medical-exams.service.ts:306:      return apiClient.put<PsychologicalExam>(`${API_ENDPOINTS.master.medicalExams}/psychological/${id}`, data);
+src/services/master/medical-exams.service.ts:325:      await apiClient.delete(`${API_ENDPOINTS.master.medicalExams}/psychological/${id}`);
+src/services/master/medical-exams.service.ts:346:      return apiClient.get<ExamStats>(`${API_ENDPOINTS.master.medicalExams}/stats`);
+src/services/master/medical-exams.service.ts:381:      return apiClient.get<{ medical: MedicalExam[]; psychological: PsychologicalExam[] }>(`${API_ENDPOINTS.master.medicalExams}/expiring`, { params: daysAhead ? { daysAhead } : undefined });
+src/services/master/medical-exams.service.ts:410:      return apiClient.get<{ medical: MedicalExam[]; psychological: PsychologicalExam[] }>(`${API_ENDPOINTS.master.medicalExams}/expired`);
+src/services/master/medical-exams.service.ts:436:      return apiClient.get<{ hasMedical: boolean; hasPsychological: boolean; medicalExpiry?: string; psychologicalExpiry?: string; issues: string[] }>(`${API_ENDPOINTS.master.medicalExams}/validate/${driverId}`);
+src/services/master/medical-exams.service.ts:475:      return apiClient.get<MedicalRestriction[]>(`${API_ENDPOINTS.master.medicalExams}/restrictions/${driverId}`);
+src/services/master/operators.service.ts:99:    return apiClient.get(API_ENDPOINTS.master.operators, { params: filters as unknown as Record<string, string> });
+src/services/master/operators.service.ts:128:    return apiClient.get(API_ENDPOINTS.master.operators, { params: { ...filters, page, pageSize } as unknown as Record<string, string> });
+src/services/master/operators.service.ts:140:    return apiClient.get(`${API_ENDPOINTS.master.operators}/${id}`);
+src/services/master/operators.service.ts:152:    return apiClient.get(`${API_ENDPOINTS.master.operators}/by-code/${code}`);
+src/services/master/operators.service.ts:164:    return apiClient.get(`${API_ENDPOINTS.master.operators}/by-ruc/${ruc}`);
+src/services/master/operators.service.ts:226:    return apiClient.post(API_ENDPOINTS.master.operators, data);
+src/services/master/operators.service.ts:271:    return apiClient.put(`${API_ENDPOINTS.master.operators}/${id}`, data);
+src/services/master/operators.service.ts:300:    return apiClient.delete(`${API_ENDPOINTS.master.operators}/${id}`);
+src/services/master/operators.service.ts:311:    return apiClient.patch(`${API_ENDPOINTS.master.operators}/${id}/status`, { status });
+src/services/master/operators.service.ts:322:    return apiClient.put(`${API_ENDPOINTS.master.operators}/${id}/checklist`, { checklist });
+src/services/master/operators.service.ts:353:    return apiClient.patch(`${API_ENDPOINTS.master.operators}/${id}/checklist/${itemId}`, { checked });
+src/services/master/operators.service.ts:372:    return apiClient.post(`${API_ENDPOINTS.master.operators}/${id}/documents`, document);
+src/services/master/operators.service.ts:391:    return apiClient.post(`${API_ENDPOINTS.master.operators}/${id}/contacts`, contact);
+src/services/master/operators.service.ts:420:    return apiClient.get(`${API_ENDPOINTS.master.operators}/stats`);
+src/services/master/operators.service.ts:432:    return apiClient.get(API_ENDPOINTS.master.operators, { params: { status: "active" } });
+src/services/master/operators.service.ts:454:    return apiClient.get(`${API_ENDPOINTS.master.operators}/search`, { params: { q: query } });
+src/services/master/products.service.ts:106:    return apiClient.get(API_ENDPOINTS.master.products, { params: filters as unknown as Record<string, string> });
+src/services/master/products.service.ts:135:    return apiClient.get(API_ENDPOINTS.master.products, { params: { ...filters, page, pageSize } as unknown as Record<string, string> });
+src/services/master/products.service.ts:147:    return apiClient.get(`${API_ENDPOINTS.master.products}/${id}`);
+src/services/master/products.service.ts:159:    return apiClient.get(`${API_ENDPOINTS.master.products}/by-sku/${sku}`);
+src/services/master/products.service.ts:171:    return apiClient.get(`${API_ENDPOINTS.master.products}/by-barcode/${barcode}`);
+src/services/master/products.service.ts:221:    return apiClient.post(API_ENDPOINTS.master.products, data);
+src/services/master/products.service.ts:268:    return apiClient.put(`${API_ENDPOINTS.master.products}/${id}`, data);
+src/services/master/products.service.ts:291:    return apiClient.delete(`${API_ENDPOINTS.master.products}/${id}`);
+src/services/master/products.service.ts:302:    return apiClient.patch(`${API_ENDPOINTS.master.products}/${id}/status`, { status });
+src/services/master/products.service.ts:338:    return apiClient.get(`${API_ENDPOINTS.master.products}/stats`);
+src/services/master/products.service.ts:350:    return apiClient.get(API_ENDPOINTS.master.products, { params: { status: "active" } });
+src/services/master/products.service.ts:362:    return apiClient.get(API_ENDPOINTS.master.products, { params: { category } });
+src/services/master/products.service.ts:376:    return apiClient.get(API_ENDPOINTS.master.products, { params: { refrigerated: "true" } });
+src/services/master/products.service.ts:388:    return apiClient.get(API_ENDPOINTS.master.products, { params: { customerId } });
+src/services/master/products.service.ts:410:    return apiClient.get(`${API_ENDPOINTS.master.products}/search`, { params: { q: query } });
+src/services/master/products.service.ts:436:    return apiClient.get(`${API_ENDPOINTS.master.products}/categories`);
+src/services/master/products.service.ts:470:    return apiClient.post(`${API_ENDPOINTS.master.products}/${id}/duplicate`);
+src/services/master/vehicles.service.ts:179:        return apiClient.get<T>(endpoint);
+src/services/master/vehicles.service.ts:181:        return apiClient.post<T>(endpoint, data);
+src/services/master/vehicles.service.ts:183:        return apiClient.get<T>(endpoint);
+src/services/master/workflows.service.ts:29:    return apiClient.get<Workflow[]>(API_ENDPOINTS.master.workflows);
+src/services/master/workflows.service.ts:40:    return apiClient.get<Workflow>(`${API_ENDPOINTS.master.workflows}/${id}`);
+src/services/master/workflows.service.ts:73:    return apiClient.post<Workflow>(API_ENDPOINTS.master.workflows, data);
+src/services/master/workflows.service.ts:110:    return apiClient.put<Workflow>(`${API_ENDPOINTS.master.workflows}/${id}`, data);
+src/services/master/workflows.service.ts:122:    await apiClient.delete(`${API_ENDPOINTS.master.workflows}/${id}`);
+src/services/master/workflows.service.ts:158:    return apiClient.post<Workflow>(`${API_ENDPOINTS.master.workflows}/${id}/duplicate`, { newName });
+src/services/master/workflows.service.ts:183:    return apiClient.patch<Workflow>(`${API_ENDPOINTS.master.workflows}/${id}/status`, { status });
+src/services/master/workflows.service.ts:194:    return apiClient.get<typeof mockGeofencesForMilestones>(`${API_ENDPOINTS.master.workflows}/helpers/available-geofences`);
+src/services/master/workflows.service.ts:205:    return apiClient.get<typeof mockCustomersForWorkflow>(`${API_ENDPOINTS.master.workflows}/helpers/available-customers`);
+src/services/monitoring/geofence-events.service.ts:121:    return apiClient.get<{ data: GeofenceEvent[]; total: number; page: number; pageSize: number }>(API_ENDPOINTS.monitoring.geofenceEvents, {
+src/services/monitoring/geofence-events.service.ts:140:    return apiClient.get<GeofenceEvent | null>(`${API_ENDPOINTS.monitoring.geofenceEvents}/${id}`);
+src/services/monitoring/geofence-events.service.ts:215:    return apiClient.post<GeofenceEvent>(API_ENDPOINTS.monitoring.geofenceEvents, data);
+src/services/monitoring/geofence-events.service.ts:257:    return apiClient.patch<GeofenceEvent>(`${API_ENDPOINTS.monitoring.geofenceEvents}/${id}`, data);
+src/services/monitoring/geofence-events.service.ts:304:    return apiClient.post<GeofenceEvent>(`${API_ENDPOINTS.monitoring.geofenceEvents}/record-exit`, {
+src/services/monitoring/geofence-events.service.ts:389:    return apiClient.get<GeofenceDwellSummary[]>(`${API_ENDPOINTS.monitoring.geofenceEvents}/dwell-summary`, {
+src/services/monitoring/geofence-events.service.ts:481:    return apiClient.get<GeofenceEventStats>(`${API_ENDPOINTS.monitoring.geofenceEvents}/stats`, {
+src/services/monitoring/geofence-events.service.ts:498:    return apiClient.get<GeofenceEvent[]>(`${API_ENDPOINTS.monitoring.geofenceEvents}/active`);
+src/services/monitoring/geofence-events.service.ts:524:    return apiClient.get<{ isInside: boolean; event: GeofenceEvent | null }>(
+src/services/monitoring/historical.service.ts:103:    const result = await apiClient.get<HistoricalRoute>(API_ENDPOINTS.monitoring.historical, {
+src/services/monitoring/historical.service.ts:180:    return apiClient.get<Pick<Vehicle, "id" | "plate">[]>(`${API_ENDPOINTS.monitoring.historical}/vehicles`);
+src/services/monitoring/historical.service.ts:201:    return apiClient.get<{ min: string; max: string }>(`${API_ENDPOINTS.monitoring.historical}/vehicles/${_vehicleId}/date-range`);
+src/services/monitoring/historical.service.ts:220:    return apiClient.get<HistoricalRoute[]>(`${API_ENDPOINTS.monitoring.historical}/preloaded`);
+src/services/monitoring/retransmission.service.ts:59:    return apiClient.get<RetransmissionRecord[]>(API_ENDPOINTS.monitoring.retransmission, {
+src/services/monitoring/retransmission.service.ts:74:    return apiClient.get<RetransmissionRecord | null>(`${API_ENDPOINTS.monitoring.retransmission}/${id}`);
+src/services/monitoring/retransmission.service.ts:92:    return apiClient.patch<RetransmissionRecord>(`${API_ENDPOINTS.monitoring.retransmission}/${recordId}/comment`, { comment });
+src/services/monitoring/retransmission.service.ts:109:    return apiClient.get<RetransmissionStats>(`${API_ENDPOINTS.monitoring.retransmission}/stats`, {
+src/services/monitoring/retransmission.service.ts:123:    return apiClient.get<GpsCompany[]>(`${API_ENDPOINTS.monitoring.retransmission}/gps-companies`);
+src/services/monitoring/retransmission.service.ts:135:    return apiClient.get<GpsCompany[]>(`${API_ENDPOINTS.monitoring.retransmission}/gps-companies`, {
+src/services/monitoring/retransmission.service.ts:150:    return apiClient.get<string[]>(`${API_ENDPOINTS.monitoring.retransmission}/companies`);
+src/services/monitoring/retransmission.service.ts:206:    return apiClient.patch<RetransmissionRecord[]>(`${API_ENDPOINTS.monitoring.retransmission}/bulk-comments`, {
+src/services/monitoring/tracking.service.ts:159:    return apiClient.get<TrackedVehicle[]>(API_ENDPOINTS.monitoring.tracking, { params });
+src/services/monitoring/tracking.service.ts:172:    return apiClient.get<VehiclePosition | null>(`${API_ENDPOINTS.monitoring.tracking}/${vehicleId}/position`);
+src/services/monitoring/tracking.service.ts:184:    return apiClient.get<TrackedVehicle | null>(`${API_ENDPOINTS.monitoring.tracking}/${vehicleId}`);
+src/services/monitoring/tracking.service.ts:220:    return apiClient.get<TrackedOrder | null>(`${API_ENDPOINTS.monitoring.tracking}/${vehicleId}/order`);
+src/services/monitoring/tracking.service.ts:232:    return apiClient.get<TrackedMilestone[]>(`${API_ENDPOINTS.operations.orders}/${orderId}/milestones`);
+src/services/monitoring/tracking.service.ts:244:    return apiClient.get<TrackedVehicle[]>(`${API_ENDPOINTS.monitoring.tracking}/with-orders`);
+src/services/monitoring/tracking.service.ts:259:    return apiClient.get<string[]>(`${API_ENDPOINTS.monitoring.tracking}/carriers`);
+src/services/notification.service.ts:131:    return apiClient.get(API_ENDPOINTS.notifications.base, { params: { ...filters, page, pageSize } });
+src/services/notification.service.ts:144:    return apiClient.get(`${API_ENDPOINTS.notifications.base}/${id}`);
+src/services/notification.service.ts:192:    return apiClient.post(API_ENDPOINTS.notifications.base, data);
+src/services/notification.service.ts:213:    return apiClient.patch(`${API_ENDPOINTS.notifications.base}/${id}/read`);
+src/services/notification.service.ts:239:    return apiClient.patch(`${API_ENDPOINTS.notifications.base}/mark-all-read`, { userId });
+src/services/notification.service.ts:258:    return apiClient.delete(`${API_ENDPOINTS.notifications.base}/${id}`);
+src/services/notification.service.ts:279:    return apiClient.delete(`${API_ENDPOINTS.notifications.base}/old`, { params: { olderThanDays } });
+src/services/notification.service.ts:333:    return apiClient.get(API_ENDPOINTS.notifications.stats, { params: userId ? { userId } : undefined });
+src/services/notification.service.ts:351:    return apiClient.get(`${API_ENDPOINTS.notifications.preferences}/${userId}`);
+src/services/notification.service.ts:370:    return apiClient.put(`${API_ENDPOINTS.notifications.preferences}/${userId}`, updates);
+src/services/notification.service.ts:388:    return apiClient.get(API_ENDPOINTS.notifications.templates, { params: category ? { category } : undefined });
+src/services/notification.service.ts:428:    return apiClient.post(`${API_ENDPOINTS.notifications.templates}/${templateId}/create`, { variables, ...options });
+src/services/orders/IncidentService.ts:95:    return apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog`, { params: filters as unknown as Record<string, string> });
+src/services/orders/IncidentService.ts:107:    return apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog/active`);
+src/services/orders/IncidentService.ts:120:    return apiClient.get<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog/${id}`);
+src/services/orders/IncidentService.ts:137:    return apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog`, { params: { category } });
+src/services/orders/IncidentService.ts:150:    return apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog/search`, { params: { q: query } });
+src/services/orders/IncidentService.ts:162:    const data = await apiClient.get<Record<IncidentCategory, number>>(`${API_ENDPOINTS.operations.incidents}/catalog/categories`);
+src/services/orders/IncidentService.ts:207:    return apiClient.post<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog`, data);
+src/services/orders/IncidentService.ts:243:    return apiClient.put<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog/${id}`, data);
+src/services/orders/IncidentService.ts:255:    return apiClient.patch<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog/${id}/deactivate`);
+src/services/orders/IncidentService.ts:268:    return apiClient.get<IncidentRecord[]>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}`);
+src/services/orders/IncidentService.ts:333:    return apiClient.post<IncidentRecord>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}`, data);
+src/services/orders/IncidentService.ts:371:    return apiClient.put<IncidentRecord>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}/${recordId}`, data);
+src/services/orders/IncidentService.ts:397:    return apiClient.post<IncidentRecord>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}/${recordId}/resolve`, resolution);
+src/services/orders/IncidentService.ts:425:    await apiClient.delete(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}/${recordId}`);
+src/services/orders/IncidentService.ts:534:    return apiClient.get<IncidentStatistics>(`${API_ENDPOINTS.operations.incidents}/statistics`, { params: dateRange as unknown as Record<string, string> });
+src/services/orders/OrderExportService.ts:360:      return apiClient.post<{ sheets: Array<{ name: string; columns: ExportColumn[]; rows: ExportRow[] }>; metadata: { generatedAt: string; totalOrders: number; filters: OrderFilters } }>(`${API_ENDPOINTS.operations.orders}/export/prepare`, options);
+src/services/orders/OrderExportService.ts:478:      return apiClient.post<Blob>(`${API_ENDPOINTS.operations.orders}/export/excel`, options);
+src/services/orders/OrderImportService.ts:359:    return apiClient.post<OrderImportResult>(`${API_ENDPOINTS.operations.orders}/import`, { rows, ...options });
+src/services/orders/OrderService.ts:130:    const response = await apiClient.get<Record<string, unknown>>(
+src/services/orders/OrderService.ts:177:    return apiClient.get<Order | null>(`${API_ENDPOINTS.operations.orders}/${id}`);
+src/services/orders/OrderService.ts:198:    return apiClient.get<Order | null>(`${API_ENDPOINTS.operations.orders}/by-number/${orderNumber}`);
+src/services/orders/OrderService.ts:212:    return apiClient.get<Record<OrderStatus, number>>(`${API_ENDPOINTS.operations.orders}/status-counts`);
+src/services/orders/OrderService.ts:306:    return apiClient.get(`${API_ENDPOINTS.operations.orders}/by-driver/${driverId}`, { params: options as unknown as Record<string, string> });
+src/services/orders/OrderService.ts:385:    return apiClient.get(`${API_ENDPOINTS.operations.orders}/by-vehicle/${vehicleId}`, { params: options as unknown as Record<string, string> });
+src/services/orders/OrderService.ts:465:    return apiClient.post<Order>(API_ENDPOINTS.operations.orders, data);
+src/services/orders/OrderService.ts:526:    return apiClient.put<Order>(`${API_ENDPOINTS.operations.orders}/${id}`, data);
+src/services/orders/OrderService.ts:552:    return apiClient.delete<boolean>(`${API_ENDPOINTS.operations.orders}/${id}`);
+src/services/orders/OrderService.ts:601:    return apiClient.patch<Order>(`${API_ENDPOINTS.operations.orders}/${id}/assign`, { vehicleId, driverId });
+src/services/orders/OrderService.ts:631:    return apiClient.patch<Order>(`${API_ENDPOINTS.operations.orders}/${id}/start-trip`);
+src/services/orders/OrderService.ts:729:    return apiClient.post<Order>(`${API_ENDPOINTS.operations.orders}/${id}/close`, closureData);
+src/services/orders/OrderService.ts:802:    return apiClient.patch<Order>(`${API_ENDPOINTS.operations.orders}/${orderId}/milestones/${milestoneId}`, data);
+src/services/orders/OrderService.ts:864:    return apiClient.post<Order>(`${API_ENDPOINTS.operations.orders}/${id}/send-external`);
+src/services/orders/OrderService.ts:912:    return apiClient.post<BulkSendResult>(`${API_ENDPOINTS.operations.orders}/bulk-send-external`, payload);
+src/services/orders/WorkflowService.ts:82:    return apiClient.get<Workflow[]>(API_ENDPOINTS.operations.orderWorkflows, { params: filters as unknown as Record<string, string> });
+src/services/orders/WorkflowService.ts:95:    return apiClient.get<Workflow>(`${API_ENDPOINTS.operations.orderWorkflows}/${id}`);
+src/services/orders/WorkflowService.ts:107:    return apiClient.get<Workflow[]>(`${API_ENDPOINTS.operations.orderWorkflows}/active`);
+src/services/orders/WorkflowService.ts:119:    return apiClient.get<Workflow>(`${API_ENDPOINTS.operations.orderWorkflows}/default`);
+src/services/orders/WorkflowService.ts:138:    return apiClient.get<Workflow[]>(API_ENDPOINTS.operations.orderWorkflows, { params: { cargoType } });
+src/services/orders/WorkflowService.ts:157:    return apiClient.get<Workflow[]>(API_ENDPOINTS.operations.orderWorkflows, { params: { customerId } });
+src/services/orders/WorkflowService.ts:207:    return apiClient.post<Workflow>(API_ENDPOINTS.operations.orderWorkflows, data);
+src/services/orders/WorkflowService.ts:258:    return apiClient.put<Workflow>(`${API_ENDPOINTS.operations.orderWorkflows}/${id}`, data);
+src/services/orders/WorkflowService.ts:270:    return apiClient.patch<Workflow>(`${API_ENDPOINTS.operations.orderWorkflows}/${id}/activate`);
+src/services/orders/WorkflowService.ts:286:    return apiClient.patch<Workflow>(`${API_ENDPOINTS.operations.orderWorkflows}/${id}/deactivate`);
+src/services/orders/WorkflowService.ts:315:    await apiClient.delete(`${API_ENDPOINTS.operations.orderWorkflows}/${id}`);
+src/services/orders/WorkflowService.ts:345:    return apiClient.post<Workflow>(`${API_ENDPOINTS.operations.orderWorkflows}/${id}/duplicate`, { newName });
+src/services/orders/WorkflowService.ts:413:    return apiClient.post<WorkflowProgress>(`${API_ENDPOINTS.operations.orderWorkflows}/calculate-progress`, { orderId: order.id });
+src/services/orders/WorkflowService.ts:444:    return apiClient.get<WorkflowStep>(`${API_ENDPOINTS.operations.orderWorkflows}/next-step/${order.id}`);
+src/services/orders/WorkflowService.ts:515:    return apiClient.post<Array<{ rule: string; triggered: boolean; message?: string }>>(`${API_ENDPOINTS.operations.orderWorkflows}/check-escalation`, { orderId: order.id });
+src/services/platform.service.ts:106:    return apiClient.get<PaginatedResponse<Tenant>>("/platform/tenants", { params: toRequestParams(params) });
+src/services/platform.service.ts:119:    return apiClient.get<Tenant>(`/platform/tenants/${id}`);
+src/services/platform.service.ts:176:    return apiClient.post<Tenant>("/platform/tenants", data);
+src/services/platform.service.ts:191:    return apiClient.put<Tenant>(`/platform/tenants/${id}`, data);
+src/services/platform.service.ts:211:    return apiClient.post<Tenant>(`/platform/tenants/${id}/suspend`, data);
+src/services/platform.service.ts:231:    return apiClient.post<Tenant>(`/platform/tenants/${id}/reactivate`);
+src/services/platform.service.ts:245:    return apiClient.delete(`/platform/tenants/${id}`);
+src/services/platform.service.ts:263:    return apiClient.get<TenantModuleConfig[]>(`/platform/tenants/${tenantId}/modules`);
+src/services/platform.service.ts:313:    return apiClient.put<TenantModuleConfig[]>(`/platform/tenants/${tenantId}/modules`, data);
+src/services/platform.service.ts:326:    const result = await apiClient.get<{ enabled: boolean }>(
+src/services/platform.service.ts:373:    return apiClient.post<AuthUser>(`/platform/tenants/${data.tenantId}/master-users`, data);
+src/services/platform.service.ts:389:    return apiClient.post(`/platform/users/${data.userId}/force-reset`, data);
+src/services/platform.service.ts:419:    return apiClient.get<PaginatedResponse<VehicleTransferRequest>>("/platform/transfers", { params: toRequestParams(params) });
+src/services/platform.service.ts:448:    return apiClient.post<VehicleTransferRequest>("/platform/transfers", data);
+src/services/platform.service.ts:467:    return apiClient.post<VehicleTransferRequest>(`/platform/transfers/${id}/approve`);
+src/services/platform.service.ts:486:    return apiClient.post<VehicleTransferRequest>(`/platform/transfers/${id}/execute`);
+src/services/platform.service.ts:506:    return apiClient.post<VehicleTransferRequest>(`/platform/transfers/${id}/reject`, { reason });
+src/services/platform.service.ts:523:    return apiClient.get<PlatformDashboard>("/platform/dashboard");
+src/services/platform.service.ts:547:    return apiClient.get<PaginatedResponse<PlatformActivityLog>>("/platform/activity", { params: toRequestParams(params) });
+src/services/platform.service.ts:564:    return apiClient.get<FleetGroup[]>(`/tenants/${tenantId}/fleet-groups`);
+src/services/platform.service.ts:583:    return apiClient.post<FleetGroup>(`/tenants/${tenantId}/fleet-groups`, data);
+src/services/platform.service.ts:597:    return apiClient.put<FleetGroup>(`/tenants/${tenantId}/fleet-groups/${groupId}`, data);
+src/services/platform.service.ts:610:    return apiClient.delete(`/tenants/${tenantId}/fleet-groups/${groupId}`);
+src/services/report.service.ts:76:    return apiClient.get(API_ENDPOINTS.reports.definitions, { params: filters as unknown as Record<string, string> });
+src/services/report.service.ts:86:    return apiClient.get(`${API_ENDPOINTS.reports.definitions}/${id}`);
+src/services/report.service.ts:117:    return apiClient.post(API_ENDPOINTS.reports.definitions, data);
+src/services/report.service.ts:147:    return apiClient.put(`${API_ENDPOINTS.reports.definitions}/${id}`, data);
+src/services/report.service.ts:161:    return apiClient.delete(`${API_ENDPOINTS.reports.definitions}/${id}`);
+src/services/report.service.ts:179:    return apiClient.get(API_ENDPOINTS.reports.templates, { params: type ? { type } : undefined });
+src/services/report.service.ts:189:    return apiClient.get(`${API_ENDPOINTS.reports.templates}/${id}`);
+src/services/report.service.ts:252:    return apiClient.post(API_ENDPOINTS.reports.generated, request);
+src/services/report.service.ts:303:    return apiClient.get(API_ENDPOINTS.reports.generated, { params: { ...filters, page, pageSize } as unknown as Record<string, string> });
+src/services/report.service.ts:313:    return apiClient.get(`${API_ENDPOINTS.reports.generated}/${id}`);
+src/services/report.service.ts:324:    return apiClient.get(`${API_ENDPOINTS.reports.generated}/${id}/status`);
+src/services/report.service.ts:342:    return apiClient.get(`${API_ENDPOINTS.reports.generated}/${id}/download`);
+src/services/report.service.ts:352:    return apiClient.get(API_ENDPOINTS.reports.schedules);
+src/services/report.service.ts:362:    return apiClient.get(`${API_ENDPOINTS.reports.schedules}/${id}`);
+src/services/report.service.ts:397:    return apiClient.post(API_ENDPOINTS.reports.schedules, data);
+src/services/report.service.ts:421:    return apiClient.put(`${API_ENDPOINTS.reports.schedules}/${id}`, data);
+src/services/report.service.ts:440:    return apiClient.patch(`${API_ENDPOINTS.reports.schedules}/${id}/toggle`);
+src/services/report.service.ts:454:    return apiClient.delete(`${API_ENDPOINTS.reports.schedules}/${id}`);
+src/services/report.service.ts:471:    return apiClient.post(`${API_ENDPOINTS.reports.schedules}/${id}/run`);
+src/services/report.service.ts:523:    return apiClient.get(`${API_ENDPOINTS.reports.generated}/operational`, { params: { startDate, endDate } });
+src/services/report.service.ts:575:    return apiClient.get(`${API_ENDPOINTS.reports.generated}/financial`, { params: { startDate, endDate } });
+src/services/report.service.ts:623:    return apiClient.get(`${API_ENDPOINTS.reports.generated}/usage-stats`);
+src/services/report.service.ts:634:    return apiClient.get(`${API_ENDPOINTS.reports.definitions}/categories`);
+src/services/scheduling-service.ts:74:      return apiClient.get<Order[]>(`${API_ENDPOINTS.operations.scheduling}/pending-orders`);
+src/services/scheduling-service.ts:86:      return apiClient.get<Order[]>(`${API_ENDPOINTS.operations.scheduling}/all-orders`);
+src/services/scheduling-service.ts:98:      return apiClient.get<MockVehicle[]>(`${API_ENDPOINTS.operations.scheduling}/vehicles`);
+src/services/scheduling-service.ts:110:      return apiClient.get<MockDriver[]>(`${API_ENDPOINTS.operations.scheduling}/drivers`);
+src/services/scheduling-service.ts:122:      return apiClient.get<SchedulingKPIs>(`${API_ENDPOINTS.operations.scheduling}/kpis`);
+src/services/scheduling-service.ts:267:      return apiClient.post<SchedulingServiceResult<ScheduledOrder>>(`${API_ENDPOINTS.operations.scheduling}/assign`, payload);
+src/services/scheduling-service.ts:355:      return apiClient.post<{ isValid: boolean; suggestedDuration: number | null; warnings: string[]; errors: string[] }>(`${API_ENDPOINTS.operations.scheduling}/validate-workflow`, { orderId: order.id });
+src/services/scheduling-service.ts:376:      return apiClient.get<{ steps: number; totalDuration: number; requiredGeofences: string[] } | null>(`${API_ENDPOINTS.operations.scheduling}/workflow-info/${workflowId}`);
+src/services/scheduling-service.ts:398:      return apiClient.get<ResourceSuggestion[]>(`${API_ENDPOINTS.operations.scheduling}/suggestions/${orderId}`, { params: { date: date.toISOString() } });
+src/services/scheduling-service.ts:417:      return apiClient.post<HOSValidationResult>(`${API_ENDPOINTS.operations.scheduling}/validate-hos`, { driverId, date: date.toISOString(), estimatedDuration });
+src/services/scheduling-service.ts:514:      return apiClient.post<ScheduleConflict[]>(`${API_ENDPOINTS.operations.scheduling}/detect-conflicts`, { orderId, vehicleId, driverId, scheduledDate: scheduledDate.toISOString() });
+src/services/scheduling-service.ts:640:      return apiClient.post<BulkAssignmentResult>(
+src/services/scheduling-service.ts:713:      return apiClient.post<SchedulingServiceResult<ScheduledOrder>>(
+src/services/scheduling-service.ts:796:      return apiClient.post<AutoScheduleResult>(
+src/services/scheduling-service.ts:815:      return apiClient.get<ScheduleAuditLog[]>(
+src/services/scheduling-service.ts:833:      return apiClient.get<BlockedDay[]>(
+src/services/scheduling-service.ts:847:      return apiClient.post<BlockedDay>(
+src/services/scheduling-service.ts:866:      await apiClient.delete(`${API_ENDPOINTS.operations.scheduling}/blocked-days/${blockId}`);
+src/services/scheduling-service.ts:882:      return apiClient.get<SchedulingNotification[]>(
+src/services/scheduling-service.ts:906:      return apiClient.get<GanttResourceRow[]>(
+src/services/settings.service.ts:60:    return apiClient.get(API_ENDPOINTS.settings.base);
+src/services/settings.service.ts:72:    return apiClient.get(`${API_ENDPOINTS.settings.base}/${category}`);
+src/services/settings.service.ts:112:    return apiClient.put(API_ENDPOINTS.settings.base, data);
+src/services/settings.service.ts:134:    return apiClient.post(`${API_ENDPOINTS.settings.base}/${category}/reset`);
+src/services/settings.service.ts:144:    return apiClient.get(`${API_ENDPOINTS.settings.base}/export`);
+src/services/settings.service.ts:171:    return apiClient.post(`${API_ENDPOINTS.settings.base}/import`, { json });
+src/services/settings.service.ts:183:    return apiClient.get(API_ENDPOINTS.settings.roles);
+src/services/settings.service.ts:193:    return apiClient.get(`${API_ENDPOINTS.settings.roles}/${id}`);
+src/services/settings.service.ts:229:    return apiClient.post(API_ENDPOINTS.settings.roles, data);
+src/services/settings.service.ts:262:    return apiClient.put(`${API_ENDPOINTS.settings.roles}/${id}`, data);
+src/services/settings.service.ts:289:    return apiClient.delete(`${API_ENDPOINTS.settings.roles}/${id}`);
+src/services/settings.service.ts:301:    return apiClient.get(API_ENDPOINTS.settings.integrations);
+src/services/settings.service.ts:311:    return apiClient.get(`${API_ENDPOINTS.settings.integrations}/${id}`);
+src/services/settings.service.ts:351:    return apiClient.post(API_ENDPOINTS.settings.integrations, data);
+src/services/settings.service.ts:370:    return apiClient.put(`${API_ENDPOINTS.settings.integrations}/${id}`, data);
+src/services/settings.service.ts:391:    return apiClient.patch(`${API_ENDPOINTS.settings.integrations}/${id}/toggle`);
+src/services/settings.service.ts:418:    return apiClient.post(`${API_ENDPOINTS.settings.integrations}/${id}/test`);
+src/services/settings.service.ts:434:    return apiClient.post(`${API_ENDPOINTS.settings.integrations}/${id}/sync`);
+src/services/settings.service.ts:452:    return apiClient.get(`${API_ENDPOINTS.settings.integrations}/health`);
+src/services/settings.service.ts:501:    return apiClient.get(API_ENDPOINTS.settings.audit, { params: { ...filters, page, pageSize } as unknown as Record<string, string> });
+src/services/settings.service.ts:564:    return apiClient.get(`${API_ENDPOINTS.settings.base}/overview`);
+src/services/workflow.service.ts:88:      return apiClient.get<Workflow[]>(API_ENDPOINTS.master.workflows, { params: filters as unknown as Record<string, string> });
+src/services/workflow.service.ts:128:      return apiClient.get<Workflow | null>(`${API_ENDPOINTS.master.workflows}/${id}`);
+src/services/workflow.service.ts:141:      return apiClient.getOptional<Workflow>(`${API_ENDPOINTS.master.workflows}/default`);
+src/services/workflow.service.ts:153:      return apiClient.get<Workflow[]>(`${API_ENDPOINTS.master.workflows}/active`);
+src/services/workflow.service.ts:165:      return apiClient.post<Workflow>(API_ENDPOINTS.master.workflows, data);
+src/services/workflow.service.ts:204:      return apiClient.put<Workflow>(`${API_ENDPOINTS.master.workflows}/${id}`, data);
+src/services/workflow.service.ts:256:      return apiClient.delete<void>(`${API_ENDPOINTS.master.workflows}/${id}`);
+src/services/workflow.service.ts:280:      return apiClient.post<Workflow>(`${API_ENDPOINTS.master.workflows}/${id}/duplicate`, { newName });
+src/services/workflow.service.ts:317:      return apiClient.patch<Workflow>(`${API_ENDPOINTS.master.workflows}/${id}/status`, { status });
+src/services/workflow.service.ts:352:      return apiClient.get<WorkflowGeofence[]>(`${API_ENDPOINTS.master.workflows}/helpers/available-geofences`);
+src/services/workflow.service.ts:388:      return apiClient.get<WorkflowGeofence[]>(`${API_ENDPOINTS.master.workflows}/helpers/geofences-by-category/${category}`);
+src/services/workflow.service.ts:427:      return apiClient.get<{ valid: boolean; issues: Array<{ stepId: string; stepName: string; issue: string }> }>(`${API_ENDPOINTS.master.workflows}/${workflowId}/validate-geofences`);
+src/services/workflow.service.ts:468:      return apiClient.get<WorkflowCustomer[]>(`${API_ENDPOINTS.master.workflows}/helpers/available-customers`);
+src/services/workflow.service.ts:480:      return apiClient.get<Workflow[]>(API_ENDPOINTS.master.workflows, { params: { customerId } });
+src/services/workflow.service.ts:505:      return apiClient.post<ApplyWorkflowResult>(`${API_ENDPOINTS.master.workflows}/${workflowId}/apply`, { orderId: order.id });
+src/services/workflow.service.ts:552:      return apiClient.get<OrderWorkflowProgress | null>(`${API_ENDPOINTS.operations.orders}/${orderId}/workflow-progress`);
+src/services/workflow.service.ts:613:      return apiClient.get<{ totalMinutes: number; totalHours: number; breakdown: Array<{ stepName: string; minutes: number }> }>(`${API_ENDPOINTS.master.workflows}/${workflowId}/schedule-duration`);
+src/services/workflow.service.ts:648:      return apiClient.getOptional<Workflow>(
+src/services/workflow.service.ts:701:      return apiClient.post<{ compatible: boolean; warnings: string[]; errors: string[] }>(`${API_ENDPOINTS.master.workflows}/${workflowId}/validate-for-schedule`, scheduledOrder);

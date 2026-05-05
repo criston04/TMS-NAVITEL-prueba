@@ -1,0 +1,23 @@
+meta {
+  name: Get driver by id
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/master/drivers/{{lastDriverId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/drivers/:id
+
+  Devuelve envelope `{data: {...}}` con el driver completo.
+
+  **Requisito:** correr antes `02-Create.bru` o `01-List.bru` para setear `lastDriverId`.
+}

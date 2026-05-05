@@ -1,0 +1,37 @@
+meta {
+  name: Cash flow summary
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/finance/cash-flow
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/cash-flow
+
+  Resumen de flujo de caja.
+
+  Response:
+  ```json
+  {
+    "data": {
+      "openingBalance": 0,
+      "closingBalance": 0,
+      "totalInflows": 0,
+      "totalOutflows": 0,
+      "netCashFlow": 0,
+      "daily": [{"day": "2026-04-01", "inflows": 0, "outflows": 0}, ...]
+    }
+  }
+  ```
+
+  Incluye breakdown diario en `daily[]`.
+}

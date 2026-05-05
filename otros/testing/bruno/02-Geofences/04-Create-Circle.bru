@@ -1,0 +1,71 @@
+meta {
+  name: Create geofence (CIRCLE)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/master/geofences
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "code": "GEO-001",
+    "name": "Almacén Central Lima",
+    "shortName": "ALM-CENTRAL",
+    "description": "Almacén principal zona norte",
+    "address": "jiron test 124",
+    "type": "CIRCLE",
+    "category": "warehouse",
+    "lat": -12.145791522844425,
+    "lng": -77.03656292894493,
+    "radius": 380.591265934025,
+    "alt": 0,
+    "color": "#00c9ff",
+    "opacity": 0.2,
+    "tags": ["almacen", "lima", "norte"],
+    "alerts": {
+      "onEntry": true,
+      "onExit": true,
+      "onDwell": false,
+      "dwellTimeMinutes": null,
+      "notifyEmails": ["ops@transsac.pe"]
+    },
+    "status": "active"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = Array.isArray(body) ? body[0] : (body?.data || body);
+  if (obj) {
+    const id = obj.id || obj.Geofenceid || obj.geofenceid;
+    if (id) {
+      bru.setEnvVar("lastGeofenceId", id);
+      console.log("[Create CIRCLE] lastGeofenceId =", id);
+    }
+  }
+}
+
+docs {
+  # POST /geofences — CIRCLE (actualizado a v3 Rev3 — 2026-04-27)
+
+  Para CIRCLE se mandan `lat`, `lng`, `radius` (en metros) PLANOS al raíz.
+  No se envía `gpoints`.
+
+  - **`type` en UPPERCASE: `"CIRCLE"`** (sniff 2026-04-29 confirma que `"circle"`
+    o `"circular"` falla con 400 "Type must be CIRCLE or POLYGON").
+  - `status: "active" | "inactive"` (string) o `1`/`0` (int) — el backend acepta ambos.
+  - `alerts{}` anidado.
+  - **NO enviar `customer_id`** — el backend lo resuelve del JWT.
+}

@@ -34,7 +34,12 @@ export function ConnectivityChart({ data, className }: ConnectivityChartProps) {
   const barWidth = 100 / chartData.length;
   const latest = chartData[chartData.length - 1];
   const previous = chartData.length > 1 ? chartData[chartData.length - 2] : latest;
-  const trend = latest.onlinePercentage - previous.onlinePercentage;
+  // 2026-05-03: defaults defensivos por si los items vienen con shape parcial.
+  const latestOnline = latest?.onlinePercentage ?? 0;
+  const latestTempLoss = latest?.temporaryLossPercentage ?? 0;
+  const latestDisconnected = latest?.disconnectedPercentage ?? 0;
+  const previousOnline = previous?.onlinePercentage ?? 0;
+  const trend = latestOnline - previousOnline;
 
   return (
     <div className={cn("rounded-lg border bg-card p-4", className)}>
@@ -104,15 +109,15 @@ export function ConnectivityChart({ data, className }: ConnectivityChartProps) {
       <div className="flex items-center justify-center gap-4 mt-2 text-[10px]">
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          En línea ({latest.onlinePercentage.toFixed(0)}%)
+          En línea ({latestOnline.toFixed(0)}%)
         </span>
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-amber-500" />
-          Pérdida temp. ({latest.temporaryLossPercentage.toFixed(0)}%)
+          Pérdida temp. ({latestTempLoss.toFixed(0)}%)
         </span>
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-red-500" />
-          Sin conexión ({latest.disconnectedPercentage.toFixed(0)}%)
+          Sin conexión ({latestDisconnected.toFixed(0)}%)
         </span>
       </div>
     </div>

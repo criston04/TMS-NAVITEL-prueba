@@ -1,0 +1,22 @@
+meta {
+  name: Integrations
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/settings/integrations
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /settings/integrations
+
+  Integraciones con proveedores externos (GPS, SMS, email).
+  Envelope stub `{data: {}, items: []}`.
+}

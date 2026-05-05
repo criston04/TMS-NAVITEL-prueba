@@ -75,8 +75,10 @@ function generateMockAlerts(vehicles: TrackedVehicle[]): MonitoringAlert[] {
   const alerts: MonitoringAlert[] = [];
   const now = Date.now();
 
-  // Speed alerts
+  // Speed alerts — solo vehiculos que reportan GPS (position puede ser undefined
+  // cuando el vehiculo viene del backend real y aun no ha enviado ping GPS).
   vehicles.forEach((v) => {
+    if (!v.position || typeof v.position.speed !== "number") return;
     if (v.position.speed > 70) {
       alerts.push({
         id: `alert-speed-${v.id}`,
@@ -94,7 +96,7 @@ function generateMockAlerts(vehicles: TrackedVehicle[]): MonitoringAlert[] {
     }
   });
 
-  // Disconnection alerts
+  // Disconnection alerts — sin position no podemos pintar el marker, pero igual alertamos
   vehicles.filter((v) => v.connectionStatus === "disconnected").forEach((v) => {
     alerts.push({
       id: `alert-disc-${v.id}`,
@@ -107,12 +109,13 @@ function generateMockAlerts(vehicles: TrackedVehicle[]): MonitoringAlert[] {
       title: "Sin conexión GPS",
       message: `${v.plate} perdió conexión GPS hace más de 15 minutos`,
       timestamp: new Date(now - Math.random() * 900000).toISOString(),
-      position: { lat: v.position.lat, lng: v.position.lng },
+      position: v.position ? { lat: v.position.lat, lng: v.position.lng } : { lat: 0, lng: 0 },
     });
   });
 
   // Stop duration alerts
   vehicles.filter((v) => v.movementStatus === "stopped" && v.stoppedSince).forEach((v) => {
+    if (!v.position) return; // sin GPS no tiene sentido alerta de "parada"
     const stoppedMs = now - new Date(v.stoppedSince!).getTime();
     if (stoppedMs > 1800000) { // 30 min
       alerts.push({
@@ -131,7 +134,7 @@ function generateMockAlerts(vehicles: TrackedVehicle[]): MonitoringAlert[] {
     }
   });
 
-  // Temp loss alerts
+  // Temp loss alerts — position puede venir undefined si el vehiculo nunca reporto GPS
   vehicles.filter((v) => v.connectionStatus === "temporary_loss").forEach((v) => {
     alerts.push({
       id: `alert-temp-${v.id}`,
@@ -144,7 +147,7 @@ function generateMockAlerts(vehicles: TrackedVehicle[]): MonitoringAlert[] {
       title: "Pérdida temporal de señal",
       message: `${v.plate} presenta intermitencia en la señal GPS`,
       timestamp: new Date(now - Math.random() * 600000).toISOString(),
-      position: { lat: v.position.lat, lng: v.position.lng },
+      position: v.position ? { lat: v.position.lat, lng: v.position.lng } : { lat: 0, lng: 0 },
     });
   });
 

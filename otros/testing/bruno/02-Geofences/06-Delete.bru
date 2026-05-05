@@ -1,0 +1,26 @@
+meta {
+  name: Delete geofence
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/master/geofences/{{lastGeofenceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # DELETE /geofences/:id — Eliminar (soft-delete)
+
+  **Excel:** `Geofence | DELETE | /geofences/:id | Eliminación lógica geocerca`
+
+  El backend hace soft-delete (setea `deleted_at`), NO borra fisicamente.
+
+  Usa `lastGeofenceId`. Al ejecutar, esta variable queda apuntando a una
+  geocerca eliminada — re-ejecuta List para setearla a una valida.
+}

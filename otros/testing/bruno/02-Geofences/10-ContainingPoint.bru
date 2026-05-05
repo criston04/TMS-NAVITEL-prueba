@@ -1,0 +1,31 @@
+meta {
+  name: Containing point
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/master/geofences/containing-point?lat=-12.0464&lng=-77.0428
+  body: none
+  auth: bearer
+}
+
+params:query {
+  lat: -12.0464
+  lng: -77.0428
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /geofences/containing-point — Buscar por punto
+
+  **Excel:** `Geofence | GET | /geofences/containing-point | Encontrar geocercas containing a geographic point`
+
+  Devuelve todas las geocercas que contienen el punto (lat, lng).
+  Uso tipico: dado un vehiculo con GPS, saber en que geocercas esta.
+
+  Coordenadas de ejemplo: centro de Lima.
+}

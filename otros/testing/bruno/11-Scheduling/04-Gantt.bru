@@ -1,0 +1,27 @@
+meta {
+  name: Gantt data
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/operations/scheduling/gantt?startDate=2026-04-22T00:00:00Z&days=7
+  body: none
+  auth: bearer
+}
+
+params:query {
+  startDate: 2026-04-22T00:00:00Z
+  days: 7
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /operations/scheduling/gantt
+
+  Datos para la vista de Gantt multi-dia.
+  Envelope: `{data: [...], startDate, endDate, days}`.
+}

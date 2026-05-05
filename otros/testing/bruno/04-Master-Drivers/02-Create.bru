@@ -1,0 +1,239 @@
+meta {
+  name: Create driver
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/master/drivers
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "code": "DRV-BRUNO-7505",
+    "document_type": "DNI",
+    "document_number": "71939097",
+    "first_name": "Jose Rolando",
+    "last_name": "Camarena",
+    "mother_last_name": "Meza",
+    "birth_date": "1999-06-09",
+    "blood_type": "O+",
+    "nationality": "PE",
+    "email": "josecamarenameza0@gmail.com",
+    "phone": "+51 904 005 637",
+    "alternative_phone": "+51 999 100 200",
+    "address": "Av. Tito Jaime 551",
+    "district": "San Miguel",
+    "province": "Lima",
+    "department": "Lima",
+    "hire_date": "2026-01-14",
+    "termination_date": null,
+    "availability": "available",
+    "operator_id": null,
+    "assigned_vehicle_id": null,
+    "photo_url": "https://files.test/drv-705/photo.jpg",
+    "signature_url": "https://files.test/drv-705/sign.png",
+    "notes": "Conductor de prueba generado desde Bruno",
+    "tags": ["preferente"],
+    "status": "active",
+    "license": {
+      "number": "Q12345678",
+      "category": "A-IIIc",
+      "issue_date": "2025-12-29",
+      "expiry_date": "2026-12-25",
+      "issuing_authority": "MTC",
+      "issuing_country": "PE",
+      "points": 100,
+      "max_points": 100,
+      "restrictions": {
+        "requires_glasses": false,
+        "requires_hearing_aid": false,
+        "automatic_only": false,
+        "other_restrictions": []
+      },
+      "verification_status": "verified"
+    },
+    "emergency_contact": {
+      "name": "Rosa Camarena",
+      "relationship": "spouse",
+      "relationship_detail": null,
+      "phone": "+51 999 333 444",
+      "alternative_phone": "+51 999 333 445",
+      "email": "rosa.contacto@test.com",
+      "address": "Av. Tito Jaime 551, Lima"
+    },
+    "documents": [
+      {
+        "id": "doc-drv-001",
+        "name": "Licencia de conducir",
+        "is_required": true,
+        "status": "valid",
+        "expiration_date": "2026-12-25",
+        "file_url": "https://files.test/drv-001/licencia.pdf"
+      },
+      {
+        "id": "doc-drv-002",
+        "name": "DNI",
+        "is_required": true,
+        "status": "valid",
+        "expiration_date": "2030-06-09",
+        "file_url": "https://files.test/drv-001/dni.pdf"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastDriverId", id);
+
+  // Espejo EXACTO de lo que el frontend (mapDriverToBackend) envia hoy
+  const sent = {
+    code: "DRV-BRUNO-7505",
+    document_type: "DNI",
+    document_number: "71939097",
+    first_name: "Jose Rolando",
+    last_name: "Camarena",
+    mother_last_name: "Meza",
+    birth_date: "1999-06-09",
+    blood_type: "O+",
+    nationality: "PE",
+    email: "josecamarenameza0@gmail.com",
+    phone: "+51 904 005 637",
+    alternative_phone: "+51 999 100 200",
+    address: "Av. Tito Jaime 551",
+    district: "San Miguel",
+    province: "Lima",
+    department: "Lima",
+    hire_date: "2026-01-14",
+    availability: "available",
+    photo_url: "https://files.test/drv-705/photo.jpg",
+    signature_url: "https://files.test/drv-705/sign.png",
+    notes: "Conductor de prueba generado desde Bruno",
+    tags: ["preferente"],
+    status: "active",
+  };
+
+  function valueMatches(expected, got) {
+    if (got === null || got === undefined) return false;
+    if (Array.isArray(expected)) {
+      return Array.isArray(got) && JSON.stringify(got) === JSON.stringify(expected);
+    }
+    if (typeof expected === "string" && typeof got === "string" && got.startsWith(expected)) {
+      return true; // fechas backend agrega T00:00:00
+    }
+    return got === expected;
+  }
+
+  console.log("===================================================");
+  console.log("            VERIFICACION CREATE DRIVER             ");
+  console.log("===================================================");
+  console.log("driver id:", id);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ENVIADOS POR EL FRONTEND ---");
+
+  const ok = [];
+  const lost = [];
+  const mismatched = [];
+
+  for (const key of Object.keys(sent)) {
+    const expected = sent[key];
+    const got = obj[key];
+
+    if (got === null || got === undefined) {
+      lost.push({ key, expected });
+      console.log("  ❌", key.padEnd(24), "PERDIDO (null) — env:", JSON.stringify(expected));
+    } else if (valueMatches(expected, got)) {
+      ok.push(key);
+      console.log("  ✅", key.padEnd(24), JSON.stringify(got));
+    } else {
+      mismatched.push({ key, expected, got });
+      console.log("  ⚠️ ", key.padEnd(24), "DIFIERE — env:", JSON.stringify(expected), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- SUB-OBJETOS / RELACIONALES ---");
+  console.log("  license:           ", obj.license           ? "✅ persistido" : "❌ DESCARTADO");
+  console.log("  emergency_contact: ", obj.emergency_contact ? "✅ persistido" : "❌ DESCARTADO");
+  console.log("  documents[]:       ", obj.documents         ? "✅ persistido" : "❌ DESCARTADO");
+
+  console.log("");
+  console.log("--- CAMPOS ENVIADOS COMO null ---");
+  const sentAsNull = ["termination_date", "operator_id", "assigned_vehicle_id"];
+  for (const k of sentAsNull) {
+    console.log("  ", k.padEnd(28), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("--- CAMPOS EXTRA QUE AGREGA EL BACKEND ---");
+  const expectedKeys = new Set([
+    ...Object.keys(sent), ...sentAsNull,
+    "id", "license", "emergency_contact", "documents",
+  ]);
+  const extras = Object.keys(obj).filter(k => !expectedKeys.has(k));
+  for (const k of extras) {
+    console.log("  +", k.padEnd(28), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("==================== RESUMEN ====================");
+  console.log("  OK:        ", String(ok.length).padEnd(3), "campos persistidos");
+  console.log("  PERDIDOS:  ", String(lost.length).padEnd(3), lost.length ? "→ " + lost.map(x => x.key).join(", ") : "");
+  console.log("  DIFIERE:   ", String(mismatched.length).padEnd(3), mismatched.length ? "→ " + mismatched.map(x => x.key).join(", ") : "");
+  console.log("  EXTRA BE:  ", String(extras.length).padEnd(3), "campos que el backend agrega solo");
+  console.log("===================================================");
+
+  if (lost.length > 0 || !obj.license || !obj.emergency_contact || !obj.documents) {
+    console.log("");
+    console.log("⚠ BUG BACKEND #10: INSERT incompleto + relacionales no guardadas");
+    console.log("  Campos perdidos:", lost.map(x => x.key).join(", "));
+    if (!obj.license)           console.log("  + license{} no se persiste");
+    if (!obj.emergency_contact) console.log("  + emergency_contact{} no se persiste");
+    if (!obj.documents)         console.log("  + documents[] no se persiste");
+  }
+}
+
+docs {
+  # POST /master/drivers — payload IDENTICO al que produce el frontend hoy
+
+  Refleja exactamente lo que sale de `mapDriverToBackend()` con los datos
+  del conductor de prueba "Jose Rolando Camarena" (DNI 71939097).
+
+  ## Body (25 campos planos + 3 sub-objetos)
+  identificacion: code, document_type, document_number, first_name, last_name,
+                  mother_last_name, birth_date, blood_type, nationality
+  contacto:       email, phone, alternative_phone
+  direccion:      address, district, province, department
+  laboral:        hire_date, termination_date, availability, operator_id, assigned_vehicle_id
+  multimedia:     photo_url, signature_url
+  metadata:       notes, tags, status
+  relacionales:   license{}, emergency_contact{}, documents[]
+
+  ## Verificacion automatica (script post-response)
+  - ✅ Campos persistidos OK
+  - ❌ Campos PERDIDOS (volvieron como null)
+  - ⚠️  Campos que DIFIEREN
+  - Sub-objetos persistidos vs descartados
+  - Campos extra auto-generados por backend (tenant_id, blocked_at,
+    current_medical_exam_id, police_record_valid, etc.)
+
+  ## Bug verificado al 2026-05-02 (BUG #10)
+  Campos planos perdidos: mother_last_name, alternative_phone, district,
+  province, department, signature_url, tags
+  Sub-objetos descartados: license, emergency_contact, documents
+}

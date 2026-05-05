@@ -17,19 +17,34 @@ import {
   CreateCustomerDTO, 
   UpdateCustomerDTO 
 } from "@/types/models";
+import dynamic from "next/dynamic";
 import { useCustomers } from "@/hooks/useCustomers";
 import {
-  CustomerFormModal,
-  CustomerDetailDrawer,
   CustomerDeleteDialog,
   CustomerBulkDeleteDialog,
-  CustomerImportModal,
   CustomerFilters,
   CustomerTable,
   CustomerStats,
   CustomerPagination,
-  CustomerCategorySettingsDialog,
 } from "@/components/customers";
+
+// Lazy-load de modales/drawers/dialogs pesados
+const CustomerFormModal = dynamic(
+  () => import("@/components/customers").then(m => ({ default: m.CustomerFormModal })),
+  { ssr: false }
+);
+const CustomerDetailDrawer = dynamic(
+  () => import("@/components/customers").then(m => ({ default: m.CustomerDetailDrawer })),
+  { ssr: false }
+);
+const CustomerImportModal = dynamic(
+  () => import("@/components/customers").then(m => ({ default: m.CustomerImportModal })),
+  { ssr: false }
+);
+const CustomerCategorySettingsDialog = dynamic(
+  () => import("@/components/customers").then(m => ({ default: m.CustomerCategorySettingsDialog })),
+  { ssr: false }
+);
 
 /**
  * Página principal de Clientes

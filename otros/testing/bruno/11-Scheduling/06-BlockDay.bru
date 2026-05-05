@@ -1,0 +1,65 @@
+meta {
+  name: Block a day
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/operations/scheduling/block-day
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "date": "2026-12-25",
+    "reason": "Feriado Navidad",
+    "blockType": "holiday"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const id = body && body.data && body.data.id;
+  if (id) {
+    bru.setEnvVar("lastBlockedDayId", id);
+    console.log("[Block Day] lastBlockedDayId =", id);
+  }
+}
+
+docs {
+  # POST /operations/scheduling/block-day
+
+  **Campos requeridos (camelCase):** `date`, `reason`, `blockType`.
+
+  ⚠ **Campo es `blockType`, NO `type`** — el backend rechaza `type` aunque parezca natural.
+
+  Valores de `blockType` observados: `holiday`, `maintenance`, `operational`.
+
+  Response 201 con shape:
+  ```json
+  {
+    "data": {
+      "id": "...",
+      "blocked_date": "2026-12-25T00:00:00.000Z",
+      "reason": "Feriado Navidad",
+      "block_type": "holiday",
+      "applies_to_all": 1,
+      "resource_ids": null,
+      "created_by": "admin",
+      "created_at": "..."
+    }
+  }
+  ```
+
+  **Endpoint singular vs plural** — GET es `/blocked-days` (plural), POST es `/block-day` (singular).
+  Es el path del backend, no un error de la collection.
+}

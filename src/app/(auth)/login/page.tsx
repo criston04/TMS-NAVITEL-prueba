@@ -1,87 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight, Shield, Building2, Users } from "lucide-react";
+import { Eye, EyeOff, Loader2, User, Lock, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
-import type { AuthUser, PlatformUser } from "@/types/auth";
+import { getUserTier, type AuthUser, type UserRole } from "@/types/auth";
+import { setAccessToken, setRefreshToken } from "@/lib/auth-storage";
+
+// Módulos a habilitar por defecto cuando se loguea contra backend real
+const ALL_MODULES: AuthUser["enabledModules"] = [
+  "orders", "scheduling", "monitoring", "invoicing", "payments",
+  "costs", "rates", "settlements", "maintenance", "customers",
+  "drivers", "vehicles", "geofences", "reports", "notifications",
+  "workflows", "bitacora", "route_planner",
+];
 
 /**
- * Mock users para demostración de los 3 niveles de jerarquía:
- *   Nivel 1: Platform Owner (proveedor del TMS)
- *   Nivel 2: Usuario Maestro (admin del client/tenant)
- *   Nivel 3: Subusuario (operador dentro del tenant)
+ * Decodifica el payload de un JWT sin verificar firma.
+ * Solo para leer datos del usuario (username, tenantId, role, exp).
  */
-const DEMO_ACCOUNTS: {
-  label: string;
-  description: string;
-  icon: typeof Shield;
-  email: string;
-  user: AuthUser | PlatformUser;
-}[] = [
-  {
-    label: "Platform Owner",
-    description: "Gestión global de la plataforma TMS",
-    icon: Shield,
-    email: "admin@tms-navitel.com",
-    user: {
-      id: "platform-001",
-      name: "Admin TMS Navitel",
-      email: "admin@tms-navitel.com",
-      role: "platform_owner",
-      tier: "platform",
-      isActive: true,
-    } as PlatformUser,
-  },
-  {
-    label: "Usuario Maestro",
-    description: "Admin de Transportes del Norte S.A.",
-    icon: Building2,
-    email: "cperez@transportesnorte.com",
-    user: {
-      id: "user-tn-001",
-      name: "Carlos Pérez",
-      email: "cperez@transportesnorte.com",
-      role: "owner",
-      tier: "tenant_admin",
-      tenantId: "tenant-001",
-      tenantName: "Transportes del Norte S.A.",
-      isActive: true,
-      enabledModules: [
-        "orders", "scheduling", "monitoring", "invoicing", "payments",
-        "costs", "rates", "settlements", "maintenance", "customers",
-        "drivers", "vehicles", "geofences", "reports", "notifications",
-        "workflows", "bitacora", "route_planner",
-      ],
-    } as AuthUser,
-  },
-  {
-    label: "Subusuario (Operador)",
-    description: "Despachador — acceso limitado",
-    icon: Users,
-    email: "jlopez@transportesnorte.com",
-    user: {
-      id: "user-tn-010",
-      name: "Juan López",
-      email: "jlopez@transportesnorte.com",
-      role: "despachador",
-      tier: "tenant_user",
-      tenantId: "tenant-001",
-      tenantName: "Transportes del Norte S.A.",
-      isActive: true,
-      enabledModules: [
-        "orders", "scheduling", "monitoring", "customers",
-        "drivers", "vehicles", "notifications",
-      ],
-      scope: { type: "all" },
-      createdBy: "user-tn-001",
-    } as AuthUser,
-  },
-];
+function decodeJWT(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    // Padding
+    const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
+    const decoded = atob(padded);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * URL de login del backend.
+ * Importante: el endpoint de login NO usa el prefijo /api/v1.
+ * El resto de endpoints sí lo usan (NEXT_PUBLIC_API_URL ya lo incluye).
+ */
+function getLoginUrl(): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  // Si NEXT_PUBLIC_API_URL = https://.../api/v1, removemos /api/v1 para login
+  const base = apiUrl.replace(/\/api\/v\d+\/?$/, "").replace(/\/$/, "");
+  return `${base || "https://api-service.gruponavitel.com"}/auth/login`;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -100,63 +65,124 @@ export default function LoginPage() {
     setError("");
     setIsLoading(true);
 
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      if (formData.email && formData.password) {
-        // Buscar si coincide con alguna cuenta demo
-        const demoAccount = DEMO_ACCOUNTS.find(
-          (acc) => acc.email.toLowerCase() === formData.email.toLowerCase()
-        );
-
-        if (demoAccount) {
-          login(demoAccount.user);
-        } else {
-          // Fallback: crear usuario maestro genérico
-          login({
-            id: "1",
-            name: "Usuario Demo",
-            email: formData.email,
-            role: "owner",
-            tier: "tenant_admin",
-            tenantId: "tenant-001",
-            tenantName: "Demo Transport S.A.C.",
-            isActive: true,
-            enabledModules: [
-              "orders", "scheduling", "monitoring", "invoicing", "payments",
-              "costs", "rates", "settlements", "maintenance", "customers",
-              "drivers", "vehicles", "geofences", "reports", "notifications",
-              "workflows", "bitacora", "route_planner",
-            ],
-          } as AuthUser);
-        }
-
-        // Platform owners van al panel de plataforma
-        if (demoAccount?.user.tier === "platform") {
-          router.push("/platform");
-        } else {
-          router.push("/");
-        }
-      } else {
-        setError(t("validation.fillAllFields"));
-      }
-    } catch {
-      setError(t("validation.loginError"));
-    } finally {
+    if (!formData.email || !formData.password) {
+      setError(t("validation.fillAllFields"));
       setIsLoading(false);
+      return;
     }
-  };
 
-  const handleDemoLogin = async (account: (typeof DEMO_ACCOUNTS)[number]) => {
-    setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      login(account.user);
-      if (account.user.tier === "platform") {
+      const loginUrl = getLoginUrl();
+
+      const response = await fetch(loginUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      if (!response.ok) {
+        let msg = "Credenciales inválidas";
+        try {
+          const errData = await response.json();
+          msg = errData.message || msg;
+        } catch {
+          // noop
+        }
+        setError(msg);
+        setIsLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      // El backend (v3 Rev3) responde:
+      //   { success: true, data: { user: {...}, accessToken, refreshToken } }
+      // Para retrocompat soportamos también el shape antiguo: { token, user }.
+      const isWrapped = data && typeof data === "object" && data.data && typeof data.data === "object";
+      const payload = isWrapped ? data.data : data;
+      const token: string | undefined = payload.accessToken || payload.token;
+      const refreshToken: string | undefined = payload.refreshToken;
+      const userObj = (typeof payload.user === "object" && payload.user) || null;
+
+      if (!token) {
+        setError("Respuesta de login inválida (no se recibió accessToken)");
+        setIsLoading(false);
+        return;
+      }
+
+      // Decodificar JWT como fallback para metadata si el response no la trae completa
+      const jwtPayload = decodeJWT(token) as
+        | { username?: string; tenantId?: string; role?: UserRole; exp?: number; jti?: string }
+        | null;
+
+      // Preferir datos del response (más confiable que decodear el JWT del cliente).
+      // BUG del backend (verificado 2026-05-02): el `role` viene en UPPERCASE
+      // ("OWNER", "ADMIN", "OPERATOR", etc.) pero DEFAULT_ROLES en el frontend
+      // los registra en lowercase ("owner", "admin", ...). Sin esta normalización,
+      // hasPermission() no encuentra el rol y devuelve permisos vacíos → solo
+      // aparece "Dashboard" en el sidebar.
+      const rawRole = (userObj?.role as string) || (jwtPayload?.role as string) || "owner";
+      const role: UserRole = rawRole.toLowerCase() as UserRole;
+
+      const tenantId = userObj?.tenantId || jwtPayload?.tenantId || "tenant-default";
+      const userId = userObj?.id || jwtPayload?.jti || formData.email;
+      const userName = userObj?.name || userObj?.email || (typeof payload.user === "string" ? payload.user : "") || formData.email;
+      const userEmail = userObj?.email || formData.email;
+      const tenantName = userObj?.tenantName || "Grupo Navitel";
+
+      // BUG del backend: hoy devuelve `enabledModules: []` (vacío) incluso para
+      // OWNER. Si está vacío usamos ALL_MODULES como fallback para no bloquear UI.
+      const enabledModules = (Array.isArray(userObj?.enabledModules) && userObj.enabledModules.length > 0)
+        ? (userObj.enabledModules as AuthUser["enabledModules"])
+        : ALL_MODULES;
+
+      // BUG del backend: hoy devuelve `permissions: []`. Cuando llegue vacío,
+      // dejamos `permissions: undefined` para que hasPermission() haga fallback a
+      // los permisos por defecto del rol en DEFAULT_ROLES (auth.ts).
+      const backendPermissions = Array.isArray(userObj?.permissions) && userObj.permissions.length > 0
+        ? (userObj.permissions as AuthUser["permissions"])
+        : undefined;
+
+      const isActive = userObj?.isActive ?? true;
+
+      // Construir AuthUser. Guardamos el token embebido para que api.ts lo lea.
+      const authUser: AuthUser & { token?: string } = {
+        id: userId,
+        name: userName,
+        email: userEmail,
+        role,
+        tier: getUserTier(role),
+        tenantId,
+        tenantName,
+        isActive,
+        enabledModules,
+        token,
+      };
+      if (backendPermissions) {
+        authUser.permissions = backendPermissions;
+      }
+
+      login(authUser);
+
+      // Guardar tokens via auth-storage:
+      //  - access token → memoria (no persiste en disco; XSS-safer)
+      //  - refresh token → sessionStorage (sobrevive F5, no cross-tab)
+      setAccessToken(token);
+      if (refreshToken) {
+        setRefreshToken(refreshToken);
+      }
+
+      if (authUser.tier === "platform") {
         router.push("/platform");
       } else {
         router.push("/");
       }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Error de conexión con el backend. Verifica tu red o el backend.");
     } finally {
       setIsLoading(false);
     }
@@ -186,19 +212,20 @@ export default function LoginPage() {
         <div className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-foreground">
-              {t("auth.email")}
+              Usuario
             </label>
             <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input
                 id="email"
-                type="email"
-                placeholder={t("auth.emailPlaceholder")}
+                type="text"
+                placeholder="admin"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 disabled={isLoading}
                 className="pl-10 h-11 bg-background border-input transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                 required
+                autoComplete="username"
               />
             </div>
           </div>
@@ -220,6 +247,7 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className="pl-10 pr-12 h-11 bg-background border-input transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                 required
+                autoComplete="current-password"
               />
               <Button
                 type="button"
@@ -240,9 +268,9 @@ export default function LoginPage() {
 
         {/* Remember me */}
         <div className="flex items-center gap-2">
-          <input 
-            type="checkbox" 
-            id="remember" 
+          <input
+            type="checkbox"
+            id="remember"
             className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
           />
           <label htmlFor="remember" className="text-sm text-muted-foreground select-none cursor-pointer">
@@ -250,9 +278,9 @@ export default function LoginPage() {
           </label>
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full h-11 text-base font-medium shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40 hover:-translate-y-0.5" 
+        <Button
+          type="submit"
+          className="w-full h-11 text-base font-medium shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40 hover:-translate-y-0.5"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -268,45 +296,6 @@ export default function LoginPage() {
           )}
         </Button>
       </form>
-
-      {/* Demo Accounts */}
-      <div className="space-y-3 pt-2">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Acceso rápido (Demo)
-            </span>
-          </div>
-        </div>
-
-        <div className="grid gap-2">
-          {DEMO_ACCOUNTS.map((account) => {
-            const Icon = account.icon;
-            return (
-              <button
-                key={account.email}
-                type="button"
-                disabled={isLoading}
-                onClick={() => handleDemoLogin(account)}
-                className="flex items-center gap-3 rounded-lg border p-3 text-left transition-all hover:bg-accent hover:border-primary/30 disabled:opacity-50"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Icon className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{account.label}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {account.description}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

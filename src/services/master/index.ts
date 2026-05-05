@@ -12,4 +12,7 @@ export { assignmentService } from "./assignment.service";
 export { auditService } from "./audit.service";
 export { maintenanceService as maintenanceMasterService } from "./maintenance.service";
 export { medicalExamsService } from "./medical-exams.service";
-export { workflowMasterService } from "./workflows.service";
+
+// NOTA: `workflowMasterService` / `master/workflows.service.ts` se eliminó el
+// 2026-05-02 por ser duplicado sin consumers. Usar `unifiedWorkflowService`
+// desde `@/services/workflow.service`.

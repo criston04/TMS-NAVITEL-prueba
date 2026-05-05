@@ -26,7 +26,20 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Workflow } from '@/types/workflow';
-import { workflowStatusConfig, workflowTypes } from '@/mocks/master/workflows.mock';
+// Configuración de workflows (antes importada de mocks)
+const workflowTypes: Array<{ value: string; label: string; color: string }> = [
+  { value: 'import', label: 'Importación', color: '#6366f1' },
+  { value: 'export', label: 'Exportación', color: '#10b981' },
+  { value: 'distribution', label: 'Distribución', color: '#f59e0b' },
+  { value: 'collection', label: 'Recolección', color: '#0ea5e9' },
+  { value: 'transfer', label: 'Transferencia', color: '#8b5cf6' },
+  { value: 'other', label: 'Otro', color: '#64748b' },
+];
+const workflowStatusConfig: Record<Workflow['status'], { label: string; color: string; bgColor: string }> = {
+  active: { label: 'Activo', color: '#059669', bgColor: '#d1fae5' },
+  inactive: { label: 'Inactivo', color: '#6b7280', bgColor: '#f3f4f6' },
+  draft: { label: 'Borrador', color: '#d97706', bgColor: '#fef3c7' },
+};
 
 interface WorkflowCardProps {
   workflow: Workflow;
@@ -49,10 +62,14 @@ export const WorkflowCard: FC<WorkflowCardProps> = ({
   viewMode = 'grid',
   className,
 }) => {
-  const statusConfig = workflowStatusConfig[workflow.status];
-  const workflowType = workflowTypes.find(t => 
+  const statusConfig = workflowStatusConfig[workflow.status] ?? workflowStatusConfig.draft;
+  // 2026-05-03: el backend no devuelve `code` (no existe en la tabla workflows),
+  // por lo que workflow.code puede ser undefined. Caemos a `name` para inferir
+  // el tipo y evitamos `.toLowerCase()` sobre undefined.
+  const workflowSearchText = (workflow.code ?? workflow.name ?? '').toLowerCase();
+  const workflowType = workflowTypes.find(t =>
     workflow.applicableCargoTypes?.some(ct => ct.includes(t.value)) ||
-    workflow.code.toLowerCase().includes(t.value.substring(0, 3))
+    workflowSearchText.includes(t.value.substring(0, 3))
   ) || workflowTypes[5]; // 'other' como fallback
 
   const handleSelect = useCallback(() => onSelect(workflow), [onSelect, workflow]);

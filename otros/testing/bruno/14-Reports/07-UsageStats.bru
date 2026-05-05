@@ -1,0 +1,37 @@
+meta {
+  name: Usage stats
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/reports/usage-stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /reports/usage-stats
+
+  Estadisticas de uso del modulo de reportes.
+
+  Response:
+  ```json
+  {
+    "data": {
+      "totalGenerated": 0,
+      "byType": [],
+      "byFormat": [],
+      "byStatus": [],
+      "avgGenerationTimeMs": 0,
+      "topReports": [],
+      "topUsers": [],
+      "dailyTrend": []
+    }
+  }
+  ```
+}

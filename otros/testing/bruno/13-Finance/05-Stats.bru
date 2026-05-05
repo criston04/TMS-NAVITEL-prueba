@@ -1,0 +1,37 @@
+meta {
+  name: Finance stats (global)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/finance/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/stats
+
+  **Funciona bien** (a diferencia de stats de modulos master que tienen BUG #1).
+
+  Response:
+  ```json
+  {
+    "data": {
+      "totalInvoiced": 0,
+      "totalPaid": 0,
+      "totalPending": 0,
+      "totalOverdue": 0,
+      "totalCosts": 0,
+      "profitMargin": 0,
+      "revenueGrowth": 0,
+      "costGrowth": 0
+    }
+  }
+  ```
+}

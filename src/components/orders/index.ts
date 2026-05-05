@@ -18,7 +18,9 @@ export { CarrierSelector } from './carrier-selector';
 export { RoutePreviewMap } from './route-preview-map';
 export { ConflictWarning } from './conflict-warning';
 export { OrderNumberField } from './order-number-field';
+export { MilestoneScheduling } from './milestone-scheduling';
 export type { MilestoneFormData } from './milestone-editor';
+export type { MilestoneScheduleData } from './milestone-scheduling';
 
 // Wizard de creación de órdenes (Fase 3)
 export { OrderFormWizard } from './order-form-wizard';

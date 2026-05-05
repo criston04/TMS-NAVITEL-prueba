@@ -34,7 +34,12 @@ import { useCustomerDetail } from "@/hooks/useCustomerDetail";
 import { Customer, CustomerCategory, CreateCustomerDTO, UpdateCustomerDTO } from "@/types/models";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
-import { CustomerFormModal, CustomerDeleteDialog } from "@/components/customers";
+import dynamic from "next/dynamic";
+import { CustomerDeleteDialog } from "@/components/customers";
+const CustomerFormModal = dynamic(
+  () => import("@/components/customers").then(m => ({ default: m.CustomerFormModal })),
+  { ssr: false }
+);
 
 const CATEGORY_COLORS: Record<CustomerCategory, string> = {
   standard: "bg-slate-500",
@@ -200,9 +205,9 @@ export default function CustomerDetailPage() {
             </Button>
             <div className={cn(
               "h-16 w-16 rounded-full flex items-center justify-center",
-              customer.type === "empresa" ? "bg-primary/10" : "bg-blue-500/10"
+              customer.type === "company" ? "bg-primary/10" : "bg-blue-500/10"
             )}>
-              {customer.type === "empresa"
+              {customer.type === "company"
                 ? <Building2 className="h-8 w-8 text-primary" />
                 : <User className="h-8 w-8 text-blue-500" />
               }

@@ -1,0 +1,47 @@
+meta {
+  name: Update product
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/master/products/{{lastProductId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "code": "PROD-001",
+    "name": "Fertilizante NPK 15-15-15 ACTUALIZADO",
+    "description": "Bolsa 50kg — versión revisada",
+    "category": "agro",
+    "unit": "bag",
+    "weight_kg": 50,
+    "volume_m3": 0.05,
+    "requires_refrigeration": false,
+    "is_dangerous": true,
+    "customer_id": "{{lastCustomerId}}",
+    "handling_instructions": "Mantener seco. Producto químico clasificado peligroso."
+  }
+}
+
+docs {
+  # PUT /master/products/:id (actualizado a v3 Rev3 — 2026-04-27)
+
+  Partial update con shape v3 Rev3 plano:
+  - `code`, `name`, `description`, `category`, `unit`.
+  - `weight_kg`, `volume_m3` (numbers).
+  - `requires_refrigeration`, `is_dangerous` (booleans).
+  - `handling_instructions`, `customer_id`.
+
+  Sin `dimensions{}` ni `transport_conditions{}` — los campos planos cubren todo.
+}

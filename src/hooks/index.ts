@@ -7,8 +7,10 @@ export * from "./useWorkflowIntegration";
 export * from "./useOrders";
 export * from "./useOrderImportExport";
 
-export * from "./useDrivers";
-export * from "./useVehicles";
+// 2026-05-03 (issue CRITICAL #1): `useVehicles` está deprecated (100% mock,
+// 0 consumidores). Se conservan los TYPES (VehicleFilters, VehiclesState)
+// pero no se exporta el hook a la API pública.
+export type { VehicleFilters, VehiclesState } from "./useVehicles";
 export * from "./useCustomers";
 export * from "./useDocumentAlerts";
 export * from "./useDriverVehicleAssignment";

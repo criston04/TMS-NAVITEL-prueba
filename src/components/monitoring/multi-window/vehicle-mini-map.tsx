@@ -47,6 +47,13 @@ export function VehicleMiniMap({
 
   const statusColor = getStatusColor(movementStatus, connectionStatus);
 
+  // 2026-05-03: defaults defensivos. Position puede venir con shape parcial.
+  const safeLat = typeof position?.lat === "number" ? position.lat : 0;
+  const safeLng = typeof position?.lng === "number" ? position.lng : 0;
+  const safeSpeed = typeof position?.speed === "number" ? position.speed : 0;
+  const hasValidPosition = typeof position?.lat === "number" && typeof position?.lng === "number" &&
+    !isNaN(position.lat) && !isNaN(position.lng);
+
   // Inicializar mapa
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -183,16 +190,16 @@ export function VehicleMiniMap({
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 pointer-events-none">
         <div className="flex items-center justify-between text-white text-xs">
           <span className="font-mono">
-            {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
+            {hasValidPosition ? `${safeLat.toFixed(5)}, ${safeLng.toFixed(5)}` : "Sin GPS"}
           </span>
           <span className="flex items-center gap-1">
-            <span className={cn("h-2 w-2 rounded-full", 
+            <span className={cn("h-2 w-2 rounded-full",
               connectionStatus === "online" && movementStatus === "moving" && "bg-emerald-400",
               connectionStatus === "online" && movementStatus !== "moving" && "bg-blue-400",
               connectionStatus === "temporary_loss" && "bg-amber-400",
               connectionStatus === "disconnected" && "bg-red-400"
             )} />
-            {position.speed} km/h
+            {safeSpeed} km/h
           </span>
         </div>
       </div>
@@ -203,9 +210,9 @@ export function VehicleMiniMap({
           <MapPin className={cn("h-8 w-8", statusColorClass)} />
           <div className="text-center text-xs text-muted-foreground">
             <p className="font-mono">
-              {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
+              {hasValidPosition ? `${safeLat.toFixed(5)}, ${safeLng.toFixed(5)}` : "Sin GPS"}
             </p>
-            <p>{position.speed} km/h</p>
+            <p>{safeSpeed} km/h</p>
           </div>
         </div>
       )}

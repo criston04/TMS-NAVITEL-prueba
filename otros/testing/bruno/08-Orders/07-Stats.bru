@@ -1,0 +1,28 @@
+meta {
+  name: Stats (BUG #1 - actualmente 404)
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/orders/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /orders/stats
+
+  **ROTO: devuelve `404 "Order not found"`** — router captura `stats` como `:id` (BUG #1).
+
+  Frontend fallback: calcula stats client-side a partir del listado.
+
+  Cuando backend lo arregle, esperamos algo como:
+  ```
+  { "draft": 2, "pending": 1, "assigned": 0, "in_transit": 0, "completed": 0, "cancelled": 0 }
+  ```
+}

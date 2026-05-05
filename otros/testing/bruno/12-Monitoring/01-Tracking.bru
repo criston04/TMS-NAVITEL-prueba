@@ -1,0 +1,40 @@
+meta {
+  name: Tracking - live fleet
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/monitoring/tracking
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /monitoring/tracking
+
+  Ubicacion GPS actual de toda la flota.
+
+  **Envelope NO estandar:** devuelve `{vehicles: [...]}` (no `{data: ...}` ni `{items: ...}`).
+
+  Shape de cada vehiculo:
+  ```json
+  {
+    "id": "...",
+    "plate": "FOR-188",
+    "vehicleType": "camion",
+    "operational_status": "available",
+    "operator_id": null,
+    "driverName": null,      // ← no hidratado si driver no asignado
+    "lat": null,             // ← null si nunca reporto GPS
+    "lng": null,
+    "speed": null,
+    "heading": null,
+    "lastUpdate": null
+  }
+  ```
+}

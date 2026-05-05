@@ -1,0 +1,90 @@
+meta {
+  name: Assign order to vehicle/driver
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/operations/scheduling/assign
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "orderId": "{{lastOrderId}}",
+    "vehicleId": "{{lastVehicleId}}",
+    "driverId": "{{lastDriverId}}",
+    "scheduledDate": "2026-05-02",
+    "scheduledStartTime": "08:00",
+    "notes": "Asignación de prueba desde Bruno",
+    "force": false
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  console.log("===================================================");
+  console.log("           VERIFICACION ASSIGN ORDER               ");
+  console.log("===================================================");
+  console.log("success:        ", obj.success ?? "n/a");
+  console.log("assignment id:  ", obj.id ?? obj.assignmentId ?? "n/a");
+  console.log("status:         ", obj.status ?? "n/a");
+  console.log("");
+  console.log("--- CAMPOS ENVIADOS ---");
+  for (const k of ["orderId", "vehicleId", "driverId", "scheduledDate", "scheduledStartTime", "notes", "force"]) {
+    const got = obj[k];
+    console.log("  ", k.padEnd(22), "=", got !== undefined ? JSON.stringify(got) : "n/a en respuesta");
+  }
+  console.log("");
+  console.log("--- RESPUESTA COMPLETA ---");
+  console.log(JSON.stringify(obj, null, 2));
+  console.log("===================================================");
+}
+
+docs {
+  # POST /operations/scheduling/assign — IDÉNTICO al que produce el frontend
+
+  Refleja `schedulingService.assignOrder()` línea 294-313 de
+  `src/services/scheduling-service.ts`.
+
+  ## Body shape (camelCase)
+  ```typescript
+  {
+    orderId: string,
+    vehicleId: string,
+    driverId: string,
+    scheduledDate: "YYYY-MM-DD",          // sin hora
+    scheduledStartTime: "HH:MM",          // OBLIGATORIO o backend devuelve 400
+    notes?: string,
+    force?: boolean                       // forzar aunque haya conflicto
+  }
+  ```
+
+  ## ⚠ Bug del backend (no documentado en Rev3)
+  - `scheduledStartTime` es OBLIGATORIO. Si falta → HTTP 400.
+  - El frontend lo deriva splitando el `Date` en dateOnly (YYYY-MM-DD) y
+    timeOnly (HH:MM) automáticamente.
+
+  ## Campos null esperados (sin GPS conectado)
+  Tras la asignación, estos campos en la respuesta vendrán null hasta que
+  haya GPS:
+  - `actual_start_time`, `actual_end_time` → null
+  - `compliance_status` (on_time/late/missed) → null
+  - `auto_completion` → no funciona sin GPS
+
+  ## Frontend
+  - Service: `src/services/scheduling-service.ts` línea 294
+  - Types: `src/types/scheduling.ts` → `AssignmentPayload`
+}

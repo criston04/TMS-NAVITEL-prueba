@@ -1,0 +1,35 @@
+meta {
+  name: Block vehicle (workaround via PUT)
+  type: http
+  seq: 9
+}
+
+put {
+  url: {{baseUrl}}/master/vehicles/{{lastVehicleId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "blocked",
+    "operational_status": "unavailable"
+  }
+}
+
+docs {
+  # Bloquear vehicle
+
+  **No existe endpoint `/block`.** Usar PUT genérico.
+
+  El backend ignora `notes` (BUG #2 — campo no persiste) asi que no hay forma limpia de
+  guardar un motivo de bloqueo. Pendiente que backend agregue columna `notes` o `reason`.
+}

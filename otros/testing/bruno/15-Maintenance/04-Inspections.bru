@@ -1,0 +1,21 @@
+meta {
+  name: Inspections
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/maintenance/inspections
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/inspections
+
+  Inspecciones tecnicas registradas. Envelope `{data: []}`.
+}

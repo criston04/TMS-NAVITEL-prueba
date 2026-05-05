@@ -1,0 +1,23 @@
+meta {
+  name: Stats (BUG #1 - actualmente 404)
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/master/operators/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/operators/stats
+
+  **ROTO:** `404 "Operator no encontrado"` por BUG #1.
+
+  Frontend fallback: calcula stats a partir de `GET /master/operators?pageSize=500`.
+}

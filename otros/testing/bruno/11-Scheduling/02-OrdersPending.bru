@@ -1,0 +1,28 @@
+meta {
+  name: Orders (status=pending)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/operations/scheduling/orders?status=pending
+  body: none
+  auth: bearer
+}
+
+params:query {
+  status: pending
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /operations/scheduling/orders?status=pending
+
+  Filtra ordenes por estado unico.
+  Valores validos observados: `pending`, `assigned`, `in_transit`, `completed`, `cancelled`.
+
+  Envelope: `{data: [...]}`.
+}

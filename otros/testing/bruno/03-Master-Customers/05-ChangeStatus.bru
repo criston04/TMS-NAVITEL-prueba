@@ -1,0 +1,33 @@
+meta {
+  name: Change status
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/master/customers/{{lastCustomerId}}/status
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "inactive"
+  }
+}
+
+docs {
+  # PATCH /master/customers/:id/status
+
+  **Excel:** `PATCH /api/v1/master/customers/:id/status | Alternar cliente estado`
+
+  Cambia el estado del customer. Probar con "active" / "inactive".
+}

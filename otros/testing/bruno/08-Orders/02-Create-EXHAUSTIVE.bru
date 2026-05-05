@@ -1,0 +1,238 @@
+meta {
+  name: Create order
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/orders
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "delivery",
+    "service_type": "delivery",
+    "priority": "high",
+    "status": "draft",
+    "customer_id": "{{lastCustomerId}}",
+    "customer_name": "Cliente Bruno SA",
+    "driver_id": "{{lastDriverId}}",
+    "driver_name": "Jose Rolando Camarena",
+    "vehicle_id": "{{lastVehicleId}}",
+    "vehicle_plate": "ABC-123",
+    "carrier_id": "{{lastOperatorId}}",
+    "workflow_id": "{{lastWorkflowId}}",
+    "route_id": null,
+    "origin_address": "Almacén Lima Centro",
+    "origin_lat": -12.046,
+    "origin_lng": -77.042,
+    "origin_geofence_id": "{{lastGeofenceId}}",
+    "destination_address": "Cliente Bruno SA, Av. Bruno 123",
+    "destination_lat": -12.054,
+    "destination_lng": -77.123,
+    "destination_geofence_id": null,
+    "scheduled_pickup_at": "2026-05-01T08:00:00.000Z",
+    "scheduled_delivery_at": "2026-05-01T14:00:00.000Z",
+    "scheduled_start_date": "2026-05-01T08:00:00.000Z",
+    "scheduled_end_date": "2026-05-01T14:00:00.000Z",
+    "estimated_distance_km": 25.5,
+    "total_weight": 1200,
+    "total_volume": 4.5,
+    "total_packages": 8,
+    "reference": "REF-BRUNO-001",
+    "external_reference": "EXT-BRUNO-001",
+    "notes": "Orden de prueba generada desde Bruno",
+    "internal_notes": "Carga frágil",
+    "tags": ["bruno", "prueba", "delivery"],
+    "cargo": {
+      "description": "Fertilizante para distribución",
+      "type": "general",
+      "weight_kg": 1200,
+      "volume_m3": 4.5,
+      "quantity": 8,
+      "declared_value": 15000,
+      "temperature_controlled": false,
+      "handling_instructions": "Frágil, mantener seco"
+    },
+    "milestones": [
+      {
+        "type": "origin",
+        "sequence": 1,
+        "geofence_id": "{{lastGeofenceId}}",
+        "geofence_name": "Almacén Lima Centro",
+        "address": "Almacén Lima Centro",
+        "coordinates": { "lat": -12.046, "lng": -77.042 },
+        "estimated_arrival": "2026-05-01T08:00:00.000Z",
+        "estimated_departure": "2026-05-01T08:30:00.000Z",
+        "notes": "Punto de carga",
+        "contact": {
+          "name": "Encargado almacén",
+          "phone": "+51 999 100 100",
+          "email": "almacen@test.pe"
+        }
+      },
+      {
+        "type": "destination",
+        "sequence": 2,
+        "address": "Cliente Bruno SA, Av. Bruno 123",
+        "coordinates": { "lat": -12.054, "lng": -77.123 },
+        "estimated_arrival": "2026-05-01T14:00:00.000Z",
+        "notes": "Entrega final"
+      }
+    ],
+    "items": [
+      {
+        "product_id": "{{lastProductId}}",
+        "product_name": "Fertilizante NPK",
+        "quantity": 10,
+        "unit": "bag",
+        "weight": 500,
+        "volume": 0.5,
+        "notes": "Producto principal"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id || obj.order_id;
+  if (id) bru.setEnvVar("lastOrderId", id);
+
+  // Espejo de mapOrderToBackend()
+  const sent = {
+    type: "delivery",
+    service_type: "delivery",
+    priority: "high",
+    status: "draft",
+    customer_name: "Cliente Bruno SA",
+    driver_name: "Jose Rolando Camarena",
+    vehicle_plate: "ABC-123",
+    origin_address: "Almacén Lima Centro",
+    origin_lat: -12.046,
+    origin_lng: -77.042,
+    destination_address: "Cliente Bruno SA, Av. Bruno 123",
+    destination_lat: -12.054,
+    destination_lng: -77.123,
+    scheduled_pickup_at: "2026-05-01T08:00:00.000Z",
+    scheduled_delivery_at: "2026-05-01T14:00:00.000Z",
+    estimated_distance_km: 25.5,
+    total_weight: 1200,
+    total_volume: 4.5,
+    total_packages: 8,
+    reference: "REF-BRUNO-001",
+    external_reference: "EXT-BRUNO-001",
+    notes: "Orden de prueba generada desde Bruno",
+    internal_notes: "Carga frágil",
+    tags: ["bruno", "prueba", "delivery"],
+  };
+
+  function valueMatches(expected, got) {
+    if (got === null || got === undefined) return false;
+    if (Array.isArray(expected)) {
+      return Array.isArray(got) && JSON.stringify(got) === JSON.stringify(expected);
+    }
+    return got === expected;
+  }
+
+  console.log("===================================================");
+  console.log("            VERIFICACION CREATE ORDER              ");
+  console.log("===================================================");
+  console.log("order id:    ", id);
+  console.log("order_number:", obj.order_number);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ---");
+
+  const ok = [], lost = [], mismatched = [];
+  for (const key of Object.keys(sent)) {
+    const expected = sent[key];
+    const got = obj[key];
+    if (got === null || got === undefined) {
+      lost.push(key);
+      console.log("  ❌", key.padEnd(28), "PERDIDO — env:", JSON.stringify(expected));
+    } else if (valueMatches(expected, got)) {
+      ok.push(key);
+      console.log("  ✅", key.padEnd(28), JSON.stringify(got));
+    } else {
+      mismatched.push(key);
+      console.log("  ⚠️ ", key.padEnd(28), "DIFIERE — env:", JSON.stringify(expected), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- IDS / RELACIONES ---");
+  for (const k of ["customer_id", "driver_id", "vehicle_id", "carrier_id", "workflow_id", "origin_geofence_id", "destination_geofence_id", "route_id"]) {
+    const v = obj[k];
+    console.log("  ", k.padEnd(28), "=", v === null || v === undefined ? "null" : JSON.stringify(v).slice(0, 40));
+  }
+
+  console.log("");
+  console.log("--- SUB-OBJETOS / RELACIONALES ---");
+  console.log("  cargo{}:                    ", obj.cargo                  ? "✅ persistido" : "❌ DESCARTADO (backend usa total_* planos)");
+  console.log("  milestones[]:               ", Array.isArray(obj.milestones) && obj.milestones.length > 0 ? "✅ persistido (" + obj.milestones.length + ")" : "❌ DESCARTADO (backend usa origin/destination planos)");
+  console.log("  items[]:                    ", Array.isArray(obj.items) && obj.items.length > 0 ? "✅ persistido (" + obj.items.length + ")" : "❌ DESCARTADO");
+
+  console.log("");
+  console.log("--- CAMPOS NULL ESPERADO POR GPS NO CONECTADO ---");
+  for (const k of ["current_lat", "current_lng", "actual_pickup_at", "actual_delivery_at", "actual_distance_km", "actual_duration_min", "estimated_duration_min", "estimated_delivery_at"]) {
+    console.log("  ", k.padEnd(28), "=", obj[k] === null || obj[k] === undefined ? "null (esperado, no hay GPS)" : JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("--- CAMPOS NULL ESPERADO POR LIFECYCLE ---");
+  for (const k of ["pod_signature_url", "receiver_name", "cancel_reason", "deleted_at"]) {
+    console.log("  ", k.padEnd(28), "=", obj[k] === null || obj[k] === undefined ? "null (esperado)" : JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("--- CAMPOS NULL ESPERADO POR SYNC EXTERNO NO CONFIGURADO ---");
+  for (const k of ["vehicle_imei", "webhook_url", "sync_error_message", "last_sync_attempt"]) {
+    console.log("  ", k.padEnd(28), "=", obj[k] === null || obj[k] === undefined ? "null (esperado)" : JSON.stringify(obj[k]));
+  }
+  console.log("  sync_status:                ", obj.sync_status, "(\"not_sent\" inicial = OK)");
+
+  console.log("");
+  console.log("==================== RESUMEN ====================");
+  console.log("  OK:        ", String(ok.length).padEnd(3), "campos persistidos");
+  console.log("  PERDIDOS:  ", String(lost.length).padEnd(3), lost.length ? "→ " + lost.join(", ") : "");
+  console.log("  DIFIERE:   ", String(mismatched.length).padEnd(3), mismatched.length ? "→ " + mismatched.join(", ") : "");
+  console.log("===================================================");
+}
+
+docs {
+  # POST /orders — payload IDÉNTICO al que produce el frontend hoy
+
+  Refleja `mapOrderToBackend()`. El frontend envía AMBAS representaciones:
+  - **Planos** (`origin_*`, `destination_*`, `total_weight/volume/packages`,
+    `scheduled_pickup_at/delivery_at`) — esto es lo que el backend persiste hoy
+  - **Sub-objetos ricos** (`cargo{}`, `milestones[]`) — para cuando el backend
+    implemente el modelo relacional completo
+
+  ## Lo que el backend persiste (sniff confirmado)
+  - Todos los planos: `customer_*, driver_*, vehicle_*, origin_*, destination_*,
+    scheduled_*, total_*, estimated_distance_km, notes, internal_notes,
+    reference, type, status, priority, route_id, workflow_id`
+  - `items[]` SÍ se persiste (devuelve un array con UUID generado por cada item)
+
+  ## ⚠ Sub-objetos NO persistidos (deuda backend)
+  - `cargo{}` (description, type, declared_value, temperature_controlled, …)
+  - `milestones[]` (waypoints intermedios con geofences/contactos)
+
+  ## Requisito previo
+  Ejecutar antes los `Create.bru` de Customers / Drivers / Vehicles / Products /
+  Operators / Geofences / Workflows para que las variables `{{lastXxxId}}` estén
+  pobladas.
+}

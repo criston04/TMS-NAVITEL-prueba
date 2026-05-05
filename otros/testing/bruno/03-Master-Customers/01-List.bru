@@ -1,0 +1,41 @@
+meta {
+  name: List customers
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/master/customers?page=1&pageSize=5
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 5
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+script:post-response {
+  // Guardar id del primer customer para usar en GetById/Update/Delete
+  const body = res.getBody();
+  const items = body?.items || body?.data || (Array.isArray(body) ? body : []);
+  if (items && items.length > 0) {
+    const first = items[0];
+    const id = first.id || first.customerid;
+    if (id) {
+      bru.setEnvVar("lastCustomerId", id);
+      console.log("[List Customers] lastCustomerId =", id);
+    }
+  }
+}
+
+docs {
+  # GET /master/customers
+
+  Si ya hay customers creados, este request guarda el id del primero
+  en `lastCustomerId` para usar en los demas requests.
+}

@@ -1,0 +1,24 @@
+meta {
+  name: Toggle status (POST)
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/master/customers/{{lastCustomerId}}/toggle-status
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # POST /master/customers/:id/toggle-status
+
+  **Excel:** `POST /api/v1/master/customers/:id/toggle-status`
+
+  Ojo: es **POST**, no PATCH. Difiere de `/status` (PATCH) que recibe el status deseado.
+  Este endpoint alterna automaticamente: active ↔ inactive.
+}

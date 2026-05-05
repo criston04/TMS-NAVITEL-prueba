@@ -1,0 +1,28 @@
+meta {
+  name: Generated reports - list
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/reports/generated
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /reports/generated
+
+  Lista de reportes ya generados.
+
+  **Envelope doble-wrap (quirk):**
+  ```json
+  { "data": { "data": [], "total": 0 }, "meta": { "page": 1, "pageSize": 20, "total": 0 } }
+  ```
+
+  Hay que desempacar `response.data.data` para obtener el array de items.
+}

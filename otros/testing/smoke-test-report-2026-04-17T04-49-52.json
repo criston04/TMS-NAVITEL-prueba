@@ -1,0 +1,689 @@
+{
+  "timestamp": "2026-04-17T04-49-52",
+  "counters": {
+    "total": 103,
+    "ok": 64,
+    "auth": 0,
+    "notFound": 35,
+    "serverError": 2,
+    "other": 2
+  },
+  "working": [
+    {
+      "method": "GET",
+      "path": "/dashboard/stats",
+      "module": "Dashboard",
+      "status": 200,
+      "latency": 700
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/vehicles/overview",
+      "module": "Dashboard",
+      "status": 200,
+      "latency": 655
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/shipments",
+      "module": "Dashboard",
+      "status": 200,
+      "latency": 219
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/vehicles/on-route",
+      "module": "Dashboard",
+      "status": 200,
+      "latency": 1172
+    },
+    {
+      "method": "GET",
+      "path": "/master/customers",
+      "module": "Master/Customers",
+      "status": 200,
+      "latency": 159
+    },
+    {
+      "method": "GET",
+      "path": "/master/drivers",
+      "module": "Master/Drivers",
+      "status": 200,
+      "latency": 171
+    },
+    {
+      "method": "GET",
+      "path": "/master/vehicles",
+      "module": "Master/Vehicles",
+      "status": 200,
+      "latency": 161
+    },
+    {
+      "method": "GET",
+      "path": "/master/products",
+      "module": "Master/Products",
+      "status": 200,
+      "latency": 158
+    },
+    {
+      "method": "GET",
+      "path": "/master/operators",
+      "module": "Master/Operators",
+      "status": 200,
+      "latency": 175
+    },
+    {
+      "method": "GET",
+      "path": "/orders",
+      "module": "Orders/BE-path",
+      "status": 200,
+      "latency": 248
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/tracking",
+      "module": "Monitoring",
+      "status": 200,
+      "latency": 169
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/stats",
+      "module": "Monitoring",
+      "status": 200,
+      "latency": 238
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/alerts",
+      "module": "Monitoring",
+      "status": 200,
+      "latency": 233
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/alert-rules",
+      "module": "Monitoring",
+      "status": 200,
+      "latency": 166
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/retransmission",
+      "module": "Monitoring",
+      "status": 200,
+      "latency": 161
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/geofence-events",
+      "module": "Monitoring",
+      "status": 200,
+      "latency": 161
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/multi-window/panels",
+      "module": "Monitoring",
+      "status": 200,
+      "latency": 169
+    },
+    {
+      "method": "GET",
+      "path": "/finance/invoices",
+      "module": "Finance",
+      "status": 200,
+      "latency": 165
+    },
+    {
+      "method": "GET",
+      "path": "/finance/payments",
+      "module": "Finance",
+      "status": 200,
+      "latency": 170
+    },
+    {
+      "method": "GET",
+      "path": "/finance/costs",
+      "module": "Finance",
+      "status": 200,
+      "latency": 172
+    },
+    {
+      "method": "GET",
+      "path": "/finance/rates",
+      "module": "Finance",
+      "status": 200,
+      "latency": 161
+    },
+    {
+      "method": "GET",
+      "path": "/finance/stats",
+      "module": "Finance",
+      "status": 200,
+      "latency": 158
+    },
+    {
+      "method": "GET",
+      "path": "/finance/aging",
+      "module": "Finance",
+      "status": 200,
+      "latency": 166
+    },
+    {
+      "method": "GET",
+      "path": "/finance/profitability",
+      "module": "Finance",
+      "status": 200,
+      "latency": 166
+    },
+    {
+      "method": "GET",
+      "path": "/finance/cash-flow",
+      "module": "Finance",
+      "status": 200,
+      "latency": 179
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/orders",
+      "module": "Scheduling",
+      "status": 200,
+      "latency": 165
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/calendar",
+      "module": "Scheduling",
+      "status": 200,
+      "latency": 189
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/conflicts",
+      "module": "Scheduling",
+      "status": 200,
+      "latency": 188
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/blocked-days",
+      "module": "Scheduling",
+      "status": 200,
+      "latency": 212
+    },
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/audit-logs",
+      "module": "Scheduling",
+      "status": 200,
+      "latency": 172
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/routes",
+      "module": "Route Planner",
+      "status": 200,
+      "latency": 152
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/depots",
+      "module": "Route Planner",
+      "status": 200,
+      "latency": 184
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/vehicles",
+      "module": "Route Planner",
+      "status": 200,
+      "latency": 212
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/route-templates",
+      "module": "Route Planner",
+      "status": 200,
+      "latency": 223
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/stats",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 170
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/work-orders",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 167
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/schedules",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 160
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/breakdowns",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 160
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/vehicles",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 160
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/workshops",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 160
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/parts",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 163
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/inspections",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 236
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/alerts",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 167
+    },
+    {
+      "method": "GET",
+      "path": "/maintenance/metrics",
+      "module": "Maintenance",
+      "status": 200,
+      "latency": 162
+    },
+    {
+      "method": "GET",
+      "path": "/reports/definitions",
+      "module": "Reports",
+      "status": 200,
+      "latency": 231
+    },
+    {
+      "method": "GET",
+      "path": "/reports/templates",
+      "module": "Reports",
+      "status": 200,
+      "latency": 169
+    },
+    {
+      "method": "GET",
+      "path": "/reports/generated",
+      "module": "Reports",
+      "status": 200,
+      "latency": 230
+    },
+    {
+      "method": "GET",
+      "path": "/reports/schedules",
+      "module": "Reports",
+      "status": 200,
+      "latency": 160
+    },
+    {
+      "method": "GET",
+      "path": "/reports/usage-stats",
+      "module": "Reports",
+      "status": 200,
+      "latency": 229
+    },
+    {
+      "method": "GET",
+      "path": "/settings",
+      "module": "Settings",
+      "status": 200,
+      "latency": 165
+    },
+    {
+      "method": "GET",
+      "path": "/settings/overview",
+      "module": "Settings",
+      "status": 200,
+      "latency": 235
+    },
+    {
+      "method": "GET",
+      "path": "/settings/roles",
+      "module": "Settings",
+      "status": 200,
+      "latency": 178
+    },
+    {
+      "method": "GET",
+      "path": "/settings/integrations",
+      "module": "Settings",
+      "status": 200,
+      "latency": 241
+    },
+    {
+      "method": "GET",
+      "path": "/settings/audit",
+      "module": "Settings",
+      "status": 200,
+      "latency": 161
+    },
+    {
+      "method": "GET",
+      "path": "/platform/tenants",
+      "module": "Platform",
+      "status": 200,
+      "latency": 169
+    },
+    {
+      "method": "GET",
+      "path": "/platform/users",
+      "module": "Platform",
+      "status": 200,
+      "latency": 242
+    },
+    {
+      "method": "GET",
+      "path": "/platform/transfers",
+      "module": "Platform",
+      "status": 200,
+      "latency": 235
+    },
+    {
+      "method": "GET",
+      "path": "/platform/dashboard",
+      "module": "Platform",
+      "status": 200,
+      "latency": 233
+    },
+    {
+      "method": "GET",
+      "path": "/platform/activity",
+      "module": "Platform",
+      "status": 200,
+      "latency": 157
+    },
+    {
+      "method": "GET",
+      "path": "/workflows",
+      "module": "Workflows",
+      "status": 200,
+      "latency": 162
+    },
+    {
+      "method": "GET",
+      "path": "/bitacora",
+      "module": "Bitacora",
+      "status": 200,
+      "latency": 176
+    },
+    {
+      "method": "GET",
+      "path": "/bitacora/stats",
+      "module": "Bitacora",
+      "status": 200,
+      "latency": 222
+    },
+    {
+      "method": "GET",
+      "path": "/bitacora/summary/vehicles",
+      "module": "Bitacora",
+      "status": 200,
+      "latency": 158
+    },
+    {
+      "method": "GET",
+      "path": "/bitacora/summary/geofences",
+      "module": "Bitacora",
+      "status": 200,
+      "latency": 161
+    }
+  ],
+  "missing": [
+    {
+      "method": "GET",
+      "path": "/master/customers/stats",
+      "module": "Master/Customers",
+      "body": "{\"code\":404,\"message\":\"Customer no encontrado\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/customers/cities",
+      "module": "Master/Customers",
+      "body": "{\"code\":404,\"message\":\"Customer no encontrado\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/drivers/stats",
+      "module": "Master/Drivers",
+      "body": "{\"code\":404,\"message\":\"Driver no encontrado\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/drivers/expiring-licenses",
+      "module": "Master/Drivers",
+      "body": "{\"code\":404,\"message\":\"Driver no encontrado\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/vehicles/stats",
+      "module": "Master/Vehicles",
+      "body": "{\"code\":404,\"message\":\"Vehicle no encontrado\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/vehicles/expiring-documents",
+      "module": "Master/Vehicles",
+      "body": "{\"code\":404,\"message\":\"Vehicle no encontrado\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/vehicles/needing-maintenance",
+      "module": "Master/Vehicles",
+      "body": "{\"code\":404,\"message\":\"Vehicle no encontrado\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/products/stats",
+      "module": "Master/Products",
+      "body": "{\"code\":404,\"message\":\"Product no encontrado\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/operators/stats",
+      "module": "Master/Operators",
+      "body": "{\"code\":404,\"message\":\"Operator no encontrado\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/master/geofences",
+      "module": "Geofences/FE-path",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/geofences",
+      "module": "Geofences/BE-path",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/geofences/stats",
+      "module": "Geofences/BE-alt",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/orders/stats",
+      "module": "Orders/BE-path",
+      "body": "{\"message\":\"Order not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/orders/status-counts",
+      "module": "Orders/BE-path",
+      "body": "{\"message\":\"Order not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/orders",
+      "module": "Orders/FE-path",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/retransmission/stats",
+      "module": "Monitoring",
+      "body": "{\"message\":\"Record not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/monitoring/geofence-events/stats",
+      "module": "Monitoring",
+      "body": "{\"message\":\"Geofence event not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/routing/calculate",
+      "module": "Routing/FE",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/routing/geocode",
+      "module": "Routing/FE",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/settings/integrations/health",
+      "module": "Settings",
+      "body": "{\"message\":\"Setting not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/workflows/active",
+      "module": "Workflows",
+      "body": "{\"message\":\"Workflow not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/workflows/default",
+      "module": "Workflows",
+      "body": "{\"message\":\"Workflow not found\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/notifications",
+      "module": "*Notifications",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/notifications/stats",
+      "module": "*Notifications",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/master/medical-exams/stats",
+      "module": "*MedicalExams",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/master/medical-exams/expiring",
+      "module": "*MedicalExams",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/master/assignments",
+      "module": "*Assignments",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/master/assignments/stats",
+      "module": "*Assignments",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/master/audit",
+      "module": "*MasterAudit",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/master/audit/stats",
+      "module": "*MasterAudit",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/orders/status-counts",
+      "module": "*Custom Orders FE",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/operations/orders/by-number/ORD-TEST",
+      "module": "*Custom Orders FE",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/master/customers/by-document/12345678",
+      "module": "*Custom Customers FE",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/master/drivers/by-document/12345678",
+      "module": "*Custom Drivers FE",
+      "body": "Not Found"
+    },
+    {
+      "method": "GET",
+      "path": "/master/vehicles/by-plate/ABC-123",
+      "module": "*Custom Vehicles FE",
+      "body": "Not Found"
+    }
+  ],
+  "bugs": [
+    {
+      "method": "GET",
+      "path": "/operations/scheduling/kpis",
+      "module": "Scheduling",
+      "status": 500,
+      "body": "Internal Server Error"
+    },
+    {
+      "method": "GET",
+      "path": "/route-planner/drivers",
+      "module": "Route Planner",
+      "status": 500,
+      "body": "Internal Server Error"
+    }
+  ]
+}

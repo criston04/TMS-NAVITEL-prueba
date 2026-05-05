@@ -1,0 +1,137 @@
+meta {
+  name: Create cost
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/finance/costs
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "fuel",
+    "category": "operational",
+    "description": "Combustible Lima-Arequipa",
+    "amount": 150,
+    "currency": "PEN",
+    "quantity": 30,
+    "unit": "gallons",
+    "date": "2026-04-22T00:00:00Z",
+    "orderId": "{{lastOrderId}}",
+    "vehicleId": "{{lastVehicleId}}",
+    "driverId": "{{lastDriverId}}",
+    "routeId": null,
+    "isReimbursable": false,
+    "receiptNumber": "FAC-FUEL-001",
+    "notes": "Carga en grifo Repsol"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastCostId", id);
+
+  // Espejo de CreateTransportCostDTO (src/types/finance.ts línea 448)
+  const sent = {
+    type: "fuel",
+    category: "operational",
+    description: "Combustible Lima-Arequipa",
+    amount: 150,
+    currency: "PEN",
+    quantity: 30,
+    unit: "gallons",
+    date: "2026-04-22T00:00:00Z",
+    isReimbursable: false,
+    receiptNumber: "FAC-FUEL-001",
+    notes: "Carga en grifo Repsol",
+  };
+
+  console.log("===================================================");
+  console.log("            VERIFICACION CREATE COST               ");
+  console.log("===================================================");
+  console.log("cost id:", id);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ---");
+  for (const k of Object.keys(sent)) {
+    const altKey = k.replace(/[A-Z]/g, m => "_" + m.toLowerCase());
+    const got = obj[k] ?? obj[altKey];
+    if (got === null || got === undefined) {
+      console.log("  ❌", k.padEnd(20), "PERDIDO");
+    } else if (typeof got === "string" && typeof sent[k] === "string" && got.startsWith(sent[k])) {
+      console.log("  ✅", k.padEnd(20), JSON.stringify(got));
+    } else if (got === sent[k]) {
+      console.log("  ✅", k.padEnd(20), JSON.stringify(got));
+    } else {
+      console.log("  ⚠️ ", k.padEnd(20), "DIFIERE — env:", JSON.stringify(sent[k]), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- IDS RELACIONALES ---");
+  for (const k of ["orderId", "order_id", "vehicleId", "vehicle_id", "driverId", "driver_id", "routeId", "route_id"]) {
+    if (k in obj) console.log("  ", k.padEnd(20), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("--- CAMPOS LIFECYCLE (esperado null) ---");
+  for (const k of ["is_approved", "isApproved", "approved_by", "approvedBy", "approved_at", "approvedAt", "receipt_url", "receiptUrl"]) {
+    if (k in obj) console.log("  ", k.padEnd(20), "=", obj[k] === null ? "null (esperado)" : JSON.stringify(obj[k]));
+  }
+
+  console.log("===================================================");
+}
+
+docs {
+  # POST /finance/costs — IDÉNTICO al CreateTransportCostDTO del frontend
+
+  Refleja `src/types/finance.ts` línea 448 → `CreateTransportCostDTO`.
+
+  ## Body shape
+  ```typescript
+  {
+    type: CostType,                // "fuel"|"tolls"|"maintenance"|"driver"|"other"
+    category?: string,
+    description: string,           // OBLIGATORIO
+    amount: number,
+    currency?: string,
+    quantity?: number,
+    unit?: string,
+    date: string,                  // ⚠ NO es `costDate`
+    orderId?: string,
+    vehicleId?: string,
+    driverId?: string,
+    routeId?: string,
+    isReimbursable?: boolean,
+    receiptNumber?: string,
+    notes?: string,
+  }
+  ```
+
+  ## Cambio respecto a versión anterior
+  - `costDate` → `date` (nombre correcto del DTO)
+  - Agregados: `category`, `quantity`, `unit`, `vehicleId`, `driverId`, `routeId`,
+    `isReimbursable`, `receiptNumber`, `notes`
+
+  ## Campos lifecycle (null esperado)
+  - `is_approved`, `approved_by`, `approved_at` → null hasta aprobar
+  - `receipt_url` → null hasta subir foto del recibo
+
+  ## Sin GPS conectado
+  Si el costo `type=fuel` debería poblarse automáticamente desde sensor de combustible
+  del vehículo. Sin GPS/sensor, todos los costs son manuales.
+}

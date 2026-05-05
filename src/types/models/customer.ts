@@ -1,9 +1,15 @@
 import { BaseEntity, EntityStatus } from "@/types/common";
 
 /**
- * Tipo de cliente
+ * Tipo de cliente.
+ *
+ * Backend acepta SOLO `"company" | "person"` en inglés (sniffeado 2026-04-29
+ * contra producción). Cualquier otro valor — incluyendo `"empresa"`, `"persona"`,
+ * `"individual"`, `"business"` — se persiste como `""` vacío.
+ *
+ * El frontend usa estos mismos valores en inglés para evitar mapeos.
  */
-export type CustomerType = "empresa" | "persona";
+export type CustomerType = "company" | "person";
 
 /**
  * Tipo de documento de identidad

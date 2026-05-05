@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVehicleTracking } from "@/hooks/monitoring/use-vehicle-tracking";
+import { monitoringWebSocketService } from "@/services/monitoring/websocket.service";
 import { useTrackedOrder } from "@/hooks/monitoring/use-tracked-order";
 import { useMonitoringAlerts } from "@/hooks/monitoring/use-monitoring-alerts";
 import { ControlTowerFilters } from "./control-tower-filters";
@@ -28,7 +29,9 @@ import { AlertPanel } from "./alert-panel";
 import { AlertRulesConfig } from "./alert-rules-config";
 import { MonitoringDashboard } from "./monitoring-dashboard";
 import { MapSkeleton } from "../common/skeletons/map-skeleton";
-import { getAllActiveRoutes } from "@/mocks/monitoring/vehicle-positions.mock";
+// NOTE: getAllActiveRoutes() venía de mocks y devolvía polylines GPS hardcodeadas.
+// Backend NO expone aún /monitoring/routes-preview. Mantenemos undefined hasta que
+// backend implemente un endpoint para traer los waypoints por vehículo/orden activa.
 import type { TrackedVehicle } from "@/types/monitoring";
 
 // Dynamic import del mapa para evitar SSR
@@ -100,10 +103,11 @@ export function ControlTowerContainer({
   } = useMonitoringAlerts({ vehicles: vehiclesList });
 
   // Obtener rutas de todos los vehículos con órdenes activas
-  const allVehicleRoutes = useMemo(() => {
-    if (vehiclesList.length === 0) return undefined;
-    return getAllActiveRoutes();
-  }, [vehiclesList]);
+  // TODO: cuando backend implemente /monitoring/routes-preview, cargar aquí.
+  // Por ahora retornamos undefined — el mapa no pinta polylines pero no muestra data falsa.
+  const allVehicleRoutes = useMemo<Map<string, [number, number][]> | undefined>(() => {
+    return undefined;
+  }, []);
 
   // Cargar lista de transportistas
   useEffect(() => {
@@ -255,11 +259,19 @@ export function ControlTowerContainer({
                   Conectado en tiempo real
                 </span>
               </>
-            ) : (
+            ) : monitoringWebSocketService.isWebSocketEnabled() ? (
               <>
                 <WifiOff className="h-4 w-4 text-red-500" />
                 <span className="text-red-600 dark:text-red-400">
                   Desconectado
+                </span>
+              </>
+            ) : (
+              // WS deshabilitado: polling HTTP activo (estado valido, no es error)
+              <>
+                <Wifi className="h-4 w-4 text-amber-500" />
+                <span className="text-amber-600 dark:text-amber-400">
+                  Actualizacion periodica
                 </span>
               </>
             )}

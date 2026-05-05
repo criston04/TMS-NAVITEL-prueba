@@ -160,7 +160,7 @@ export function HistoricalContainer({
               />
 
               {/* Resultados */}
-              {route && (
+              {route && route.points && route.points.length > 0 && (
                 <>
                   <Separator />
 
@@ -180,6 +180,18 @@ export function HistoricalContainer({
                 </>
               )}
 
+              {/* Ruta vacia: mensaje informativo */}
+              {route && (!route.points || route.points.length === 0) && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/10 p-3 text-sm text-amber-900 dark:text-amber-300">
+                  <p className="font-medium">Sin datos GPS en este rango</p>
+                  <p className="text-xs mt-1">
+                    El backend respondio correctamente pero no hay posiciones registradas
+                    para el vehiculo seleccionado en las fechas indicadas. Prueba con otro
+                    rango o confirma que el dispositivo GPS este activo.
+                  </p>
+                </div>
+              )}
+
               {/* Error */}
               {error && (
                 <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
@@ -192,7 +204,7 @@ export function HistoricalContainer({
 
           {/* Tab de análisis detallado */}
           <TabsContent value="analysis" className="flex-1 m-0 min-h-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {route && (
+            {route && route.points && route.points.length > 0 && (
               <div className="space-y-4 p-4">
                 {/* Gráfico de velocidad */}
                 <SpeedChart
@@ -221,12 +233,12 @@ export function HistoricalContainer({
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
-                      {route.points.length} puntos
+                      {route.points?.length ?? 0} puntos
                     </span>
                     <span>·</span>
-                    <span>{stats?.totalDistanceKm.toFixed(1)} km</span>
+                    <span>{(stats?.totalDistanceKm ?? 0).toFixed(1)} km</span>
                     <span>·</span>
-                    <span>{stats ? Math.round(stats.totalTimeSeconds / 60) : 0} min</span>
+                    <span>{stats?.totalTimeSeconds ? Math.round(stats.totalTimeSeconds / 60) : 0} min</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <ExportButton
@@ -265,12 +277,25 @@ export function HistoricalContainer({
         )}
 
         {/* Mapa */}
-        {route ? (
+        {route && route.points && route.points.length > 0 ? (
           <HistoricalMap
             route={route}
             currentPoint={currentPlaybackPoint}
             currentIndex={playback.currentIndex}
           />
+        ) : route && (!route.points || route.points.length === 0) ? (
+          <div className="flex h-full flex-col items-center justify-center bg-muted/30">
+            <History className="h-16 w-16 text-muted-foreground/50" />
+            <h3 className="mt-4 text-lg font-medium text-muted-foreground">
+              Sin datos GPS en este rango
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              El vehículo seleccionado no envió posiciones entre las fechas indicadas.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              Prueba con otro rango o verifica que el dispositivo GPS esté activo.
+            </p>
+          </div>
         ) : (
           <div className="flex h-full flex-col items-center justify-center bg-muted/30">
             <History className="h-16 w-16 text-muted-foreground/50" />
@@ -283,8 +308,8 @@ export function HistoricalContainer({
           </div>
         )}
 
-        {/* Controles de reproducción (sobre el mapa) */}
-        {route && (
+        {/* Controles de reproducción (sobre el mapa) — solo si hay puntos */}
+        {route && route.points && route.points.length > 0 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-1000">
             <PlaybackControls
               state={{

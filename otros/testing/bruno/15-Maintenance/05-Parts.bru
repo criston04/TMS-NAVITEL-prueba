@@ -1,0 +1,26 @@
+meta {
+  name: Parts inventory
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/maintenance/parts?page=1&pageSize=20
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/parts
+
+  Inventario de repuestos. Envelope `{data: [], meta: {total, page, pageSize}}`.
+}

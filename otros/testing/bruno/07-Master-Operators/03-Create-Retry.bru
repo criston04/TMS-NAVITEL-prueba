@@ -1,0 +1,45 @@
+meta {
+  name: Create operator (retry alterno)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/master/operators
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "code": "OP-002",
+    "name": "Transportes Andinos SAC",
+    "trade_name": "TAndinos",
+    "type": "carrier",
+    "document_type": "RUC",
+    "document_number": "20111222333",
+    "email": "ops@andinos.pe",
+    "phone": "+51 1 5556677",
+    "address": "Av. La Marina 2020, San Miguel, Lima",
+    "city": "Lima",
+    "country": "PE",
+    "contract_start_date": "2026-02-01",
+    "contract_end_date": "2026-12-31",
+    "notes": "Segundo operador — reintento con datos alternos."
+  }
+}
+
+docs {
+  # POST /master/operators — retry alterno (actualizado a v3 Rev3 — 2026-04-27)
+
+  Mismo shape v3 Rev3 que `02-Create.bru` pero con datos diferentes,
+  para crear un segundo operador o reintentar tras un 422 sin sobrescribir el primero.
+}

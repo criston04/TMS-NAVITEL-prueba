@@ -1,0 +1,53 @@
+meta {
+  name: List geofences
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/master/geofences?page=1&pageSize=20
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+  ~search: burgos
+  ~category: customer
+  ~status: 1
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+script:post-response {
+  // Guardar el id de la primera geocerca para poder usarla en otros endpoints
+  const body = res.getBody();
+  const items = body?.items || body?.data || (Array.isArray(body) ? body : []);
+  if (items && items.length > 0) {
+    const first = items[0];
+    const id = first.geofenceid || first.Geofenceid || first.id;
+    if (id) {
+      bru.setEnvVar("lastGeofenceId", id);
+      console.log("[List] Guardado lastGeofenceId =", id);
+    }
+  }
+}
+
+docs {
+  # GET /geofences — Listar geocercas
+
+  **Excel:** `Geofence | GET | /geofences`
+
+  Devuelve lista paginada con envelope `{items, meta}`.
+
+  Al ejecutarse, guarda el `id` de la primera geocerca en `lastGeofenceId`
+  para usar en los requests de detalle/update/delete sin copiar manualmente.
+
+  Params opcionales (descomentar con click en el check):
+  - `search` - busqueda textual
+  - `category` - filtro por categoria
+  - `status` - 1=active, 0=inactive
+}

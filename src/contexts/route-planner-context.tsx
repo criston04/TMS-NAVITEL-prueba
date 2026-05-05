@@ -26,7 +26,7 @@ import {
   estimateCost,
   generateMultipleOptimizedRoutes,
   calculateEstimatedArrivals,
-} from "@/lib/mock-data/route-planner";
+} from "@/lib/route-planner-utils";
 import { routingService } from "@/services/routing.service";
 import { tmsEventBus } from "@/services/integration/event-bus.service";
 import type { AllRoutesConfirmedPayload, RouteConfirmedPayload } from "@/services/integration/event-bus.service";

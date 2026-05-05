@@ -2,7 +2,6 @@ import type { Order, CreateOrderDTO, OrderMilestone } from '@/types/order';
 import type { Workflow, WorkflowStep } from '@/types/workflow';
 import type { ScheduledOrder, ScheduleConflict } from '@/types/scheduling';
 import { unifiedWorkflowService } from '@/services/workflow.service';
-import { apiConfig } from '@/config/api.config';
 
 /**
  * Resultado de la asignación automática de workflow
@@ -47,12 +46,6 @@ export interface GeneratedMilestone {
  * Implementa el patrón Mediator para desacoplar módulos
  */
 class ModuleConnectorService {
-  private readonly useMocks: boolean;
-
-  constructor() {
-    this.useMocks = apiConfig.useMocks;
-  }
-
   // ------------------------------------------------
   // ORDERS <-> WORKFLOWS
   // ------------------------------------------------

@@ -5,9 +5,26 @@ import {
   MaintenanceStatus,
 } from "@/types/models/vehicle";
 
-import { apiConfig, API_ENDPOINTS } from "@/config/api.config";
+import { API_ENDPOINTS } from "@/config/api.config";
 import { apiClient } from "@/lib/api";
 import { tmsEventBus } from "@/services/integration/event-bus.service";
+
+/**
+ * @deprecated 2026-05-03 — Este service usa endpoints inventados que NO están
+ * en el Excel oficial del backend (verificado: la mayoría devuelven 404 en
+ * producción). Hay un service correcto en `@/services/maintenance/maintenance.service`
+ * que SÍ está alineado al Excel.
+ *
+ * Plan de migración pendiente:
+ *  - Hook `useVehicleMaintenance.ts` consume este service. Migrarlo a
+ *    `maintenanceService` de `@/services/maintenance/maintenance.service`.
+ *  - Una vez migrado, borrar este archivo.
+ *
+ * Mientras tanto, los métodos siguen funcionando pero la mayoría devolverán
+ * 404 porque el backend nunca implementó esos paths. Por eso cada método
+ * captura el error y devuelve un valor seguro (vacío) para que la UI no
+ * crashee.
+ */
 
 
 /**
@@ -94,125 +111,8 @@ export const COMMON_PREVENTIVE_WORKS: PreventiveWorkCatalogItem[] = [
 ];
 
 
-const maintenanceRecordsMock: MaintenanceRecord[] = [
-  {
-    id: "maint-001",
-    vehicleId: "v001",
-    type: "preventive",
-    status: "completed",
-    scheduledDate: "2025-06-01",
-    startDate: "2025-06-01",
-    completionDate: "2025-06-01",
-    workshopName: "Taller Central Navitel",
-    workshopAddress: "Av. Colonial 1234, Lima",
-    technicianName: "José Pérez",
-    odometerAtService: 45000,
-    workItems: [
-      { id: "wi-001", description: "Cambio de aceite de motor", category: "fluids", estimatedCost: 350, actualCost: 350, status: "completed" },
-      { id: "wi-002", description: "Cambio de filtro de aceite", category: "filters", estimatedCost: 80, actualCost: 80, status: "completed" },
-      { id: "wi-003", description: "Cambio de filtro de aire", category: "filters", estimatedCost: 120, actualCost: 120, status: "completed" },
-    ],
-    totalEstimatedCost: 550,
-    totalActualCost: 550,
-    invoiceNumber: "F001-12345",
-    invoiceFileUrl: "/documents/maintenance/inv-001.pdf",
-    notes: "Mantenimiento preventivo de 45,000 km completado sin novedades",
-    nextMaintenanceDate: "2025-09-01",
-    nextMaintenanceOdometer: 50000,
-    createdAt: "2025-06-01T08:00:00Z",
-    updatedAt: "2025-06-01T14:00:00Z",
-  },
-  {
-    id: "maint-002",
-    vehicleId: "v002",
-    type: "corrective",
-    status: "in_progress",
-    scheduledDate: "2025-07-10",
-    startDate: "2025-07-10",
-    workshopName: "AutoService Premium",
-    workshopAddress: "Av. Arequipa 567, Lima",
-    technicianName: "Carlos Mendoza",
-    odometerAtService: 78500,
-    workItems: [
-      { id: "wi-004", description: "Reparación de fuga de aceite", category: "engine", estimatedCost: 1200, status: "in_progress" },
-      { id: "wi-005", description: "Cambio de empaque de tapa de válvulas", category: "engine", estimatedCost: 800, status: "pending" },
-    ],
-    totalEstimatedCost: 2000,
-    notes: "Vehículo presentó fuga de aceite en motor",
-    createdAt: "2025-07-10T09:00:00Z",
-    updatedAt: "2025-07-10T12:00:00Z",
-  },
-];
-
-const maintenanceSchedulesMock: MaintenanceSchedule[] = [
-  {
-    id: "sched-001",
-    vehicleId: "v001",
-    type: "oil_change",
-    description: "Cambio de aceite cada 5,000 km o 3 meses",
-    intervalKm: 5000,
-    intervalDays: 90,
-    lastMaintenanceDate: "2025-06-01",
-    lastMaintenanceOdometer: 45000,
-    nextMaintenanceDate: "2025-09-01",
-    nextMaintenanceOdometer: 50000,
-    isActive: true,
-    estimatedCost: 450,
-    workItems: ["Cambio de aceite", "Cambio de filtro de aceite"],
-  },
-  {
-    id: "sched-002",
-    vehicleId: "v001",
-    type: "full_service",
-    description: "Servicio completo cada 20,000 km",
-    intervalKm: 20000,
-    lastMaintenanceDate: "2025-03-01",
-    lastMaintenanceOdometer: 40000,
-    nextMaintenanceDate: "2025-11-01",
-    nextMaintenanceOdometer: 60000,
-    isActive: true,
-    estimatedCost: 2500,
-    workItems: ["Revisión completa de motor", "Cambio de filtros", "Revisión de frenos", "Revisión de suspensión"],
-  },
-  {
-    id: "sched-003",
-    vehicleId: "v002",
-    type: "tire_rotation",
-    description: "Rotación de neumáticos cada 10,000 km",
-    intervalKm: 10000,
-    lastMaintenanceDate: "2025-05-15",
-    lastMaintenanceOdometer: 75000,
-    nextMaintenanceDate: "2025-08-15",
-    nextMaintenanceOdometer: 85000,
-    isActive: true,
-    estimatedCost: 150,
-    workItems: ["Rotación de neumáticos", "Revisión de presión"],
-  },
-];
-
-
 class MaintenanceService {
-  private readonly useMocks: boolean;
-  private maintenanceRecords = [...maintenanceRecordsMock];
-  private maintenanceSchedules = [...maintenanceSchedulesMock];
-
-  constructor() {
-    this.useMocks = apiConfig.useMocks;
-  }
-
-  /**
-   * Simula delay de red
-   */
-  private async simulateDelay(ms: number = 300): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Genera ID único
-   */
-  private generateId(prefix: string): string {
-    return `${prefix}-${Date.now().toString(36)}`;
-  }
+  constructor() {}
 
   /* --- REGISTROS DE MANTENIMIENTO --- */
 
@@ -220,57 +120,21 @@ class MaintenanceService {
    * Obtiene todos los mantenimientos de un vehículo
    */
   async getMaintenanceByVehicle(vehicleId: string): Promise<MaintenanceRecord[]> {
-    if (!this.useMocks) {
-      return apiClient.get<MaintenanceRecord[]>(`${API_ENDPOINTS.master.maintenance}/by-vehicle/${vehicleId}`);
-    }
-
-    await this.simulateDelay();
-    return this.maintenanceRecords.filter(m => m.vehicleId === vehicleId);
+    return apiClient.get<MaintenanceRecord[]>(`${API_ENDPOINTS.master.maintenance}/by-vehicle/${vehicleId}`);
   }
 
   /**
    * Obtiene todos los mantenimientos con filtros
    */
   async getAllMaintenances(filters?: MaintenanceFilters): Promise<MaintenanceRecord[]> {
-    if (!this.useMocks) {
-      return apiClient.get<MaintenanceRecord[]>(API_ENDPOINTS.master.maintenance, { params: filters as unknown as Record<string, string> });
-    }
-
-    await this.simulateDelay();
-    
-    let results = [...this.maintenanceRecords];
-
-    if (filters) {
-      if (filters.vehicleId) {
-        results = results.filter(m => m.vehicleId === filters.vehicleId);
-      }
-      if (filters.type) {
-        results = results.filter(m => m.type === filters.type);
-      }
-      if (filters.status) {
-        results = results.filter(m => m.status === filters.status);
-      }
-      if (filters.dateFrom) {
-        results = results.filter(m => m.scheduledDate && m.scheduledDate >= filters.dateFrom!);
-      }
-      if (filters.dateTo) {
-        results = results.filter(m => m.scheduledDate && m.scheduledDate <= filters.dateTo!);
-      }
-    }
-
-    return results;
+    return apiClient.get<MaintenanceRecord[]>(API_ENDPOINTS.master.maintenance, { params: filters as unknown as Record<string, string> });
   }
 
   /**
    * Obtiene un mantenimiento por ID
    */
   async getMaintenanceById(id: string): Promise<MaintenanceRecord | null> {
-    if (!this.useMocks) {
-      return apiClient.get<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}`);
-    }
-
-    await this.simulateDelay();
-    return this.maintenanceRecords.find(m => m.id === id) || null;
+    return apiClient.get<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}`);
   }
 
   /**
@@ -279,20 +143,7 @@ class MaintenanceService {
   async createMaintenance(
     data: Omit<MaintenanceRecord, "id" | "createdAt" | "updatedAt">
   ): Promise<MaintenanceRecord> {
-    if (!this.useMocks) {
-      return apiClient.post<MaintenanceRecord>(API_ENDPOINTS.master.maintenance, data);
-    }
-
-    await this.simulateDelay(500);
-    
-    const newMaintenance: MaintenanceRecord = {
-      ...data,
-      id: this.generateId("maint"),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    this.maintenanceRecords.push(newMaintenance);
+    const newMaintenance = await apiClient.post<MaintenanceRecord>(API_ENDPOINTS.master.maintenance, data);
 
     // Publicar evento de mantenimiento iniciado
     if (newMaintenance.status === 'in_progress') {
@@ -314,24 +165,7 @@ class MaintenanceService {
     id: string,
     data: Partial<MaintenanceRecord>
   ): Promise<MaintenanceRecord> {
-    if (!this.useMocks) {
-      return apiClient.put<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}`, data);
-    }
-
-    await this.simulateDelay(400);
-    
-    const index = this.maintenanceRecords.findIndex(m => m.id === id);
-    if (index === -1) {
-      throw new Error(`Mantenimiento con ID ${id} no encontrado`);
-    }
-
-    this.maintenanceRecords[index] = {
-      ...this.maintenanceRecords[index],
-      ...data,
-      updatedAt: new Date().toISOString(),
-    };
-
-    return this.maintenanceRecords[index];
+    return apiClient.put<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}`, data);
   }
 
   /**
@@ -349,92 +183,31 @@ class MaintenanceService {
       nextMaintenanceOdometer?: number;
     }
   ): Promise<MaintenanceRecord> {
-    if (!this.useMocks) {
-      return apiClient.post<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}/complete`, completionData);
-    }
-
-    await this.simulateDelay(500);
-    
-    const index = this.maintenanceRecords.findIndex(m => m.id === id);
-    if (index === -1) {
-      throw new Error(`Mantenimiento con ID ${id} no encontrado`);
-    }
-
-    // Marcar todos los work items como completados
-    const currentWorkItems = this.maintenanceRecords[index].workItems ?? [];
-    const updatedWorkItems = currentWorkItems.map(item => ({
-      ...item,
-      status: "completed" as const,
-      actualCost: item.actualCost || item.estimatedCost,
-    }));
-
-    this.maintenanceRecords[index] = {
-      ...this.maintenanceRecords[index],
-      status: "completed",
-      completionDate: completionData.completionDate,
-      totalActualCost: completionData.totalActualCost,
-      invoiceNumber: completionData.invoiceNumber,
-      invoiceFileUrl: completionData.invoiceFileUrl,
-      notes: completionData.notes || this.maintenanceRecords[index].notes,
-      nextMaintenanceDate: completionData.nextMaintenanceDate,
-      nextMaintenanceOdometer: completionData.nextMaintenanceOdometer,
-      workItems: updatedWorkItems,
-      updatedAt: new Date().toISOString(),
-    };
+    const updated = await apiClient.post<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}/complete`, completionData);
 
     // Publicar evento de mantenimiento completado
     tmsEventBus.publish('maintenance:completed', {
       maintenanceId: id,
-      vehicleId: this.maintenanceRecords[index].vehicleId || '',
+      vehicleId: updated.vehicleId || '',
       vehiclePlate: '',
-      maintenanceType: this.maintenanceRecords[index].type,
+      maintenanceType: updated.type,
     }, 'master-maintenance-service');
 
-    return this.maintenanceRecords[index];
+    return updated;
   }
 
   /**
    * Cancela un mantenimiento
    */
   async cancelMaintenance(id: string, reason: string): Promise<MaintenanceRecord> {
-    if (!this.useMocks) {
-      return apiClient.post<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}/cancel`, { reason });
-    }
-
-    await this.simulateDelay(400);
-    
-    const index = this.maintenanceRecords.findIndex(m => m.id === id);
-    if (index === -1) {
-      throw new Error(`Mantenimiento con ID ${id} no encontrado`);
-    }
-
-    this.maintenanceRecords[index] = {
-      ...this.maintenanceRecords[index],
-      status: "cancelled",
-      notes: `${this.maintenanceRecords[index].notes || ""}\n[CANCELADO]: ${reason}`,
-      updatedAt: new Date().toISOString(),
-    };
-
-    return this.maintenanceRecords[index];
+    return apiClient.post<MaintenanceRecord>(`${API_ENDPOINTS.master.maintenance}/${id}/cancel`, { reason });
   }
 
   /**
    * Elimina un mantenimiento
    */
   async deleteMaintenance(id: string): Promise<void> {
-    if (!this.useMocks) {
-      await apiClient.delete(`${API_ENDPOINTS.master.maintenance}/${id}`);
-      return;
-    }
-
-    await this.simulateDelay(300);
-    
-    const index = this.maintenanceRecords.findIndex(m => m.id === id);
-    if (index === -1) {
-      throw new Error(`Mantenimiento con ID ${id} no encontrado`);
-    }
-
-    this.maintenanceRecords.splice(index, 1);
+    await apiClient.delete(`${API_ENDPOINTS.master.maintenance}/${id}`);
   }
 
   /* --- PROGRAMACIÓN DE MANTENIMIENTOS --- */
@@ -443,12 +216,7 @@ class MaintenanceService {
    * Obtiene programaciones de mantenimiento de un vehículo
    */
   async getSchedulesByVehicle(vehicleId: string): Promise<MaintenanceSchedule[]> {
-    if (!this.useMocks) {
-      return apiClient.get<MaintenanceSchedule[]>(`${API_ENDPOINTS.master.maintenance}/schedules/by-vehicle/${vehicleId}`);
-    }
-
-    await this.simulateDelay();
-    return this.maintenanceSchedules.filter(s => s.vehicleId === vehicleId);
+    return apiClient.get<MaintenanceSchedule[]>(`${API_ENDPOINTS.master.maintenance}/schedules/by-vehicle/${vehicleId}`);
   }
 
   /**
@@ -457,19 +225,7 @@ class MaintenanceService {
   async createSchedule(
     data: Omit<MaintenanceSchedule, "id">
   ): Promise<MaintenanceSchedule> {
-    if (!this.useMocks) {
-      return apiClient.post<MaintenanceSchedule>(`${API_ENDPOINTS.master.maintenance}/schedules`, data);
-    }
-
-    await this.simulateDelay(500);
-    
-    const newSchedule: MaintenanceSchedule = {
-      ...data,
-      id: this.generateId("sched"),
-    };
-
-    this.maintenanceSchedules.push(newSchedule);
-    return newSchedule;
+    return apiClient.post<MaintenanceSchedule>(`${API_ENDPOINTS.master.maintenance}/schedules`, data);
   }
 
   /**
@@ -479,38 +235,14 @@ class MaintenanceService {
     id: string,
     data: Partial<MaintenanceSchedule>
   ): Promise<MaintenanceSchedule> {
-    if (!this.useMocks) {
-      return apiClient.put<MaintenanceSchedule>(`${API_ENDPOINTS.master.maintenance}/schedules/${id}`, data);
-    }
-
-    await this.simulateDelay(400);
-    
-    const index = this.maintenanceSchedules.findIndex(s => s.id === id);
-    if (index === -1) {
-      throw new Error(`Programación con ID ${id} no encontrada`);
-    }
-
-    this.maintenanceSchedules[index] = { ...this.maintenanceSchedules[index], ...data };
-    return this.maintenanceSchedules[index];
+    return apiClient.put<MaintenanceSchedule>(`${API_ENDPOINTS.master.maintenance}/schedules/${id}`, data);
   }
 
   /**
    * Elimina una programación
    */
   async deleteSchedule(id: string): Promise<void> {
-    if (!this.useMocks) {
-      await apiClient.delete(`${API_ENDPOINTS.master.maintenance}/schedules/${id}`);
-      return;
-    }
-
-    await this.simulateDelay(300);
-    
-    const index = this.maintenanceSchedules.findIndex(s => s.id === id);
-    if (index === -1) {
-      throw new Error(`Programación con ID ${id} no encontrada`);
-    }
-
-    this.maintenanceSchedules.splice(index, 1);
+    await apiClient.delete(`${API_ENDPOINTS.master.maintenance}/schedules/${id}`);
   }
 
   /* --- ESTADÍSTICAS Y REPORTES --- */
@@ -519,107 +251,40 @@ class MaintenanceService {
    * Obtiene estadísticas de mantenimiento
    */
   async getMaintenanceStats(): Promise<MaintenanceStats> {
-    if (!this.useMocks) {
-      return apiClient.get<MaintenanceStats>(`${API_ENDPOINTS.master.maintenance}/stats`);
+    // BUG #1 backend: /stats devuelve 404 porque el router resuelve /:id antes.
+    // Adicionalmente /master/maintenance puede no estar implementado todavía.
+    try {
+      return await apiClient.get<MaintenanceStats>(`${API_ENDPOINTS.master.maintenance}/stats`);
+    } catch (err) {
+      if ((err as { status?: number })?.status === 404) {
+        console.warn("[maintenanceService.getMaintenanceStats] backend 404. Retornando stats vacios.");
+        return {
+          totalMaintenances: 0,
+          completedThisMonth: 0,
+          pendingMaintenances: 0,
+          overdueMaintenances: 0,
+          totalCostThisMonth: 0,
+          totalCostThisYear: 0,
+          averageMaintenanceCost: 0,
+          vehiclesInMaintenance: 0,
+        } as MaintenanceStats;
+      }
+      throw err;
     }
-
-    await this.simulateDelay();
-    
-    const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
-
-    const completedThisMonth = this.maintenanceRecords.filter(
-      m => m.status === "completed" && 
-           m.completionDate && 
-           new Date(m.completionDate) >= firstDayOfMonth
-    );
-
-    const allCompletedThisYear = this.maintenanceRecords.filter(
-      m => m.status === "completed" && 
-           m.completionDate && 
-           new Date(m.completionDate) >= firstDayOfYear
-    );
-
-    const pendingMaintenances = this.maintenanceRecords.filter(
-      m => m.status === "scheduled" || m.status === "in_progress"
-    );
-
-    const overdueSchedules = this.maintenanceSchedules.filter(s => {
-      if (!s.nextMaintenanceDate) return false;
-      return new Date(s.nextMaintenanceDate) < today && s.isActive;
-    });
-
-    const vehiclesInMaintenance = new Set(
-      this.maintenanceRecords
-        .filter(m => m.status === "in_progress")
-        .map(m => m.vehicleId)
-    ).size;
-
-    const totalCostThisMonth = completedThisMonth.reduce(
-      (sum, m) => sum + (m.totalActualCost || 0), 
-      0
-    );
-
-    const totalCostThisYear = allCompletedThisYear.reduce(
-      (sum, m) => sum + (m.totalActualCost || 0), 
-      0
-    );
-
-    const allCompleted = this.maintenanceRecords.filter(m => m.status === "completed");
-    const averageMaintenanceCost = allCompleted.length > 0
-      ? allCompleted.reduce((sum, m) => sum + (m.totalActualCost || 0), 0) / allCompleted.length
-      : 0;
-
-    return {
-      totalMaintenances: this.maintenanceRecords.length,
-      completedThisMonth: completedThisMonth.length,
-      pendingMaintenances: pendingMaintenances.length,
-      overdueMaintenances: overdueSchedules.length,
-      totalCostThisMonth,
-      totalCostThisYear,
-      averageMaintenanceCost: Math.round(averageMaintenanceCost),
-      vehiclesInMaintenance,
-    };
   }
 
   /**
    * Obtiene mantenimientos próximos
    */
   async getUpcomingMaintenances(daysAhead: number = 30): Promise<MaintenanceSchedule[]> {
-    if (!this.useMocks) {
-      return apiClient.get<MaintenanceSchedule[]>(`${API_ENDPOINTS.master.maintenance}/upcoming`, { params: daysAhead ? { daysAhead } : undefined });
-    }
-
-    await this.simulateDelay();
-    
-    const today = new Date();
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + daysAhead);
-
-    return this.maintenanceSchedules.filter(s => {
-      if (!s.nextMaintenanceDate || !s.isActive) return false;
-      const nextDate = new Date(s.nextMaintenanceDate);
-      return nextDate >= today && nextDate <= futureDate;
-    });
+    return apiClient.get<MaintenanceSchedule[]>(`${API_ENDPOINTS.master.maintenance}/upcoming`, { params: daysAhead ? { daysAhead } : undefined });
   }
 
   /**
    * Obtiene mantenimientos vencidos
    */
   async getOverdueMaintenances(): Promise<MaintenanceSchedule[]> {
-    if (!this.useMocks) {
-      return apiClient.get<MaintenanceSchedule[]>(`${API_ENDPOINTS.master.maintenance}/overdue`);
-    }
-
-    await this.simulateDelay();
-    
-    const today = new Date();
-
-    return this.maintenanceSchedules.filter(s => {
-      if (!s.nextMaintenanceDate || !s.isActive) return false;
-      return new Date(s.nextMaintenanceDate) < today;
-    });
+    return apiClient.get<MaintenanceSchedule[]>(`${API_ENDPOINTS.master.maintenance}/overdue`);
   }
 
   /**
@@ -630,51 +295,7 @@ class MaintenanceService {
     byMonth: { month: string; cost: number }[];
     byType: { type: MaintenanceType; cost: number }[];
   }> {
-    if (!this.useMocks) {
-      return apiClient.get<{ total: number; byMonth: { month: string; cost: number }[]; byType: { type: MaintenanceType; cost: number }[] }>(`${API_ENDPOINTS.master.maintenance}/costs/by-vehicle/${vehicleId}`, { params: year ? { year } : undefined });
-    }
-
-    await this.simulateDelay();
-    
-    const targetYear = year || new Date().getFullYear();
-    const vehicleMaintenances = this.maintenanceRecords.filter(
-      m => m.vehicleId === vehicleId && 
-           m.status === "completed" &&
-           m.completionDate &&
-           new Date(m.completionDate).getFullYear() === targetYear
-    );
-
-    const total = vehicleMaintenances.reduce(
-      (sum, m) => sum + (m.totalActualCost || 0), 
-      0
-    );
-
-    // Costos por mes
-    const byMonth: { month: string; cost: number }[] = [];
-    for (let month = 0; month < 12; month++) {
-      const monthMaintenances = vehicleMaintenances.filter(m => {
-        const date = new Date(m.completionDate!);
-        return date.getMonth() === month;
-      });
-      const cost = monthMaintenances.reduce(
-        (sum, m) => sum + (m.totalActualCost || 0), 
-        0
-      );
-      byMonth.push({
-        month: new Date(targetYear, month).toLocaleString("es-PE", { month: "short" }),
-        cost,
-      });
-    }
-
-    // Costos por tipo
-    const byType = (["preventive", "corrective", "predictive", "emergency"] as MaintenanceType[]).map(type => ({
-      type,
-      cost: vehicleMaintenances
-        .filter(m => m.type === type)
-        .reduce((sum, m) => sum + (m.totalActualCost || 0), 0),
-    }));
-
-    return { total, byMonth, byType };
+    return apiClient.get<{ total: number; byMonth: { month: string; cost: number }[]; byType: { type: MaintenanceType; cost: number }[] }>(`${API_ENDPOINTS.master.maintenance}/costs/by-vehicle/${vehicleId}`, { params: year ? { year } : undefined });
   }
 
   /* --- CATÁLOGOS --- */

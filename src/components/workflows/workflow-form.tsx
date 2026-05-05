@@ -37,7 +37,15 @@ import { cn } from '@/lib/utils';
 import { WorkflowMilestones } from './workflow-milestones';
 import { WorkflowTimeline } from './workflow-timeline';
 import type { Workflow, WorkflowStep, CreateWorkflowDTO } from '@/types/workflow';
-import { workflowTypes } from '@/mocks/master/workflows.mock';
+// Tipos de workflows (antes importados de mocks)
+const workflowTypes: Array<{ value: string; label: string; color: string }> = [
+  { value: 'import', label: 'Importación', color: '#6366f1' },
+  { value: 'export', label: 'Exportación', color: '#10b981' },
+  { value: 'distribution', label: 'Distribución', color: '#f59e0b' },
+  { value: 'collection', label: 'Recolección', color: '#0ea5e9' },
+  { value: 'transfer', label: 'Transferencia', color: '#8b5cf6' },
+  { value: 'other', label: 'Otro', color: '#64748b' },
+];
 
 interface Customer {
   id: string;

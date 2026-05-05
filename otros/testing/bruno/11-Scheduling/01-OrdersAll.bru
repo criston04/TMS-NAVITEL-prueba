@@ -1,0 +1,25 @@
+meta {
+  name: Orders (all statuses)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/operations/scheduling/orders
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /operations/scheduling/orders
+
+  Devuelve todas las ordenes (cualquier estado) para el modulo de Scheduling.
+  Envelope: `{data: [...]}`.
+
+  **Quirk:** el backend acepta el filtro `?status=pending` pero NO soporta arrays
+  (ej: `?status=pending,assigned`). El frontend filtra client-side.
+}

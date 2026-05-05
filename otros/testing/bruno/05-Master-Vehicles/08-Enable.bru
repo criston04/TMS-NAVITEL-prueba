@@ -1,0 +1,33 @@
+meta {
+  name: Enable vehicle (workaround via PUT)
+  type: http
+  seq: 8
+}
+
+put {
+  url: {{baseUrl}}/master/vehicles/{{lastVehicleId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "active",
+    "operational_status": "available"
+  }
+}
+
+docs {
+  # Habilitar vehicle
+
+  **No existe endpoint dedicado `/enable`** (404 Not Found).
+  Usar PUT genérico con `status: "active"` + `operational_status: "available"`.
+}

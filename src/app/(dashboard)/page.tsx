@@ -1,12 +1,27 @@
 "use client";
 
-import { StatCard } from "@/components/dashboard/stat-card";
-import { VehicleOverview } from "@/components/dashboard/vehicle-overview";
-import { ShipmentStatistics } from "@/components/dashboard/shipment-statistics";
-import { OnRouteVehicles } from "@/components/dashboard/on-route-vehicles";
+import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useDashboard } from "@/hooks/useDashboard";
+
+// Lazy-load de componentes que cargan recharts (saca ~150KB del bundle inicial)
+const StatCard = dynamic(
+  () => import("@/components/dashboard/stat-card").then(m => ({ default: m.StatCard })),
+  { ssr: false, loading: () => <div className="h-[160px] rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
+);
+const ShipmentStatistics = dynamic(
+  () => import("@/components/dashboard/shipment-statistics").then(m => ({ default: m.ShipmentStatistics })),
+  { ssr: false, loading: () => <div className="h-[400px] rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
+);
+const VehicleOverview = dynamic(
+  () => import("@/components/dashboard/vehicle-overview").then(m => ({ default: m.VehicleOverview })),
+  { ssr: false, loading: () => <div className="h-[400px] rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
+);
+const OnRouteVehicles = dynamic(
+  () => import("@/components/dashboard/on-route-vehicles").then(m => ({ default: m.OnRouteVehicles })),
+  { ssr: false, loading: () => <div className="h-[300px] rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
+);
 
 import {
   Truck,
@@ -32,11 +47,25 @@ export default function DashboardPage() {
     shipmentTotal,
     onRouteVehicles,
     onRouteTotal,
-    trends,
+    trends: trendsRaw,
     sparklines,
     loading,
     setDateFilter,
   } = useDashboard();
+
+  // Defensa runtime: el backend hoy NO devuelve `trends`. Usamos un Proxy que
+  // siempre devuelve `{ label: "" }` para cualquier key que se acceda.
+  // Cuando el backend implemente el endpoint, basta con borrar el Proxy y
+  // dejar `const trends = (trendsRaw ?? {}) as ...`.
+  const DEFAULT_TREND = { label: "" };
+  const trends = new Proxy(
+    (trendsRaw ?? {}) as Record<string, { label: string; value?: number }>,
+    {
+      get(target, prop: string) {
+        return target[prop] ?? DEFAULT_TREND;
+      },
+    }
+  );
 
   const dateFilter = (() => {
     const today = new Date();

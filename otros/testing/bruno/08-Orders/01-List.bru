@@ -1,0 +1,29 @@
+meta {
+  name: List orders
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/orders?page=1&pageSize=5
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  pageSize: 5
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /orders
+
+  Orders NO esta bajo /master/. Es su propio modulo.
+
+  Proposito: ver si usa `orderNumber`, `customerId` limpio
+  u `onumber`, `ocustomerid` con prefijo.
+}

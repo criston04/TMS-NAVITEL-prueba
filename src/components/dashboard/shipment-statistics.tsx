@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ShipmentDataPoint } from "@/mocks/dashboard.mock";
+import type { ShipmentDataPoint } from "@/hooks/useDashboard";
 
 interface ShipmentStatisticsProps {
   data?: ShipmentDataPoint[];

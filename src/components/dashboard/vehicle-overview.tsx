@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, PackageOpen, Package, Clock } from "lucide-react";
-import type { VehicleOverviewData } from "@/mocks/dashboard.mock";
+import type { VehicleOverviewData } from "@/hooks/useDashboard";
 
 interface VehicleOverviewProps {
   data?: VehicleOverviewData | null;
@@ -11,12 +11,16 @@ interface VehicleOverviewProps {
 export function VehicleOverview({ data }: VehicleOverviewProps) {
   const available = data?.available ?? 39.7;
   const onRoute = data?.onRoute ?? 28.3;
-  const inMaintenance = data?.inMaintenance ?? 17.4;
+  // El tipo canonico tiene `maintenance` (no `inMaintenance`). Se queda como
+  // alias para no romper la UI hasta que el backend devuelva los promedios reales.
+  const inMaintenance = data?.maintenance ?? 17.4;
   const inactive = data?.inactive ?? 14.6;
-  const avgRouteTime = data?.avgRouteTime ?? "2hr 10min";
-  const avgIdleTime = data?.avgIdleTime ?? "45min";
-  const avgMaintenanceTime = data?.avgMaintenanceTime ?? "1hr 30min";
-  const avgLoadTime = data?.avgLoadTime ?? "25min";
+  // Promedios de tiempo: el backend aun no los provee. Mantenemos los strings
+  // por defecto hasta que el contrato los formalice.
+  const avgRouteTime = "2hr 10min";
+  const avgIdleTime = "45min";
+  const avgMaintenanceTime = "1hr 30min";
+  const avgLoadTime = "25min";
 
   return (
     <Card className="h-full rounded-2xl border-none shadow-sm bg-white dark:bg-card/50">

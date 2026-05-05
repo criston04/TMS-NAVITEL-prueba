@@ -26,7 +26,10 @@ interface VehicleInfoCardProps {
 /**
  * Formatea coordenadas para mostrar
  */
-function formatCoordinates(lat: number, lng: number): string {
+function formatCoordinates(lat: number | null | undefined, lng: number | null | undefined): string {
+  if (typeof lat !== "number" || typeof lng !== "number" || isNaN(lat) || isNaN(lng)) {
+    return "Sin posicion";
+  }
   return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 }
 
@@ -311,7 +314,7 @@ export function VehicleInfoCard({
                     </div>
                     <div className="text-right">
                       <p className="text-muted-foreground">Distancia</p>
-                      <p className="font-medium font-mono">{eta.distanceKm.toFixed(1)} km</p>
+                      <p className="font-medium font-mono">{(eta.distanceKm ?? 0).toFixed(1)} km</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Llegada estimada</p>

@@ -1,0 +1,32 @@
+meta {
+  name: Import KML (stub 501)
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/master/geofences/import/kml
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:multipart-form {
+  file: @file(/ruta/al/archivo.kml)
+}
+
+docs {
+  # POST /geofences/import/kml — Importar KML
+
+  **Excel:** `Geofence | POST | /geofences/import/kml | STUB — returns 501 Not Implemented`
+
+  ⚠ Este endpoint es un STUB segun el Excel. Devuelve 501 Not Implemented.
+
+  Cuando backend lo implemente, subir archivo .kml via multipart/form-data
+  con field name "file".
+
+  Para probar, editar la ruta del archivo en el body.
+}

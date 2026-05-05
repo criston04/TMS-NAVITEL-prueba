@@ -1,0 +1,21 @@
+meta {
+  name: Delete invoice
+  type: http
+  seq: 13
+}
+
+delete {
+  url: {{baseUrl}}/finance/invoices/{{lastInvoiceId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # DELETE /finance/invoices/:id
+
+  Soft-delete. Responde 200.
+}

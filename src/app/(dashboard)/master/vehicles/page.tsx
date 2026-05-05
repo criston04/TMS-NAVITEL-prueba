@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { vehiclesService, driversService } from "@/services/master";
+import { isBackendNotImplemented } from "@/services/missing-endpoint-helper";
 import { useService } from "@/hooks/use-service";
 import { Vehicle, VehicleStats, VehicleStatus, VehicleOperationalStatus, VehicleType, FuelType, Driver } from "@/types/models";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,9 +47,18 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { exportToExcel, EXPORT_CONFIGS } from "@/lib/excel-utils";
-import { VehicleFormModal } from "./components/vehicle-form-modal";
+import dynamic from "next/dynamic";
 import type { VehicleFormData } from "./components/vehicle-form-modal";
-import { VehicleDetailDrawer } from "./components/vehicle-detail-drawer";
+// Modal de 1342 líneas — lazy-load para sacar de bundle inicial
+const VehicleFormModal = dynamic(
+  () => import("./components/vehicle-form-modal").then(m => ({ default: m.VehicleFormModal })),
+  { ssr: false }
+);
+// Drawer pesado — lazy-load
+const VehicleDetailDrawer = dynamic(
+  () => import("./components/vehicle-detail-drawer").then(m => ({ default: m.VehicleDetailDrawer })),
+  { ssr: false }
+);
 import {
   AlertDialog,
   AlertDialogAction,
@@ -254,6 +264,66 @@ function CardsSkeleton() {
 const STATS_SKELETON_KEYS = ['stat-1', 'stat-2', 'stat-3', 'stat-4', 'stat-5', 'stat-6', 'stat-7'] as const;
 
 /**
+ * Mapper FormData → Vehicle.
+ *
+ * El form de vehicle usa nombres distintos al type del dominio (legacy):
+ *   form.specs.fuelCapacity     → vehicle.specs.fuelTankCapacity
+ *   form.specs.numberOfAxles    → vehicle.specs.axles
+ *   form.specs.numberOfTires    → vehicle.specs.wheels
+ *   form.specs.horsePower       → vehicle.specs.horsepower
+ *   form.capacity.maxWeight     → vehicle.capacity.maxPayload
+ *   form.capacity.tare          → vehicle.capacity.tareWeight
+ *   form.registration.number    → vehicle.registration.registrationNumber
+ *   form.registration.issueDate → vehicle.registration.registrationDate
+ *   form.registration.issuingEntity → vehicle.registration.registryOffice
+ *
+ * Sin este mapper el `mapVehicleToBackend` recibe claves equivocadas y descarta
+ * campos críticos del formulario. (form.dimensions y horsePower no tienen
+ * destino en el type Vehicle hoy — se mantienen en memoria pero no van al backend.)
+ */
+function mapVehicleFormToVehicle(data: VehicleFormData): Partial<Vehicle> {
+  return {
+    plate: data.plate,
+    type: data.type,
+    bodyType: data.bodyType,
+    operatorId: data.operatorId,
+    currentDriverId: data.currentDriverId || undefined,
+    currentMileage: data.currentMileage,
+    notes: data.notes || undefined,
+    isEnabled: data.status === "active",
+    specs: {
+      brand: data.brand,
+      model: data.model,
+      year: data.year,
+      color: data.color,
+      engineNumber: data.specs.engineNumber || "",
+      chassisNumber: data.vin,
+      axles: data.specs.numberOfAxles ?? 0,
+      wheels: data.specs.numberOfTires ?? 0,
+      fuelType: data.specs.fuelType,
+      fuelTankCapacity: data.specs.fuelCapacity ?? 0,
+      transmission: data.specs.transmission ?? "manual",
+      horsepower: data.specs.horsePower,
+    },
+    capacity: {
+      grossWeight: data.capacity.grossWeight ?? 0,
+      tareWeight: data.capacity.tare ?? 0,
+      maxPayload: data.capacity.maxWeight ?? 0,
+      maxVolume: data.capacity.maxVolume,
+      palletCapacity: data.capacity.palletCapacity,
+    },
+    registration: {
+      registrationNumber: data.registration.number ?? "",
+      ownerName: "",                     // form no captura — gap
+      ownerDocument: "",                 // form no captura — gap
+      registrationDate: data.registration.issueDate ?? "",
+      registryOffice: data.registration.issuingEntity ?? "SUNARP",
+      fileUrl: data.registration.fileUrl,
+    },
+  } as Partial<Vehicle>;
+}
+
+/**
  * Página principal de Vehículos
  */
 export default function VehiclesPage() {
@@ -406,13 +476,18 @@ export default function VehiclesPage() {
   const handleFormSubmit = useCallback(async (data: VehicleFormData) => {
     setIsSubmitting(true);
     try {
+      // Convertir el shape del form al shape del dominio (Vehicle) antes de enviar.
+      // Sin esto, el transformer recibe claves equivocadas (numberOfAxles vs axles,
+      // maxWeight vs maxPayload, registration.number vs registration.registrationNumber, etc.)
+      const vehiclePayload = mapVehicleFormToVehicle(data);
+
       if (selectedVehicle) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await vehiclesService.update(selectedVehicle.id, data as any);
+        await vehiclesService.update(selectedVehicle.id, vehiclePayload);
         toast.success("Vehículo actualizado correctamente");
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await vehiclesService.create(data as any);
+        await vehiclesService.create(
+          vehiclePayload as Parameters<typeof vehiclesService.create>[0]
+        );
         toast.success("Vehículo creado correctamente");
       }
       setIsFormModalOpen(false);
@@ -434,8 +509,16 @@ export default function VehiclesPage() {
       setIsDeleteDialogOpen(false);
       setSelectedVehicle(null);
       handleRefresh();
-    } catch {
-      toast.error("Error al eliminar vehículo");
+    } catch (err) {
+      // 2026-05-03 (issue HIGH #8/#9): toast amigable cuando backend no
+      // implementó el endpoint.
+      if (isBackendNotImplemented(err)) {
+        toast.warning("Eliminación pendiente del backend", {
+          description: "El equipo backend aún no implementó DELETE /master/vehicles/:id",
+        });
+      } else {
+        toast.error("Error al eliminar vehículo");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -489,8 +572,14 @@ export default function VehiclesPage() {
       await vehiclesService.assignDriver(vehicleId, driverId);
       toast.success("Conductor asignado correctamente");
       handleRefresh();
-    } catch {
-      toast.error("Error al asignar conductor");
+    } catch (err) {
+      if (isBackendNotImplemented(err)) {
+        toast.warning("Asignación de conductor pendiente del backend", {
+          description: "El equipo backend aún no implementó este endpoint.",
+        });
+      } else {
+        toast.error("Error al asignar conductor");
+      }
     }
   }, [handleRefresh]);
 
@@ -499,8 +588,14 @@ export default function VehiclesPage() {
       await vehiclesService.unassignDriver(vehicleId, driverId);
       toast.success("Conductor desasignado correctamente");
       handleRefresh();
-    } catch {
-      toast.error("Error al desasignar conductor");
+    } catch (err) {
+      if (isBackendNotImplemented(err)) {
+        toast.warning("Desasignación de conductor pendiente del backend", {
+          description: "El equipo backend aún no implementó este endpoint.",
+        });
+      } else {
+        toast.error("Error al desasignar conductor");
+      }
     }
   }, [handleRefresh]);
 

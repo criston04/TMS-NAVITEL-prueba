@@ -1,0 +1,151 @@
+meta {
+  name: Create invoice
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/finance/invoices
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "type": "service",
+    "customerId": "{{lastCustomerId}}",
+    "issueDate": "2026-04-22T00:00:00Z",
+    "dueDate": "2026-05-22T00:00:00Z",
+    "currency": "PEN",
+    "lineItems": [
+      {
+        "description": "Servicio de transporte Lima-Arequipa",
+        "quantity": 1,
+        "unitPrice": 1500,
+        "discount": 0,
+        "discountType": "amount",
+        "taxRate": 18
+      }
+    ],
+    "orderIds": ["{{lastOrderId}}"],
+    "purchaseOrderNumber": "PO-BRUNO-001",
+    "notes": "Factura de prueba generada desde Bruno",
+    "termsAndConditions": "Pago a 30 días. Sin cancelaciones después de emitida."
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastInvoiceId", id);
+
+  // Espejo de CreateInvoiceDTO (src/types/finance.ts línea 417)
+  const sent = {
+    type: "service",
+    customerId: bru.getEnvVar("lastCustomerId"),
+    issueDate: "2026-04-22T00:00:00Z",
+    dueDate: "2026-05-22T00:00:00Z",
+    currency: "PEN",
+    purchaseOrderNumber: "PO-BRUNO-001",
+    notes: "Factura de prueba generada desde Bruno",
+    termsAndConditions: "Pago a 30 días. Sin cancelaciones después de emitida.",
+  };
+
+  console.log("===================================================");
+  console.log("           VERIFICACION CREATE INVOICE             ");
+  console.log("===================================================");
+  console.log("invoice id:    ", id);
+  console.log("invoice number:", obj.invoiceNumber ?? obj.invoice_number);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ---");
+
+  for (const k of Object.keys(sent)) {
+    const altKey = k.replace(/[A-Z]/g, m => "_" + m.toLowerCase());
+    const got = obj[k] ?? obj[altKey];
+    if (got === null || got === undefined) {
+      console.log("  ❌", k.padEnd(22), "PERDIDO");
+    } else if (typeof got === "string" && typeof sent[k] === "string" && got.startsWith(sent[k])) {
+      console.log("  ✅", k.padEnd(22), JSON.stringify(got));
+    } else if (got === sent[k]) {
+      console.log("  ✅", k.padEnd(22), JSON.stringify(got));
+    } else {
+      console.log("  ⚠️ ", k.padEnd(22), "DIFIERE — env:", JSON.stringify(sent[k]), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- LINE ITEMS / RELACIONES ---");
+  console.log("  lineItems[]:        ", Array.isArray(obj.lineItems) || Array.isArray(obj.line_items) ? "✅ array (" + (obj.lineItems ?? obj.line_items).length + ")" : "❌ no devuelto");
+  console.log("  orderIds[]:         ", Array.isArray(obj.orderIds) || Array.isArray(obj.order_ids) ? "✅ persistido" : "❌ no asociado");
+
+  console.log("");
+  console.log("--- TOTALES (calculados por backend) ---");
+  for (const k of ["subtotal", "taxTotal", "tax_total", "discountTotal", "discount_total", "total", "amountPaid", "amount_paid", "amountDue", "amount_due", "status"]) {
+    if (obj[k] !== undefined) {
+      console.log("  ", k.padEnd(22), "=", JSON.stringify(obj[k]));
+    }
+  }
+
+  console.log("");
+  console.log("--- CAMPOS NULL ESPERADO POR LIFECYCLE ---");
+  for (const k of ["paid_at", "paidAt", "pdf_url", "pdfUrl", "cancelled_at", "cancelledAt", "cancel_reason"]) {
+    if (k in obj) console.log("  ", k.padEnd(22), "=", obj[k] === null ? "null (esperado)" : JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("--- CAMPOS NULL ESPERADO POR SUNAT NO INTEGRADO ---");
+  for (const k of ["sunat_status", "sunatStatus", "sunat_hash", "xml_url", "xmlUrl", "cdr_url", "sent_to_sunat_at"]) {
+    if (k in obj) console.log("  ", k.padEnd(22), "=", obj[k] === null ? "null (esperado, sin SUNAT)" : JSON.stringify(obj[k]));
+  }
+
+  console.log("===================================================");
+}
+
+docs {
+  # POST /finance/invoices — IDÉNTICO al CreateInvoiceDTO del frontend
+
+  Refleja `src/types/finance.ts` línea 417 → `CreateInvoiceDTO`.
+
+  ## Body shape del frontend
+  ```typescript
+  {
+    type: InvoiceType,           // "service" | "freight" | ...
+    customerId: string,
+    issueDate?: string,
+    dueDate: string,             // OBLIGATORIO
+    currency?: string,
+    lineItems: [{
+      description, quantity, unitPrice,
+      discount, discountType, taxRate
+    }],
+    orderIds?: string[],         // facturar varias órdenes en 1 invoice
+    purchaseOrderNumber?: string,
+    notes?: string,
+    termsAndConditions?: string,
+  }
+  ```
+
+  ## Cambio respecto a versión anterior del Bruno
+  - Quitado `customerName` (frontend NO lo envía, lo hidrata el backend)
+  - Agregado `discount`, `discountType`, `taxRate` en lineItems (los exige el DTO)
+  - Agregado `orderIds`, `purchaseOrderNumber`, `notes`, `termsAndConditions`
+
+  ## Campos que el backend calcula
+  - `invoiceNumber` (auto), `subtotal`, `taxTotal`, `discountTotal`, `total`
+  - `amountPaid: 0` inicial, `amountDue: total` inicial
+  - `status: "draft"` inicial
+
+  ## Null esperados (por SUNAT no integrado)
+  - `sunat_status`, `sunat_hash`, `xml_url`, `cdr_url` → null hasta integración
+}

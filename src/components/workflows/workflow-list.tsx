@@ -20,7 +20,20 @@ import {
 import { cn } from '@/lib/utils';
 import { WorkflowCard } from './workflow-card';
 import type { Workflow, WorkflowStatus } from '@/types/workflow';
-import { workflowTypes, workflowStatusConfig } from '@/mocks/master/workflows.mock';
+// Configuración de workflows (antes importada de mocks)
+const workflowTypes: Array<{ value: string; label: string; color: string }> = [
+  { value: 'import', label: 'Importación', color: '#6366f1' },
+  { value: 'export', label: 'Exportación', color: '#10b981' },
+  { value: 'distribution', label: 'Distribución', color: '#f59e0b' },
+  { value: 'collection', label: 'Recolección', color: '#0ea5e9' },
+  { value: 'transfer', label: 'Transferencia', color: '#8b5cf6' },
+  { value: 'other', label: 'Otro', color: '#64748b' },
+];
+const workflowStatusConfig: Record<WorkflowStatus, { label: string; color: string; bgColor: string }> = {
+  active: { label: 'Activo', color: '#059669', bgColor: '#d1fae5' },
+  inactive: { label: 'Inactivo', color: '#6b7280', bgColor: '#f3f4f6' },
+  draft: { label: 'Borrador', color: '#d97706', bgColor: '#fef3c7' },
+};
 
 interface WorkflowListProps {
   workflows: Workflow[];

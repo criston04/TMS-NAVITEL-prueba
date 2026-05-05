@@ -1,0 +1,32 @@
+meta {
+  name: Update notes
+  type: http
+  seq: 10
+}
+
+put {
+  url: {{baseUrl}}/bitacora/{{lastBitacoraEntryId}}/notes
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "notes": "Nota del operador agregada desde Bruno"
+  }
+}
+
+docs {
+  # PUT /bitacora/:id/notes
+
+  Actualiza el campo `operator_notes` del entry.
+  Response minimo: `{data: {id}}`.
+}

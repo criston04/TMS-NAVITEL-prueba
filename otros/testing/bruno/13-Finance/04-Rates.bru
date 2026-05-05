@@ -1,0 +1,21 @@
+meta {
+  name: Service rates
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/finance/rates
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /finance/rates
+
+  Tarifas activas. Envelope `{data: []}`.
+}

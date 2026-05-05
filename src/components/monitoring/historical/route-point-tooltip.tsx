@@ -82,14 +82,14 @@ export function RoutePointTooltip({
         <div className="flex items-center gap-2">
           <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="font-mono text-xs">
-            {point.lat.toFixed(6)}, {point.lng.toFixed(6)}
+            {(point.lat ?? 0).toFixed(6)}, {(point.lng ?? 0).toFixed(6)}
           </span>
         </div>
 
         {/* Distancia recorrida */}
         <div className="flex items-center gap-2 text-muted-foreground">
           <span className="text-xs">
-            Recorrido: {point.distanceFromStart.toFixed(2)} km
+            Recorrido: {(point.distanceFromStart ?? 0).toFixed(2)} km
           </span>
         </div>
 

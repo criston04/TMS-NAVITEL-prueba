@@ -1,0 +1,3 @@
+src/services/finance.service.ts	524	POST	/finance/costs/:id/approve	[('PATCH', '/finance/costs/:id/approve')]
+src/services/orders/OrderService.ts	526	PUT	/orders/:id	[('DELETE', '/orders/:id'), ('GET', '/orders/:id'), ('PATCH', '/orders/:id')]
+src/services/report.service.ts	252	POST	/reports/generated	[('GET', '/reports/generated')]

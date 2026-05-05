@@ -1,0 +1,46 @@
+meta {
+  name: Stats (BUG #1 - actualmente 404)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/master/drivers/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/drivers/stats
+
+  **ACTUALMENTE ROTO (BUG #1 del backend):**
+  Devuelve `404 "Driver no encontrado"` porque el router resuelve `/:id` antes que `/stats`.
+
+  El mismo bug ocurre en Customers, Operators y Products.
+
+  **Fix que necesita el backend:**
+  ```js
+  // Reordenar en el router: especificas ANTES de :id
+  router.get('/stats', statsHandler);        // mover arriba
+  router.get('/find-by-document', findHandler); // mover arriba
+  router.get('/:id', getByIdHandler);        // al final
+  ```
+
+  Mientras tanto el frontend calcula stats client-side a partir del listado.
+
+  Cuando backend lo arregle, debera devolver algo como:
+  ```json
+  {
+    "total": 10,
+    "enabled": 8,
+    "blocked": 2,
+    "available": 5,
+    "onRoute": 3,
+    ...
+  }
+  ```
+}

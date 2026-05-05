@@ -227,14 +227,15 @@ export function validateDocument(
 
 /**
  * Obtiene el tipo de documento recomendado según el tipo de cliente
- * 
- * @param customerType - Tipo de cliente (empresa o persona)
+ *
+ * @param customerType - Tipo de cliente (company / person — valores en inglés
+ *                       porque el backend solo acepta esos)
  * @returns Tipo de documento recomendado
  */
 export function getRecommendedDocumentType(
-  customerType: "empresa" | "persona"
+  customerType: "company" | "person"
 ): DocumentType {
-  return customerType === "empresa" ? "RUC" : "DNI";
+  return customerType === "company" ? "RUC" : "DNI";
 }
 
 /**

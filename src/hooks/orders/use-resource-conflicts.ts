@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { mockOrders } from '@/mocks/orders/orders.mock';
+import { orderService } from '@/services/orders';
 import type { Order } from '@/types/order';
 
 /**
@@ -123,15 +123,23 @@ export function useResourceConflicts(
     const detectedConflicts: ResourceConflict[] = [];
 
     try {
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 300));
-
       const newStart = new Date(startDate);
       const newEnd = new Date(endDate);
 
-      // Obtener órdenes activas (excluyendo la actual si está en edición)
-      const activeOrders = mockOrders.filter(
-        (order: Order) => 
+      // Traer órdenes reales del backend. Filtramos status planificables + en curso
+      // porque esos son los únicos que pueden generar conflicto de recurso.
+      // Si el backend falla, devolvemos [] y no se detectan conflictos (fail-safe).
+      let allOrders: Order[] = [];
+      try {
+        const resp = await orderService.getOrders({ pageSize: 200 });
+        allOrders = resp.data;
+      } catch (err) {
+        console.warn('[useResourceConflicts] no se pudieron cargar órdenes:', err);
+      }
+
+      // Filtrar órdenes activas (excluyendo la actual si está en edición)
+      const activeOrders = allOrders.filter(
+        (order: Order) =>
           order.id !== currentOrderId &&
           ['pending', 'assigned', 'in_transit'].includes(order.status) &&
           order.scheduledStartDate &&

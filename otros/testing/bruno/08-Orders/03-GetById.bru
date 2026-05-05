@@ -1,0 +1,33 @@
+meta {
+  name: Get order by ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/orders/{{lastOrderId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /orders/:id — Detalle de una orden
+
+  Usa `lastOrderId` (guardado automaticamente por `02-Create`).
+
+  ## Verificaciones importantes
+
+  Revisar que estos campos vengan populados (NO null):
+  - `origin_address`, `origin_lat`, `origin_lng`
+  - `destination_address`, `destination_lat`, `destination_lng`
+  - `total_weight`, `total_volume`, `total_packages`
+  - `scheduled_pickup_at`, `scheduled_delivery_at`
+  - `notes`, `reference`
+
+  Si todos están null, el backend NO guardó los datos que mandamos en el POST.
+  Si algunos están populados y otros null, algunos campos se aceptan y otros no.
+}

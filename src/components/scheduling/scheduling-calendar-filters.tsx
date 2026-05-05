@@ -9,7 +9,7 @@ import {
   X,
 } from 'lucide-react';
 import type { CalendarFilters, ScheduleStatus } from '@/types/scheduling';
-import type { MockVehicle } from '@/mocks/scheduling';
+import type { MockVehicle } from '@/hooks/use-scheduling';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {

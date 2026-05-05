@@ -1,0 +1,24 @@
+meta {
+  name: Helper - available geofences
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/workflows/helpers/available-geofences
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /workflows/helpers/available-geofences
+
+  Devuelve las geocercas que pueden usarse como hitos en un workflow.
+  Envelope `{data: [...]}`. Cada item: `{id, name, shortName, type, category, color}`.
+
+  **Nota:** Muchas geocercas tienen `name: ""` porque el backend no persiste el nombre en algunos casos (bug separado).
+}

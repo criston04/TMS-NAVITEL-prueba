@@ -1,0 +1,21 @@
+meta {
+  name: Blocked days - list
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/operations/scheduling/blocked-days
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /operations/scheduling/blocked-days
+
+  Lista de dias bloqueados para scheduling. Envelope `{data: []}`.
+}

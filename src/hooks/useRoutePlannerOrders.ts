@@ -13,7 +13,7 @@ import type { TransportOrder } from '@/types/route-planner';
 import type { Order, OrderFilters } from '@/types/order';
 import { orderService } from '@/services/orders';
 import { ordersToTransportOrders } from '@/lib/mappers/order-to-transport-order';
-import { mockOrders as fallbackMockOrders } from '@/lib/mock-data/route-planner';
+import { useEntityCache } from '@/contexts/entity-cache-context';
 
 interface UseRoutePlannerOrdersOptions {
   /** Si true, incluye mock data del route planner como fallback cuando no hay órdenes reales */
@@ -59,6 +59,9 @@ export function useRoutePlannerOrders(
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // EntityCache para hidratar customer_name cuando el backend no lo envía
+  const { getCustomerName } = useEntityCache();
+
   /**
    * Carga órdenes planificables desde el servicio
    */
@@ -67,10 +70,11 @@ export function useRoutePlannerOrders(
     setError(null);
 
     try {
-      // Traer órdenes en estados planificables con una página grande
+      // Traer muchas órdenes; el mapper ya filtra por status planificable
+      // (draft|pending|assigned) client-side. Enviar status como array al
+      // backend no siempre funciona, así que filtramos después.
       const response = await orderService.getOrders({
-        status: ['draft', 'pending', 'assigned'],
-        pageSize: 500, // Traer suficientes para planificación
+        pageSize: 200,
         page: 1,
         ...filters,
       });
@@ -91,23 +95,21 @@ export function useRoutePlannerOrders(
   }, [fetchOrders]);
 
   /**
-   * Órdenes convertidas al formato TransportOrder
+   * Órdenes convertidas al formato TransportOrder.
+   * Pasamos el resolver del cache para que los nombres de clientes se hidraten
+   * aunque el backend no los haya enviado en el payload de la orden.
    */
   const convertedOrders = useMemo(() => {
-    return ordersToTransportOrders(realOrders);
-  }, [realOrders]);
+    return ordersToTransportOrders(realOrders, { getCustomerName });
+  }, [realOrders, getCustomerName]);
 
   /**
-   * Si no hay órdenes reales convertidas y se permite fallback, usar mock data
+   * Mock fallback eliminado el 2026-05-02. Si no hay órdenes reales, retornar
+   * lista vacía. La UI debe mostrar empty state.
    */
-  const usingFallback = convertedOrders.length === 0 && includeFallbackMocks;
+  const usingFallback = false;
 
-  const orders = useMemo(() => {
-    if (usingFallback) {
-      return fallbackMockOrders;
-    }
-    return convertedOrders;
-  }, [convertedOrders, usingFallback]);
+  const orders = useMemo(() => convertedOrders, [convertedOrders]);
 
   return {
     orders,

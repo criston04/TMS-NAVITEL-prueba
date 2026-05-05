@@ -1,0 +1,21 @@
+meta {
+  name: Breakdowns
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/maintenance/breakdowns
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /maintenance/breakdowns
+
+  Averias reportadas. Envelope `{data: []}`.
+}

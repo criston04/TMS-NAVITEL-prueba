@@ -1,0 +1,23 @@
+meta {
+  name: Delete driver
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/master/drivers/{{lastDriverId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # DELETE /master/drivers/:id
+
+  Soft-delete. Backend responde 200 con `{"message":"Driver terminated successfully"}`.
+
+  Despues de esto el driver queda con `deleted_at` poblado y ya no aparece en el listado.
+}

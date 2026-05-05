@@ -81,6 +81,14 @@ export function HistoricalMap({
   useEffect(() => {
     if (!mapContainerRef.current || isInitializingRef.current || mapRef.current) return;
 
+    // 2026-05-03 (UI bug fix): si la ruta no tiene puntos GPS validos, NO
+    // inicializar el mapa. Antes `L.latLngBounds([]).getCenter()` retornaba
+    // un objeto con lat/lng undefined y crashebamos en `[center.lat, center.lng]`.
+    if (routeCoords.length === 0) {
+      console.warn("[HistoricalMap] route.points esta vacio, no inicializo mapa.");
+      return;
+    }
+
     isInitializingRef.current = true;
 
     const initMap = async () => {
@@ -98,9 +106,12 @@ export function HistoricalMap({
         return;
       }
 
-      // Calcular centro de la ruta
+      // Calcular centro de la ruta. Doble guard por defensa: si los bounds
+      // son invalidos, fallback a Lima.
       const bounds = L.latLngBounds(routeCoords);
-      const center = bounds.getCenter();
+      const center = bounds.isValid()
+        ? bounds.getCenter()
+        : { lat: -12.0464, lng: -77.0428 };  // Lima como fallback.
 
       const map = L.map(container, {
         center: [center.lat, center.lng],
@@ -306,13 +317,13 @@ export function HistoricalMap({
           </div>
           <div className="space-y-1 text-xs text-muted-foreground">
             <p className="font-mono text-foreground">
-              {displayPoint.lat.toFixed(6)}, {displayPoint.lng.toFixed(6)}
+              {(displayPoint.lat ?? 0).toFixed(6)}, {(displayPoint.lng ?? 0).toFixed(6)}
             </p>
             <p className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {formatTime(displayPoint.timestamp)}
+              {displayPoint.timestamp ? formatTime(displayPoint.timestamp) : "Sin hora"}
             </p>
-            <p className="text-foreground font-semibold">{displayPoint.speed} km/h</p>
+            <p className="text-foreground font-semibold">{displayPoint.speed ?? 0} km/h</p>
           </div>
           {/* Botón Street View */}
           <a

@@ -1,0 +1,199 @@
+meta {
+  name: Create operator
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/master/operators
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "code": "OP-001",
+    "name": "Logística del Norte SAC",
+    "business_name": "Logística del Norte SAC",
+    "trade_name": "TLima",
+    "type": "carrier",
+    "document_type": "RUC",
+    "document_number": "20100100100",
+    "ruc": "20100100100",
+    "contact_name": "Carlos Rojas",
+    "email": "ops@lognorte.pe",
+    "phone": "+51 1 4446666",
+    "address": "Av. Faucett 789, Callao",
+    "fiscal_address": "Av. Faucett 789, Callao",
+    "city": "Callao",
+    "country": "PE",
+    "status": "active",
+    "contract_start_date": "2026-01-01",
+    "contract_end_date": "2026-12-31",
+    "notes": "Operador principal zona norte",
+    "contacts": [
+      {
+        "id": "ct-op-001",
+        "name": "Carlos Rojas",
+        "position": "Gerente General",
+        "email": "carlos.rojas@lognorte.pe",
+        "phone": "+51 999 100 200",
+        "is_primary": true
+      },
+      {
+        "id": "ct-op-002",
+        "name": "Ana Quispe",
+        "position": "Coordinadora de Operaciones",
+        "email": "ana.quispe@lognorte.pe",
+        "phone": "+51 999 200 300",
+        "is_primary": false
+      }
+    ],
+    "checklist": {
+      "items": [
+        { "id": "chk-1", "label": "RUC verificado en SUNAT", "checked": true, "date": "2026-04-15" },
+        { "id": "chk-2", "label": "Contrato firmado", "checked": true, "date": "2026-01-01" },
+        { "id": "chk-3", "label": "SOAT vigente flota completa", "checked": false }
+      ],
+      "is_complete": false,
+      "last_updated": "2026-04-30T00:00:00Z"
+    },
+    "documents": [
+      {
+        "id": "doc-op-1",
+        "name": "Ficha RUC SUNAT",
+        "is_required": true,
+        "status": "valid",
+        "expiration_date": "2026-12-31",
+        "file_url": "https://storage.test/ruc-lognorte.pdf"
+      },
+      {
+        "id": "doc-op-2",
+        "name": "Contrato de servicios",
+        "is_required": true,
+        "status": "valid",
+        "expiration_date": "2026-12-31",
+        "file_url": "https://storage.test/contrato-lognorte.pdf"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastOperatorId", id);
+
+  // Espejo de mapOperatorToBackend()
+  const sent = {
+    code: "OP-001",
+    name: "Logística del Norte SAC",
+    business_name: "Logística del Norte SAC",
+    trade_name: "TLima",
+    type: "carrier",
+    document_type: "RUC",
+    document_number: "20100100100",
+    ruc: "20100100100",
+    contact_name: "Carlos Rojas",
+    email: "ops@lognorte.pe",
+    phone: "+51 1 4446666",
+    address: "Av. Faucett 789, Callao",
+    fiscal_address: "Av. Faucett 789, Callao",
+    city: "Callao",
+    country: "PE",
+    status: "active",
+    contract_start_date: "2026-01-01",
+    contract_end_date: "2026-12-31",
+    notes: "Operador principal zona norte",
+  };
+
+  function valueMatches(expected, got) {
+    if (got === null || got === undefined) return false;
+    if (typeof expected === "string" && typeof got === "string" && got.startsWith(expected)) return true;
+    return got === expected;
+  }
+
+  console.log("===================================================");
+  console.log("           VERIFICACION CREATE OPERATOR            ");
+  console.log("===================================================");
+  console.log("operator id:", id);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ---");
+
+  const ok = [], lost = [], mismatched = [];
+  for (const key of Object.keys(sent)) {
+    const expected = sent[key];
+    const got = obj[key];
+    if (got === null || got === undefined) {
+      lost.push(key);
+      console.log("  ❌", key.padEnd(24), "PERDIDO — env:", JSON.stringify(expected));
+    } else if (valueMatches(expected, got)) {
+      ok.push(key);
+      console.log("  ✅", key.padEnd(24), JSON.stringify(got));
+    } else {
+      mismatched.push(key);
+      console.log("  ⚠️ ", key.padEnd(24), "DIFIERE — env:", JSON.stringify(expected), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- SUB-OBJETOS (necesitan endpoints separados según backend) ---");
+  console.log("  contacts[]:        ", Array.isArray(obj.contacts) && obj.contacts.length > 0 ? "✅ persistido (" + obj.contacts.length + ")" : "❌ DESCARTADO");
+  console.log("  checklist{}:       ", obj.checklist ? "✅ persistido" : "❌ DESCARTADO");
+  console.log("  documents[]:       ", Array.isArray(obj.documents) && obj.documents.length > 0 ? "✅ persistido (" + obj.documents.length + ")" : "❌ DESCARTADO");
+
+  console.log("");
+  console.log("--- CAMPOS EXTRA QUE AGREGA EL BACKEND ---");
+  const expectedKeys = new Set([...Object.keys(sent), "id", "contacts", "checklist", "documents"]);
+  const extras = Object.keys(obj).filter(k => !expectedKeys.has(k));
+  for (const k of extras) {
+    console.log("  +", k.padEnd(28), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("");
+  console.log("==================== RESUMEN ====================");
+  console.log("  OK:        ", String(ok.length).padEnd(3));
+  console.log("  PERDIDOS:  ", String(lost.length).padEnd(3), lost.length ? "→ " + lost.join(", ") : "");
+  console.log("  DIFIERE:   ", String(mismatched.length).padEnd(3), mismatched.length ? "→ " + mismatched.join(", ") : "");
+  console.log("  EXTRA BE:  ", String(extras.length).padEnd(3));
+  console.log("===================================================");
+}
+
+docs {
+  # POST /master/operators — payload IDÉNTICO al que produce el frontend hoy
+
+  Refleja `mapOperatorToBackend()` tras los fixes de 2026-04-30:
+  - Ahora se deriva `contact_name` plano del contacto primary del array
+    (la doc v3 del backend lo lista como campo plano del POST).
+  - Mantenemos los aliases legacy: `business_name` (alias de `name`),
+    `ruc` (alias de `document_number`), `fiscal_address` (alias de `address`).
+
+  ## Lo que el backend persiste
+  - Planos canónicos: `code, name, trade_name, type, document_type/number,
+    contact_name, email, phone, address, city, country, status,
+    contract_start_date, contract_end_date, notes`
+  - El backend duplica internamente `document_number → ruc` y `address → fiscal_address`
+
+  ## ⚠ Sub-objetos: el backend espera endpoints separados
+  La doc del backend lista:
+  - `POST /master/operators/:id/contacts` (uno a la vez)
+  - `POST /master/operators/:id/documents` (uno a la vez)
+  - `PUT /master/operators/:id/checklist` (todo el checklist de una)
+
+  Hoy el frontend solo hace el POST básico. El flujo correcto sería:
+  1. POST `/master/operators` → obtener `id`
+  2. Por cada contacto del form → POST `/operators/:id/contacts`
+  3. Por cada documento → POST `/operators/:id/documents`
+  4. Para checklist → PUT `/operators/:id/checklist`
+}

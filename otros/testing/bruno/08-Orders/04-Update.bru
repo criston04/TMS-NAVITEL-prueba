@@ -1,0 +1,117 @@
+meta {
+  name: Update order (PATCH)
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{lastOrderId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "priority": "high",
+    "status": "confirmed",
+    "type": "distribucion",
+    "service_type": "distribucion",
+    "customer_id": "{{lastCustomerId}}",
+    "customer_name": "Cliente Bruno SA",
+    "vehicle_id": "{{lastVehicleId}}",
+    "vehicle_plate": "ABC-C7U",
+    "driver_id": "{{lastDriverId}}",
+    "driver_name": "Jose Rolando Camarena Meza",
+    "route_id": null,
+    "workflow_id": "{{lastWorkflowId}}",
+    "estimated_distance_km": 14,
+    "origin_address": "Almacén Lima Centro",
+    "origin_lat": -12.0464,
+    "origin_lng": -77.0428,
+    "origin_geofence_id": "{{lastGeofenceId}}",
+    "destination_address": "Cliente Bruno SA, Av. Bruno 123",
+    "destination_lat": -12.0837,
+    "destination_lng": -77.0442,
+    "destination_geofence_id": "",
+    "scheduled_pickup_at": "2026-04-22T07:30:00.000Z",
+    "scheduled_delivery_at": "2026-04-22T13:30:00.000Z",
+    "scheduled_start_date": "2026-04-22T07:30:00.000Z",
+    "scheduled_end_date": "2026-04-22T13:30:00.000Z",
+    "total_weight": 1500,
+    "total_volume": 6,
+    "total_packages": 12,
+    "reference": "REF-BRUNO-001-UPDATED",
+    "external_reference": "EXT-BRUNO-001-UPDATED",
+    "notes": "Orden ACTUALIZADA desde Bruno — prioridad subida.",
+    "internal_notes": "Prioridad alta por requerimiento del cliente.",
+    "tags": ["bruno", "prueba", "alta-prioridad"],
+    "cargo": {
+      "description": "Pallets de producto seco (ampliado)",
+      "type": "general",
+      "weight_kg": 1500,
+      "volume_m3": 6,
+      "quantity": 12,
+      "declared_value": 35000,
+      "temperature_controlled": false,
+      "handling_instructions": "Apilable hasta 3 niveles. Prioridad alta."
+    },
+    "milestones": [
+      {
+        "type": "origin",
+        "sequence": 1,
+        "geofence_id": "{{lastGeofenceId}}",
+        "geofence_name": "Almacén Lima Centro",
+        "address": "Almacén Lima Centro",
+        "coordinates": { "lat": -12.0464, "lng": -77.0428 },
+        "estimated_arrival": "2026-04-22T07:30:00.000Z",
+        "estimated_departure": "2026-04-22T08:00:00.000Z",
+        "notes": "Carga en muelle 3 (prioridad alta).",
+        "contact": {
+          "name": "Supervisor Almacén",
+          "phone": "+51 999 000 111",
+          "email": "almacen@brunocorp.test"
+        }
+      },
+      {
+        "type": "destination",
+        "sequence": 2,
+        "geofence_id": "",
+        "geofence_name": "Cliente Bruno SA",
+        "address": "Cliente Bruno SA, Av. Bruno 123",
+        "coordinates": { "lat": -12.0837, "lng": -77.0442 },
+        "estimated_arrival": "2026-04-22T13:30:00.000Z",
+        "estimated_departure": "2026-04-22T14:00:00.000Z",
+        "notes": "Entrega urgente en recepción.",
+        "contact": {
+          "name": "María Pérez",
+          "phone": "+51 999 111 222",
+          "email": "maria.perez@brunocorp.test"
+        }
+      }
+    ]
+  }
+}
+
+docs {
+  # PATCH /orders/:id — Actualizar parcial
+
+  El backend soporta actualizaciones parciales (COALESCE update segun Excel).
+  Solo mandamos los campos que queremos cambiar.
+
+  ## Verificaciones
+
+  Después del PATCH, ejecutar `03-GetById` para verificar:
+  - `priority` cambió a "high"
+  - `notes` actualizado
+  - `total_weight` ahora 1500
+  - `reference` actualizada
+  - El resto de campos (customer_id, origin_*, etc.) sigue igual
+}

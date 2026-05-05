@@ -1,0 +1,24 @@
+meta {
+  name: Settings base
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/settings
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /settings
+
+  Configuracion general del tenant. Envelope extrano: `{data: {}, items: []}` (shape mixto).
+
+  Probablemente stub — backend todavia no tiene implementacion real, solo devuelve
+  estructura vacia.
+}

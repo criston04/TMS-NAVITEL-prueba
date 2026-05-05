@@ -1,0 +1,49 @@
+meta {
+  name: Update operator
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/master/operators/{{lastOperatorId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "code": "OP-001",
+    "name": "Logística del Norte SAC ACTUALIZADO",
+    "trade_name": "TLima",
+    "type": "carrier",
+    "document_type": "RUC",
+    "document_number": "20100100100",
+    "email": "ops-updated@lognorte.pe",
+    "phone": "+51 1 4446677",
+    "address": "Av. Faucett 1010, Callao",
+    "city": "Callao",
+    "country": "PE",
+    "contract_start_date": "2026-01-01",
+    "contract_end_date": "2027-12-31",
+    "notes": "Operador actualizado — contrato extendido."
+  }
+}
+
+docs {
+  # PUT /master/operators/:id (actualizado a v3 Rev3 — 2026-04-27)
+
+  Partial update con shape v3 Rev3 plano: `name`, `trade_name`, `type:"carrier"`,
+  `document_type`, `document_number`, `address`, `city`, `country`, `contract_start_date`,
+  `contract_end_date`.
+
+  Workarounds para endpoints que probablemente no existen:
+  - Change status: usar PUT con `"status": "active|blocked|pending"` si /status no existe.
+}

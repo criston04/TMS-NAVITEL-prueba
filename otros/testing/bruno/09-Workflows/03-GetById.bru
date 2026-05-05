@@ -1,0 +1,23 @@
+meta {
+  name: Get workflow by id
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/workflows/{{lastWorkflowId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /workflows/:id
+
+  Devuelve `{data: {...}}` con el workflow completo + `recentExecutions: []`.
+
+  Aqui `actions` viene como array parseado (a diferencia del POST que lo devuelve string JSON).
+}

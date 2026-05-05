@@ -7,7 +7,7 @@
  * Permite crear órdenes posteriores a partir de eventos registrados.
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AlertModal } from '@/components/ui/alert-modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { CreateOrderModal } from '@/components/bitacora/create-order-modal';
@@ -15,7 +15,10 @@ import { AssignToOrderModal } from '@/components/bitacora/assign-to-order-modal'
 import { AddNotesModal } from '@/components/bitacora/add-notes-modal';
 import { ViewOnMapModal } from '@/components/bitacora/view-on-map-modal';
 import { EntryDetailModal } from '@/components/bitacora/entry-detail-modal';
-import { mockOrders } from '@/mocks/orders/orders.mock';
+import { orderService } from '@/services/orders';
+import { bitacoraService } from '@/services/bitacora.service';
+import { isBackendNotImplemented } from '@/services/missing-endpoint-helper';
+import type { Order } from '@/types/order';
 import {
   LogIn,
   LogOut,
@@ -144,20 +147,22 @@ function BitacoraRow({
   onViewDetails: (id: string) => void;
   onDiscard: (id: string) => void;
 }) {
-  const eventConfig = EVENT_TYPE_CONFIG[entry.eventType];
-  const statusConfig = STATUS_CONFIG[entry.status];
-  const severityConfig = SEVERITY_CONFIG[entry.severity];
+  // 2026-05-03 (UI bug fix): el backend puede devolver eventType="" o
+  // status/severity desconocidos. Caemos a defaults seguros para que el
+  // componente nunca crashee tratando de leer .icon/.color de undefined.
+  const eventConfig = EVENT_TYPE_CONFIG[entry.eventType] ?? EVENT_TYPE_CONFIG.entry;
+  const statusConfig = STATUS_CONFIG[entry.status] ?? STATUS_CONFIG.active;
+  const severityConfig = SEVERITY_CONFIG[entry.severity] ?? SEVERITY_CONFIG.low;
   const EventIcon = eventConfig.icon;
   const StatusIcon = statusConfig.icon;
 
-  const time = new Date(entry.startTimestamp).toLocaleTimeString('es-PE', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  const date = new Date(entry.startTimestamp).toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'short',
-  });
+  const startDate = entry.startTimestamp ? new Date(entry.startTimestamp) : null;
+  const time = startDate && !isNaN(startDate.getTime())
+    ? startDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
+    : '—';
+  const date = startDate && !isNaN(startDate.getTime())
+    ? startDate.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })
+    : '—';
 
   return (
     <div className={cn(
@@ -243,9 +248,11 @@ function BitacoraRow({
               <div>
                 <div className="font-medium text-gray-700 dark:text-gray-300">Ubicación</div>
                 <div className="text-xs text-muted-foreground">{entry.address || 'Sin dirección'}</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">
-                  {entry.coordinates.lat.toFixed(5)}, {entry.coordinates.lng.toFixed(5)}
-                </div>
+                {entry.coordinates && typeof entry.coordinates.lat === 'number' && typeof entry.coordinates.lng === 'number' && (
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    {entry.coordinates.lat.toFixed(5)}, {entry.coordinates.lng.toFixed(5)}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -539,6 +546,16 @@ export function BitacoraView({
     open: false, title: '', description: '', variant: 'info',
   });
 
+  // Órdenes del backend real (para el modal "asignar a orden existente")
+  const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
+  useEffect(() => {
+    orderService.getOrders({ pageSize: 200 })
+      .then(resp => {
+        setAvailableOrders(resp.data ?? []);
+      })
+      .catch(err => console.warn("[BitacoraView] Error cargando órdenes:", err));
+  }, []);
+
   // Estado de modales de bitácora
   const [createOrderModal, setCreateOrderModal] = useState<{ open: boolean; entryId: string | null }>({ open: false, entryId: null });
   const [assignOrderModal, setAssignOrderModal] = useState<{ open: boolean; entryId: string | null }>({ open: false, entryId: null });
@@ -549,11 +566,23 @@ export function BitacoraView({
   const [reviewConfirm, setReviewConfirm] = useState<{ open: boolean; entryId: string | null }>({ open: false, entryId: null });
 
   // Entries mutables para actualizaciones locales (simula actualizaciones de API)
+  // 2026-05-03 (UI bug fix): el `useState(entries)` solo toma `entries` en el
+  // primer render. Como BitacoraView se carga vía `dynamic()` antes de que la
+  // page resuelva el fetch a /bitacora, el prop entra como [] y nunca se
+  // sincroniza, dejando "No se encontraron registros" aunque el backend
+  // devuelva data. Sincronizamos vía useEffect cuando cambia el prop.
   const [localEntries, setLocalEntries] = useState<BitacoraEntry[]>(entries);
+  useEffect(() => {
+    setLocalEntries(entries);
+  }, [entries]);
 
-  // Obtener lista de placas únicas
+  // Obtener lista de placas únicas (filtra nulos/vacíos para evitar crashes)
   const uniquePlates = useMemo(() => {
-    const plates = new Set(localEntries.map(e => e.vehiclePlate));
+    const plates = new Set(
+      localEntries
+        .map(e => e.vehiclePlate)
+        .filter((p): p is string => typeof p === 'string' && p.length > 0)
+    );
     return Array.from(plates).sort();
   }, [localEntries]);
 
@@ -566,7 +595,7 @@ export function BitacoraView({
       const q = search.toLowerCase();
       result = result.filter(
         (e) =>
-          e.vehiclePlate.toLowerCase().includes(q) ||
+          e.vehiclePlate?.toLowerCase().includes(q) ||
           e.driverName?.toLowerCase().includes(q) ||
           e.geofenceName?.toLowerCase().includes(q) ||
           e.address?.toLowerCase().includes(q) ||
@@ -643,31 +672,77 @@ export function BitacoraView({
     setCreateOrderModal({ open: true, entryId: id });
   }, []);
 
-  const handleCreateOrderConfirm = useCallback((data: {
+  const handleCreateOrderConfirm = useCallback(async (data: {
     entryId: string; priority: string; serviceType: string; notes: string; reference: string;
   }) => {
-    const orderNumber = `ORD-BIT-${Date.now().toString(36).toUpperCase()}`;
-    updateEntry(data.entryId, {
-      status: 'order_created' as const,
-      createdOrderId: `order-${Date.now()}`,
-      createdOrderNumber: orderNumber,
-      operatorNotes: data.notes || undefined,
-    });
-    setCreateOrderModal({ open: false, entryId: null });
-    showAlert('Orden creada exitosamente', `Se generó la orden ${orderNumber} a partir del evento de bitácora.`, 'success');
+    // 2026-05-03: cableado al backend real (POST /bitacora/:id/create-order).
+    // El service envuelve con `withMissingEndpointDetection` → si backend
+    // devuelve 404, mostramos alerta amarilla en vez de crash.
+    try {
+      const result = await bitacoraService.createOrderFromEntry(data.entryId, {
+        bitacoraEntryId: data.entryId,
+        notes: data.notes || undefined,
+        priority: (['low', 'medium', 'high', 'urgent'].includes(data.priority)
+          ? data.priority
+          : 'medium') as 'low' | 'medium' | 'high' | 'urgent',
+      });
+      // Sincronizar local con la respuesta real del backend
+      updateEntry(data.entryId, {
+        status: 'order_created' as const,
+        createdOrderId: result.orderId,
+        createdOrderNumber: result.entry.createdOrderNumber,
+        operatorNotes: data.notes || undefined,
+      });
+      setCreateOrderModal({ open: false, entryId: null });
+      showAlert(
+        'Orden creada exitosamente',
+        `Se generó la orden ${result.entry.createdOrderNumber ?? result.orderId} a partir del evento de bitácora.`,
+        'success'
+      );
+    } catch (err) {
+      setCreateOrderModal({ open: false, entryId: null });
+      if (isBackendNotImplemented(err)) {
+        showAlert(
+          'Función pendiente del backend',
+          'El endpoint POST /bitacora/:id/create-order aún no está implementado en producción. Comunícate con el equipo backend.',
+          'warning'
+        );
+      } else {
+        showAlert(
+          'Error al crear orden',
+          err instanceof Error ? err.message : 'Error desconocido al crear la orden.',
+          'error'
+        );
+      }
+    }
   }, [updateEntry, showAlert]);
 
   const handleAssignToOrder = useCallback((id: string) => {
     setAssignOrderModal({ open: true, entryId: id });
   }, []);
 
-  const handleAssignToOrderConfirm = useCallback((entryId: string, orderId: string, orderNumber: string) => {
-    updateEntry(entryId, {
-      relatedOrderId: orderId,
-      relatedOrderNumber: orderNumber,
-    });
-    setAssignOrderModal({ open: false, entryId: null });
-    showAlert('Evento asignado', `El evento ha sido vinculado a la orden ${orderNumber}.`, 'success');
+  const handleAssignToOrderConfirm = useCallback(async (entryId: string, orderId: string, orderNumber: string) => {
+    // 2026-05-03: cableado al backend real (PUT /bitacora/:id/assign-order).
+    try {
+      await bitacoraService.assignToOrder(entryId, orderId);
+      updateEntry(entryId, {
+        relatedOrderId: orderId,
+        relatedOrderNumber: orderNumber,
+      });
+      setAssignOrderModal({ open: false, entryId: null });
+      showAlert('Evento asignado', `El evento ha sido vinculado a la orden ${orderNumber}.`, 'success');
+    } catch (err) {
+      setAssignOrderModal({ open: false, entryId: null });
+      if (isBackendNotImplemented(err)) {
+        showAlert(
+          'Función pendiente del backend',
+          'El endpoint PUT /bitacora/:id/assign-order aún no está implementado en producción.',
+          'warning'
+        );
+      } else {
+        showAlert('Error al asignar', err instanceof Error ? err.message : 'Error desconocido.', 'error');
+      }
+    }
   }, [updateEntry, showAlert]);
 
   const handleViewOnMap = useCallback((id: string) => {
@@ -678,26 +753,55 @@ export function BitacoraView({
     setReviewConfirm({ open: true, entryId: id });
   }, []);
 
-  const handleMarkReviewedConfirm = useCallback(() => {
-    if (reviewConfirm.entryId) {
-      updateEntry(reviewConfirm.entryId, {
+  const handleMarkReviewedConfirm = useCallback(async () => {
+    const entryId = reviewConfirm.entryId;
+    setReviewConfirm({ open: false, entryId: null });
+    if (!entryId) return;
+    // 2026-05-03: cableado al backend real (PUT /bitacora/:id/review).
+    try {
+      await bitacoraService.reviewEntry(entryId, 'Operador TMS');
+      updateEntry(entryId, {
         status: 'reviewed' as const,
         reviewedBy: 'Operador TMS',
         reviewedAt: new Date().toISOString(),
       });
       showAlert('Estado actualizado', 'El evento ha sido marcado como revisado.', 'success');
+    } catch (err) {
+      if (isBackendNotImplemented(err)) {
+        showAlert(
+          'Función pendiente del backend',
+          'El endpoint PUT /bitacora/:id/review aún no está implementado en producción.',
+          'warning'
+        );
+      } else {
+        showAlert('Error al marcar como revisado', err instanceof Error ? err.message : 'Error desconocido.', 'error');
+      }
     }
-    setReviewConfirm({ open: false, entryId: null });
   }, [reviewConfirm.entryId, updateEntry, showAlert]);
 
   const handleAddNotes = useCallback((id: string) => {
     setAddNotesModal({ open: true, entryId: id });
   }, []);
 
-  const handleAddNotesConfirm = useCallback((entryId: string, notes: string) => {
-    updateEntry(entryId, { operatorNotes: notes });
-    setAddNotesModal({ open: false, entryId: null });
-    showAlert('Notas guardadas', 'Las notas del operador se han actualizado correctamente.', 'success');
+  const handleAddNotesConfirm = useCallback(async (entryId: string, notes: string) => {
+    // 2026-05-03: cableado al backend real (PUT /bitacora/:id/notes).
+    try {
+      await bitacoraService.updateNotes(entryId, notes);
+      updateEntry(entryId, { operatorNotes: notes });
+      setAddNotesModal({ open: false, entryId: null });
+      showAlert('Notas guardadas', 'Las notas del operador se han actualizado correctamente.', 'success');
+    } catch (err) {
+      setAddNotesModal({ open: false, entryId: null });
+      if (isBackendNotImplemented(err)) {
+        showAlert(
+          'Función pendiente del backend',
+          'El endpoint PUT /bitacora/:id/notes aún no está implementado en producción.',
+          'warning'
+        );
+      } else {
+        showAlert('Error al guardar notas', err instanceof Error ? err.message : 'Error desconocido.', 'error');
+      }
+    }
   }, [updateEntry, showAlert]);
 
   const handleViewDetails = useCallback((id: string) => {
@@ -708,12 +812,26 @@ export function BitacoraView({
     setDiscardConfirm({ open: true, entryId: id });
   }, []);
 
-  const handleDiscardConfirm = useCallback(() => {
-    if (discardConfirm.entryId) {
-      updateEntry(discardConfirm.entryId, { status: 'dismissed' as const });
-      showAlert('Evento descartado', 'El evento ha sido descartado correctamente.', 'warning');
-    }
+  const handleDiscardConfirm = useCallback(async () => {
+    const entryId = discardConfirm.entryId;
     setDiscardConfirm({ open: false, entryId: null });
+    if (!entryId) return;
+    // 2026-05-03: cableado al backend real (PUT /bitacora/:id/dismiss).
+    try {
+      await bitacoraService.dismissEntry(entryId);
+      updateEntry(entryId, { status: 'dismissed' as const });
+      showAlert('Evento descartado', 'El evento ha sido descartado correctamente.', 'warning');
+    } catch (err) {
+      if (isBackendNotImplemented(err)) {
+        showAlert(
+          'Función pendiente del backend',
+          'El endpoint PUT /bitacora/:id/dismiss aún no está implementado en producción.',
+          'warning'
+        );
+      } else {
+        showAlert('Error al descartar', err instanceof Error ? err.message : 'Error desconocido.', 'error');
+      }
+    }
   }, [discardConfirm.entryId, updateEntry, showAlert]);
 
   const activeFilterCount = [
@@ -1032,7 +1150,7 @@ export function BitacoraView({
           if (!open) setAssignOrderModal({ open: false, entryId: null });
         }}
         entry={assignOrderModal.entryId ? findEntry(assignOrderModal.entryId) : null}
-        orders={mockOrders}
+        orders={availableOrders}
         onConfirm={handleAssignToOrderConfirm}
       />
 

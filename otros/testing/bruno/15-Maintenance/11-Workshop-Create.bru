@@ -1,0 +1,104 @@
+meta {
+  name: Create workshop
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/maintenance/workshops
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Taller Central Lima",
+    "code": "TALLER-001",
+    "type": "external",
+    "contactPerson": "Roberto Quispe",
+    "phone": "+51 1 4445566",
+    "email": "contacto@tallercentral.pe",
+    "address": "Av. Argentina 1234, Callao",
+    "city": "Lima",
+    "specialties": ["engine", "brakes", "transmission", "electrical"],
+    "isActive": true,
+    "rating": 4.5,
+    "notes": "Taller principal autorizado para flota Volvo"
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastWorkshopId", id);
+
+  const sent = {
+    name: "Taller Central Lima",
+    code: "TALLER-001",
+    type: "external",
+    contactPerson: "Roberto Quispe",
+    phone: "+51 1 4445566",
+    email: "contacto@tallercentral.pe",
+    address: "Av. Argentina 1234, Callao",
+    city: "Lima",
+    specialties: ["engine", "brakes", "transmission", "electrical"],
+    isActive: true,
+    rating: 4.5,
+    notes: "Taller principal autorizado para flota Volvo",
+  };
+
+  console.log("===================================================");
+  console.log("           VERIFICACION CREATE WORKSHOP            ");
+  console.log("===================================================");
+  console.log("workshop id:", id);
+  console.log("");
+  for (const k of Object.keys(sent)) {
+    const altKey = k.replace(/[A-Z]/g, m => "_" + m.toLowerCase());
+    const got = obj[k] ?? obj[altKey];
+    if (got === null || got === undefined) {
+      console.log("  ❌", k.padEnd(18), "PERDIDO — env:", JSON.stringify(sent[k]));
+    } else if (Array.isArray(sent[k])) {
+      console.log("  ", Array.isArray(got) && JSON.stringify(got) === JSON.stringify(sent[k]) ? "✅" : "⚠️", k.padEnd(18), JSON.stringify(got));
+    } else {
+      console.log("  ", got === sent[k] ? "✅" : "⚠️", k.padEnd(18), JSON.stringify(got));
+    }
+  }
+  console.log("===================================================");
+}
+
+docs {
+  # POST /maintenance/workshops — alineado con type Workshop del frontend
+
+  ## Body shape (src/types/maintenance.ts línea 242)
+  ```typescript
+  {
+    name: string,
+    code: string,
+    type: WorkshopType,           // "internal" | "external"
+    contactPerson?: string,
+    phone?: string,
+    email?: string,
+    address?: string,
+    city?: string,
+    specialties: string[],
+    isActive: boolean,
+    rating?: number,
+    notes?: string,
+  }
+  ```
+
+  ## Cambio respecto a versión anterior
+  Antes solo se enviaba `name, code, city` (mínimo). Ahora se envía el shape
+  completo del frontend para verificar qué persiste el backend.
+}

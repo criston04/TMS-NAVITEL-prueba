@@ -24,7 +24,13 @@ export function SpeedSparkline({
   speedLimit,
   className,
 }: SpeedSparklineProps) {
-  if (speeds.length < 2) {
+  // Filtramos valores invalidos (NaN, undefined, null, Infinity) antes de calcular.
+  // Esto pasa cuando el backend devuelve velocidad=null para vehiculos sin reporte
+  // GPS reciente (ej: vehiculos detenidos o sin dispositivo). Sin este guard los
+  // calculos devuelven NaN y React pinta <circle cy="NaN"> rompiendo el SVG.
+  const validSpeeds = speeds.filter((s): s is number => Number.isFinite(s));
+
+  if (validSpeeds.length < 2) {
     return (
       <div
         className={cn("flex items-center justify-center", className)}
@@ -35,13 +41,13 @@ export function SpeedSparkline({
     );
   }
 
-  const maxSpeed = Math.max(...speeds, speedLimit ?? 0, 10);
+  const maxSpeed = Math.max(...validSpeeds, speedLimit ?? 0, 10);
   const padding = 1;
   const innerW = width - padding * 2;
   const innerH = height - padding * 2;
 
-  const points = speeds.map((speed, i) => {
-    const x = padding + (i / (speeds.length - 1)) * innerW;
+  const points = validSpeeds.map((speed, i) => {
+    const x = padding + (i / (validSpeeds.length - 1)) * innerW;
     const y = padding + innerH - (speed / maxSpeed) * innerH;
     return { x, y, speed };
   });
@@ -51,7 +57,7 @@ export function SpeedSparkline({
   // Fill path (area under curve)
   const fillD = `${pathD} L${points[points.length - 1].x.toFixed(1)},${height - padding} L${padding},${height - padding} Z`;
 
-  const currentSpeed = speeds[speeds.length - 1];
+  const currentSpeed = validSpeeds[validSpeeds.length - 1];
   const isOverSpeed = speedLimit ? currentSpeed > speedLimit : false;
   const strokeColor = isOverSpeed ? "#ef4444" : "#3b82f6";
   const fillColor = isOverSpeed ? "rgba(239,68,68,0.1)" : "rgba(59,130,246,0.1)";

@@ -1,0 +1,23 @@
+meta {
+  name: Stats
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/master/geofences/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /geofences/stats — Estadisticas
+
+  **Excel:** `Geofence | GET | /geofences/stats | Obtener geocerca estadisticas`
+
+  Devuelve totales por categoria, tipo, etc.
+}

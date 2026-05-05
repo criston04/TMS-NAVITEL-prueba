@@ -171,7 +171,10 @@ export function CustomerImportModal({
       const warnings: string[] = [];
 
       // Validar campos requeridos
-      if (!rowData.tipo || !["empresa", "persona"].includes(rowData.tipo.toLowerCase())) {
+      // El CSV de import sigue aceptando "empresa"/"persona" en español por
+      // compat con plantillas existentes — se traducen a company/person abajo.
+      const TIPO_VALIDOS = ["empresa", "persona", "company", "person"];
+      if (!rowData.tipo || !TIPO_VALIDOS.includes(rowData.tipo.toLowerCase())) {
         errors.push("Tipo debe ser 'empresa' o 'persona'");
       }
       if (!rowData.tipo_documento || !["RUC", "DNI", "CE", "PASSPORT"].includes(rowData.tipo_documento.toUpperCase())) {
@@ -216,8 +219,13 @@ export function CustomerImportModal({
         warnings.push("Sin categoría (se usará 'standard')");
       }
 
+      // Traducir tipo del CSV (español o inglés) al enum del backend (inglés).
+      const tipoLower = (rowData.tipo || "").toLowerCase();
+      const customerType: CustomerType =
+        tipoLower === "persona" || tipoLower === "person" ? "person" : "company";
+
       const customerData: Partial<CreateCustomerDTO> = {
-        type: (rowData.tipo?.toLowerCase() || "empresa") as CustomerType,
+        type: customerType,
         documentType: (rowData.tipo_documento?.toUpperCase() || "RUC") as DocumentType,
         documentNumber: rowData.numero_documento || "",
         name: rowData.nombre || "",

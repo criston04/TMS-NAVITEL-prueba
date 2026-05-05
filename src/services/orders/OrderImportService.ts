@@ -1,13 +1,11 @@
 import type {
-  Order,
   CreateOrderDTO,
   OrderImportRow,
   OrderImportResult,
   CargoType,
   OrderPriority,
 } from '@/types/order';
-import { orderService } from './OrderService';
-import { apiConfig, API_ENDPOINTS } from "@/config/api.config";
+import { API_ENDPOINTS } from "@/config/api.config";
 import { apiClient } from "@/lib/api";
 
 /**
@@ -78,22 +76,9 @@ const CARGO_TYPE_MAP: Record<string, CargoType> = {
 };
 
 /**
- * Simula latencia de red
- */
-const simulateDelay = (ms: number = 300): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-};
-
-/**
  * Clase de servicio para importación de órdenes
  */
 class OrderImportService {
-  private readonly useMocks: boolean;
-
-  constructor() {
-    this.useMocks = apiConfig.useMocks;
-  }
-
   /**
    * Valida el formato del archivo Excel
    * @param headers - Encabezados del archivo
@@ -292,8 +277,6 @@ class OrderImportService {
    * @returns Resultado de la previsualización
    */
   async preview(rows: ExcelRow[]): Promise<OrderImportResult> {
-    await simulateDelay(500);
-
     const parsedRows = rows.map((row, index) => this.parseRow(row, index + 2)); // +2 porque row 1 es header
 
     return {
@@ -318,44 +301,6 @@ class OrderImportService {
       skipWarnings?: boolean;
     } = {}
   ): Promise<OrderImportResult> {
-    if (this.useMocks) {
-      await simulateDelay(500);
-
-      const { skipInvalid = true, skipWarnings = false } = options;
-      const parsedRows = rows.map((row, index) => this.parseRow(row, index + 2));
-      const createdOrders: Order[] = [];
-
-      // Filtrar filas a procesar
-      let rowsToProcess = parsedRows;
-      if (skipInvalid) {
-        rowsToProcess = rowsToProcess.filter(r => r.status !== 'invalid');
-      }
-      if (skipWarnings) {
-        rowsToProcess = rowsToProcess.filter(r => r.status === 'valid');
-      }
-
-      // Crear órdenes
-      for (const row of rowsToProcess) {
-        if (row.status === 'invalid') continue;
-
-        try {
-          const order = await orderService.createOrder(row.data as CreateOrderDTO);
-          createdOrders.push(order);
-        } catch (error) {
-          row.errors.push(`Error al crear orden: ${(error as Error).message}`);
-          row.status = 'invalid';
-        }
-      }
-
-      return {
-        totalRows: parsedRows.length,
-        validRows: parsedRows.filter(r => r.status === 'valid').length,
-        errorRows: parsedRows.filter(r => r.status === 'invalid').length,
-        warningRows: parsedRows.filter(r => r.status === 'warning').length,
-        rows: parsedRows,
-        createdOrders,
-      };
-    }
     return apiClient.post<OrderImportResult>(`${API_ENDPOINTS.operations.orders}/import`, { rows, ...options });
   }
 
@@ -432,46 +377,22 @@ class OrderImportService {
   }
 
   /**
-   * Parsea un archivo Excel (simulado)
-   * @param _file - Archivo a parsear (no usado en mock)
-   * @returns Promesa con las filas parseadas
-   * @description En producción, usar librería como xlsx o exceljs
+   * Parsea un archivo Excel.
+   *
+   * Solo se invoca cuando el usuario hace click en "Importar Excel". El parseo
+   * client-side requiere `xlsx` (que se eliminó del bundle por peso). Mientras
+   * no se decida la solución (lazy import de xlsx, o subir a backend), lanzamos
+   * un error con mensaje claro para que el usuario sepa que la feature no está
+   * disponible aún.
+   *
+   * TODO: opciones de implementación:
+   *  (a) await import("xlsx") y parsear en cliente (~200 KB lazy).
+   *  (b) POST /orders/import-excel con multipart/form-data al backend.
    */
   async parseExcelFile(_file: File): Promise<ExcelRow[]> {
-    await simulateDelay(1000);
-
-    // En producción, aquí se usaría xlsx o exceljs
-    // Por ahora retornamos datos mock para demostración
-    console.warn('parseExcelFile: En producción, implementar con xlsx o exceljs');
-    
-    return [
-      {
-        cliente_id: 'cust-001',
-        cliente_nombre: 'Corporación Andina de Fomento',
-        transportista_id: 'car-001',
-        vehiculo_id: 'veh-001',
-        conductor_id: 'drv-001',
-        workflow_id: 'wf-1',
-        prioridad: 'normal',
-        carga_descripcion: 'Carga importada desde Excel',
-        carga_tipo: 'general',
-        carga_peso_kg: 5000,
-        carga_cantidad: 50,
-        carga_valor: 10000,
-        origen_nombre: 'Almacén Lima',
-        origen_direccion: 'Av. Argentina 1234',
-        origen_lat: -12.0464,
-        origen_lng: -77.0428,
-        destino_nombre: 'Centro Arequipa',
-        destino_direccion: 'Parque Industrial',
-        destino_lat: -16.409,
-        destino_lng: -71.5375,
-        fecha_inicio: new Date().toISOString(),
-        fecha_fin: new Date(Date.now() + 24 * 3600000).toISOString(),
-        referencia_externa: 'EXT-IMPORT-001',
-        notas: 'Importado desde Excel',
-      },
-    ];
+    throw new Error(
+      "La importación de Excel aún no está disponible. Por favor crea las órdenes manualmente."
+    );
   }
 }
 

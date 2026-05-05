@@ -1,0 +1,21 @@
+meta {
+  name: Summary by vehicles
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/bitacora/summary/vehicles
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /bitacora/summary/vehicles
+
+  Resumen agrupado por vehiculo. Envelope `{data: []}`.
+}

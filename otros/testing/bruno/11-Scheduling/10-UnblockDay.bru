@@ -1,0 +1,28 @@
+meta {
+  name: Unblock day (DELETE)
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{baseUrl}}/operations/scheduling/block-day/{{lastBlockedDayId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # DELETE /operations/scheduling/block-day/:id
+
+  Desbloquea un dia previamente bloqueado con `POST /block-day`.
+
+  **Ojo con el path:** DELETE usa singular (`/block-day/:id`), igual que el POST.
+  El GET plural (`/blocked-days`) solo lista.
+
+  Response: **204 No Content** (sin body).
+
+  **Requisito:** correr antes `06-BlockDay.bru` y capturar el id en `{{lastBlockedDayId}}`.
+}

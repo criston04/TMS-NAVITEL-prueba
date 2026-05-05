@@ -6,8 +6,23 @@ import {
   MedicalRestriction,
 } from "@/types/models/driver";
 
-import { apiConfig, API_ENDPOINTS } from "@/config/api.config";
+import { API_ENDPOINTS } from "@/config/api.config";
 import { apiClient } from "@/lib/api";
+
+/**
+ * ⚠️ MÓDULO PENDIENTE DE BACKEND (verificado 2026-05-03)
+ *
+ * Los endpoints `/master/medical-exams/*` NO están en el Excel oficial ni
+ * implementados en producción. Son una sub-entidad de Driver que el frontend
+ * espera tener pero el backend nunca planificó.
+ *
+ * El backend debe decidir:
+ *   - ¿Endpoints separados como espera el frontend?
+ *   - ¿O integrarlos en el detalle del Driver (GET /master/drivers/:id devuelve
+ *     `medicalExams[]`, `psychologicalExams[]`)?
+ *
+ * Ver `otros/docs-backend/...-medical-exams-...` para detalle del contrato.
+ */
 
 
 /**
@@ -71,89 +86,8 @@ export const COMMON_MEDICAL_RESTRICTIONS: MedicalRestriction[] = [
 ];
 
 
-const medicalExamsMock: MedicalExam[] = [
-  {
-    id: "med-001",
-    type: "periodic",
-    date: "2025-06-15",
-    expiryDate: "2026-06-15",
-    result: "approved",
-    restrictions: [],
-    clinicName: "Clínica San Pablo",
-    clinicRuc: "20100091896",
-    doctorName: "Dr. Carlos Mendoza",
-    doctorCmp: "012345",
-    certificateNumber: "MED-2025-001234",
-    fileUrl: "/documents/medical/med-001.pdf",
-    observations: "Conductor en óptimas condiciones de salud",
-    createdAt: "2025-06-15T10:00:00Z",
-  },
-  {
-    id: "med-002",
-    type: "pre_employment",
-    date: "2025-01-10",
-    expiryDate: "2026-01-10",
-    result: "conditional",
-    restrictions: [
-      { code: "R001", description: "Uso obligatorio de lentes correctivos", isTemporary: false, affectsDriving: true },
-    ],
-    clinicName: "Clínica Javier Prado",
-    clinicRuc: "20101090231",
-    doctorName: "Dra. María García",
-    doctorCmp: "023456",
-    certificateNumber: "MED-2025-000456",
-    fileUrl: "/documents/medical/med-002.pdf",
-    observations: "Requiere uso de lentes para conducir",
-    createdAt: "2025-01-10T09:30:00Z",
-  },
-];
-
-const psychologicalExamsMock: PsychologicalExam[] = [
-  {
-    id: "psy-001",
-    date: "2025-06-15",
-    expiryDate: "2026-06-15",
-    result: "approved",
-    centerName: "Centro de Evaluación Psicológica CEPP",
-    psychologistName: "Lic. Ana Torres",
-    psychologistLicense: "CPP-12345",
-    certificateNumber: "PSY-2025-001234",
-    profile: {
-      stressLevel: "low",
-      reactionTime: "normal",
-      attentionLevel: "excellent",
-      pressureHandling: "good",
-      additionalNotes: "Perfil apto para conducción de carga pesada",
-    },
-    fileUrl: "/documents/psychological/psy-001.pdf",
-    observations: "Conductor con perfil psicológico óptimo",
-    createdAt: "2025-06-15T14:00:00Z",
-  },
-];
-
-
 class MedicalExamsService {
-  private readonly useMocks: boolean;
-  private medicalExams = [...medicalExamsMock];
-  private psychologicalExams = [...psychologicalExamsMock];
-
-  constructor() {
-    this.useMocks = apiConfig.useMocks;
-  }
-
-  /**
-   * Simula delay de red
-   */
-  private async simulateDelay(ms: number = 300): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Genera ID único
-   */
-  private generateId(prefix: string): string {
-    return `${prefix}-${Date.now().toString(36)}`;
-  }
+  constructor() {}
 
   /* --- EXÁMENES MÉDICOS --- */
 
@@ -161,25 +95,14 @@ class MedicalExamsService {
    * Obtiene todos los exámenes médicos de un conductor
    */
   async getMedicalExamsByDriver(driverId: string): Promise<MedicalExam[]> {
-    if (!this.useMocks) {
-      return apiClient.get<MedicalExam[]>(`${API_ENDPOINTS.master.medicalExams}/medical/by-driver/${driverId}`);
-    }
-
-    await this.simulateDelay();
-    // En mock, retornamos todos los exámenes (en producción se filtraría por driverId)
-    return this.medicalExams;
+    return apiClient.get<MedicalExam[]>(`${API_ENDPOINTS.master.medicalExams}/medical/by-driver/${driverId}`);
   }
 
   /**
    * Obtiene un examen médico por ID
    */
   async getMedicalExamById(id: string): Promise<MedicalExam | null> {
-    if (!this.useMocks) {
-      return apiClient.get<MedicalExam>(`${API_ENDPOINTS.master.medicalExams}/medical/${id}`);
-    }
-
-    await this.simulateDelay();
-    return this.medicalExams.find(e => e.id === id) || null;
+    return apiClient.get<MedicalExam>(`${API_ENDPOINTS.master.medicalExams}/medical/${id}`);
   }
 
   /**
@@ -189,20 +112,7 @@ class MedicalExamsService {
     driverId: string,
     data: Omit<MedicalExam, "id" | "createdAt">
   ): Promise<MedicalExam> {
-    if (!this.useMocks) {
-      return apiClient.post<MedicalExam>(`${API_ENDPOINTS.master.medicalExams}/medical`, { ...data, driverId });
-    }
-
-    await this.simulateDelay(500);
-    
-    const newExam: MedicalExam = {
-      ...data,
-      id: this.generateId("med"),
-      createdAt: new Date().toISOString(),
-    };
-
-    this.medicalExams.push(newExam);
-    return newExam;
+    return apiClient.post<MedicalExam>(`${API_ENDPOINTS.master.medicalExams}/medical`, { ...data, driverId });
   }
 
   /**
@@ -212,38 +122,14 @@ class MedicalExamsService {
     id: string,
     data: Partial<MedicalExam>
   ): Promise<MedicalExam> {
-    if (!this.useMocks) {
-      return apiClient.put<MedicalExam>(`${API_ENDPOINTS.master.medicalExams}/medical/${id}`, data);
-    }
-
-    await this.simulateDelay(400);
-    
-    const index = this.medicalExams.findIndex(e => e.id === id);
-    if (index === -1) {
-      throw new Error(`Examen médico con ID ${id} no encontrado`);
-    }
-
-    this.medicalExams[index] = { ...this.medicalExams[index], ...data };
-    return this.medicalExams[index];
+    return apiClient.put<MedicalExam>(`${API_ENDPOINTS.master.medicalExams}/medical/${id}`, data);
   }
 
   /**
    * Elimina un examen médico
    */
   async deleteMedicalExam(id: string): Promise<void> {
-    if (!this.useMocks) {
-      await apiClient.delete(`${API_ENDPOINTS.master.medicalExams}/medical/${id}`);
-      return;
-    }
-
-    await this.simulateDelay(300);
-    
-    const index = this.medicalExams.findIndex(e => e.id === id);
-    if (index === -1) {
-      throw new Error(`Examen médico con ID ${id} no encontrado`);
-    }
-
-    this.medicalExams.splice(index, 1);
+    await apiClient.delete(`${API_ENDPOINTS.master.medicalExams}/medical/${id}`);
   }
 
   /* --- EXÁMENES PSICOLÓGICOS --- */
@@ -252,24 +138,14 @@ class MedicalExamsService {
    * Obtiene todos los exámenes psicológicos de un conductor
    */
   async getPsychologicalExamsByDriver(driverId: string): Promise<PsychologicalExam[]> {
-    if (!this.useMocks) {
-      return apiClient.get<PsychologicalExam[]>(`${API_ENDPOINTS.master.medicalExams}/psychological/by-driver/${driverId}`);
-    }
-
-    await this.simulateDelay();
-    return this.psychologicalExams;
+    return apiClient.get<PsychologicalExam[]>(`${API_ENDPOINTS.master.medicalExams}/psychological/by-driver/${driverId}`);
   }
 
   /**
    * Obtiene un examen psicológico por ID
    */
   async getPsychologicalExamById(id: string): Promise<PsychologicalExam | null> {
-    if (!this.useMocks) {
-      return apiClient.get<PsychologicalExam>(`${API_ENDPOINTS.master.medicalExams}/psychological/${id}`);
-    }
-
-    await this.simulateDelay();
-    return this.psychologicalExams.find(e => e.id === id) || null;
+    return apiClient.get<PsychologicalExam>(`${API_ENDPOINTS.master.medicalExams}/psychological/${id}`);
   }
 
   /**
@@ -279,20 +155,7 @@ class MedicalExamsService {
     driverId: string,
     data: Omit<PsychologicalExam, "id" | "createdAt">
   ): Promise<PsychologicalExam> {
-    if (!this.useMocks) {
-      return apiClient.post<PsychologicalExam>(`${API_ENDPOINTS.master.medicalExams}/psychological`, { ...data, driverId });
-    }
-
-    await this.simulateDelay(500);
-    
-    const newExam: PsychologicalExam = {
-      ...data,
-      id: this.generateId("psy"),
-      createdAt: new Date().toISOString(),
-    };
-
-    this.psychologicalExams.push(newExam);
-    return newExam;
+    return apiClient.post<PsychologicalExam>(`${API_ENDPOINTS.master.medicalExams}/psychological`, { ...data, driverId });
   }
 
   /**
@@ -302,38 +165,14 @@ class MedicalExamsService {
     id: string,
     data: Partial<PsychologicalExam>
   ): Promise<PsychologicalExam> {
-    if (!this.useMocks) {
-      return apiClient.put<PsychologicalExam>(`${API_ENDPOINTS.master.medicalExams}/psychological/${id}`, data);
-    }
-
-    await this.simulateDelay(400);
-    
-    const index = this.psychologicalExams.findIndex(e => e.id === id);
-    if (index === -1) {
-      throw new Error(`Examen psicológico con ID ${id} no encontrado`);
-    }
-
-    this.psychologicalExams[index] = { ...this.psychologicalExams[index], ...data };
-    return this.psychologicalExams[index];
+    return apiClient.put<PsychologicalExam>(`${API_ENDPOINTS.master.medicalExams}/psychological/${id}`, data);
   }
 
   /**
    * Elimina un examen psicológico
    */
   async deletePsychologicalExam(id: string): Promise<void> {
-    if (!this.useMocks) {
-      await apiClient.delete(`${API_ENDPOINTS.master.medicalExams}/psychological/${id}`);
-      return;
-    }
-
-    await this.simulateDelay(300);
-    
-    const index = this.psychologicalExams.findIndex(e => e.id === id);
-    if (index === -1) {
-      throw new Error(`Examen psicológico con ID ${id} no encontrado`);
-    }
-
-    this.psychologicalExams.splice(index, 1);
+    await apiClient.delete(`${API_ENDPOINTS.master.medicalExams}/psychological/${id}`);
   }
 
   /* --- ESTADÍSTICAS Y ALERTAS --- */
@@ -342,32 +181,26 @@ class MedicalExamsService {
    * Obtiene estadísticas de exámenes
    */
   async getExamStats(): Promise<ExamStats> {
-    if (!this.useMocks) {
-      return apiClient.get<ExamStats>(`${API_ENDPOINTS.master.medicalExams}/stats`);
+    // BUG #1 backend: /stats devuelve 404 porque el router resuelve /:id antes.
+    // Adicionalmente /master/medical-exams puede no estar implementado todavía.
+    try {
+      return await apiClient.get<ExamStats>(`${API_ENDPOINTS.master.medicalExams}/stats`);
+    } catch (err) {
+      if ((err as { status?: number })?.status === 404) {
+        console.warn("[medicalExamsService.getExamStats] backend 404. Retornando stats vacios.");
+        return {
+          totalMedical: 0,
+          totalPsychological: 0,
+          approvedMedical: 0,
+          approvedPsychological: 0,
+          expiringSoonMedical: 0,
+          expiringSoonPsychological: 0,
+          expiredMedical: 0,
+          expiredPsychological: 0,
+        };
+      }
+      throw err;
     }
-
-    await this.simulateDelay();
-    
-    const today = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
-    return {
-      totalMedical: this.medicalExams.length,
-      totalPsychological: this.psychologicalExams.length,
-      approvedMedical: this.medicalExams.filter(e => e.result === "approved").length,
-      approvedPsychological: this.psychologicalExams.filter(e => e.result === "approved").length,
-      expiringSoonMedical: this.medicalExams.filter(e => {
-        const expiry = new Date(e.expiryDate);
-        return expiry > today && expiry <= thirtyDaysFromNow;
-      }).length,
-      expiringSoonPsychological: this.psychologicalExams.filter(e => {
-        const expiry = new Date(e.expiryDate);
-        return expiry > today && expiry <= thirtyDaysFromNow;
-      }).length,
-      expiredMedical: this.medicalExams.filter(e => new Date(e.expiryDate) <= today).length,
-      expiredPsychological: this.psychologicalExams.filter(e => new Date(e.expiryDate) <= today).length,
-    };
   }
 
   /**
@@ -377,26 +210,7 @@ class MedicalExamsService {
     medical: MedicalExam[];
     psychological: PsychologicalExam[];
   }> {
-    if (!this.useMocks) {
-      return apiClient.get<{ medical: MedicalExam[]; psychological: PsychologicalExam[] }>(`${API_ENDPOINTS.master.medicalExams}/expiring`, { params: daysAhead ? { daysAhead } : undefined });
-    }
-
-    await this.simulateDelay();
-    
-    const today = new Date();
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + daysAhead);
-
-    return {
-      medical: this.medicalExams.filter(e => {
-        const expiry = new Date(e.expiryDate);
-        return expiry > today && expiry <= futureDate;
-      }),
-      psychological: this.psychologicalExams.filter(e => {
-        const expiry = new Date(e.expiryDate);
-        return expiry > today && expiry <= futureDate;
-      }),
-    };
+    return apiClient.get<{ medical: MedicalExam[]; psychological: PsychologicalExam[] }>(`${API_ENDPOINTS.master.medicalExams}/expiring`, { params: daysAhead ? { daysAhead } : undefined });
   }
 
   /**
@@ -406,18 +220,7 @@ class MedicalExamsService {
     medical: MedicalExam[];
     psychological: PsychologicalExam[];
   }> {
-    if (!this.useMocks) {
-      return apiClient.get<{ medical: MedicalExam[]; psychological: PsychologicalExam[] }>(`${API_ENDPOINTS.master.medicalExams}/expired`);
-    }
-
-    await this.simulateDelay();
-    
-    const today = new Date();
-
-    return {
-      medical: this.medicalExams.filter(e => new Date(e.expiryDate) <= today),
-      psychological: this.psychologicalExams.filter(e => new Date(e.expiryDate) <= today),
-    };
+    return apiClient.get<{ medical: MedicalExam[]; psychological: PsychologicalExam[] }>(`${API_ENDPOINTS.master.medicalExams}/expired`);
   }
 
   /* --- VALIDACIONES --- */
@@ -432,68 +235,14 @@ class MedicalExamsService {
     psychologicalExpiry?: string;
     issues: string[];
   }> {
-    if (!this.useMocks) {
-      return apiClient.get<{ hasMedical: boolean; hasPsychological: boolean; medicalExpiry?: string; psychologicalExpiry?: string; issues: string[] }>(`${API_ENDPOINTS.master.medicalExams}/validate/${driverId}`);
-    }
-
-    await this.simulateDelay();
-    
-    const today = new Date();
-    const issues: string[] = [];
-
-    // Buscar examen médico vigente más reciente
-    const validMedical = this.medicalExams
-      .filter(e => new Date(e.expiryDate) > today && e.result === "approved")
-      .sort((a, b) => new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime())[0];
-
-    // Buscar examen psicológico vigente más reciente
-    const validPsychological = this.psychologicalExams
-      .filter(e => new Date(e.expiryDate) > today && e.result === "approved")
-      .sort((a, b) => new Date(b.expiryDate).getTime() - new Date(a.expiryDate).getTime())[0];
-
-    if (!validMedical) {
-      issues.push("Sin examen médico vigente aprobado");
-    }
-    if (!validPsychological) {
-      issues.push("Sin examen psicológico vigente aprobado");
-    }
-
-    return {
-      hasMedical: !!validMedical,
-      hasPsychological: !!validPsychological,
-      medicalExpiry: validMedical?.expiryDate,
-      psychologicalExpiry: validPsychological?.expiryDate,
-      issues,
-    };
+    return apiClient.get<{ hasMedical: boolean; hasPsychological: boolean; medicalExpiry?: string; psychologicalExpiry?: string; issues: string[] }>(`${API_ENDPOINTS.master.medicalExams}/validate/${driverId}`);
   }
 
   /**
    * Obtiene restricciones médicas activas de un conductor
    */
   async getActiveRestrictions(driverId: string): Promise<MedicalRestriction[]> {
-    if (!this.useMocks) {
-      return apiClient.get<MedicalRestriction[]>(`${API_ENDPOINTS.master.medicalExams}/restrictions/${driverId}`);
-    }
-
-    await this.simulateDelay();
-    
-    const today = new Date();
-    const validExams = this.medicalExams.filter(
-      e => new Date(e.expiryDate) > today
-    );
-
-    // Consolidar restricciones de todos los exámenes vigentes
-    const restrictions: MedicalRestriction[] = [];
-    for (const exam of validExams) {
-      for (const restriction of exam.restrictions) {
-        // Evitar duplicados
-        if (!restrictions.find(r => r.code === restriction.code)) {
-          restrictions.push(restriction);
-        }
-      }
-    }
-
-    return restrictions;
+    return apiClient.get<MedicalRestriction[]>(`${API_ENDPOINTS.master.medicalExams}/restrictions/${driverId}`);
   }
 
   /* --- CATÁLOGOS --- */

@@ -1,0 +1,32 @@
+meta {
+  name: Find by document
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/master/customers/find-by-document?documentNumber=20123458789
+  body: none
+  auth: bearer
+}
+
+params:query {
+  documentNumber: 20123458789
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/customers/find-by-document
+
+  **Excel:** `GET /api/v1/master/customers/find-by-document`
+  (con query param, no path param)
+
+  Buscar customer por numero de documento (RUC/DNI/CE).
+  Cambiar el `documentNumber` en el query por uno existente.
+
+  - 200 con el customer si existe
+  - 404 si no existe
+}

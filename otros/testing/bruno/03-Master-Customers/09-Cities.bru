@@ -1,0 +1,22 @@
+meta {
+  name: Cities
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/master/customers/cities
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/customers/cities
+  **Excel:** `GET /api/v1/master/customers/cities`
+  Devuelve lista de ciudades unicas de los customers.
+  Util para popular filtros dropdown.
+}

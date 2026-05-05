@@ -1,0 +1,47 @@
+meta {
+  name: Assign vehicle/driver/workflow (workaround via PATCH)
+  type: http
+  seq: 8
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{lastOrderId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "vehicle_id": "{{lastVehicleId}}",
+    "driver_id": "{{lastDriverId}}",
+    "workflow_id": "{{lastWorkflowId}}"
+  }
+}
+
+docs {
+  # Asignar recursos a una orden
+
+  **Backend NO tiene endpoints dedicados:**
+  - `POST /orders/:id/assign-vehicle` → 405
+  - `POST /orders/:id/assign-driver` → 405
+  - `POST /orders/:id/assign-workflow` → 404
+  - `PUT /orders/:id` → 405 (no acepta PUT en orders)
+
+  **Workaround:** usar `PATCH /orders/:id` con los FKs en el body.
+
+  Campos validos para asignar:
+  - `vehicle_id`   → asigna vehiculo
+  - `driver_id`    → asigna conductor
+  - `workflow_id`  → asigna workflow (si el backend lo persiste)
+  - `operator_id`  → asigna operador logistico
+
+  Backend responde 200 con el shape completo de la orden actualizada en `{data: {...}}`.
+}

@@ -1,0 +1,24 @@
+meta {
+  name: Delete customer
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/master/customers/{{lastCustomerId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # DELETE /master/customers/:id
+
+  **Excel:** `DELETE /api/v1/master/customers/:id | Eliminación lógica cliente`
+
+  Soft-delete (pone deleted_at, no elimina físicamente).
+  Ejecutar `01-List` después para confirmar que desapareció.
+}

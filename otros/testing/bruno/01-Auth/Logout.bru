@@ -1,0 +1,36 @@
+meta {
+  name: Logout
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{rootUrl}}/auth/logout
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {}
+}
+
+script:post-response {
+  bru.setEnvVar("authToken", "");
+  bru.setEnvVar("refreshToken", "");
+  console.log("[Logout] authToken y refreshToken limpiados");
+}
+
+docs {
+  # POST /auth/logout (actualizado a v3 Rev3 — 2026-04-27)
+
+  Endpoint SIN prefijo `/api/v1`. Body vacío `{}`.
+  Cierra la sesión y limpia `authToken` + `refreshToken` en las env vars.
+}

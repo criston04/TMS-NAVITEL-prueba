@@ -5,37 +5,23 @@ type Environment = "development" | "staging" | "production";
 interface ApiConfig {
   baseUrl: string;
   timeout: number;
-  useMocks: boolean;
 }
 
-/**
- * Determina si usar mocks basado en variables de entorno
- * NEXT_PUBLIC_USE_MOCKS=true fuerza mocks en cualquier entorno (útil para demos)
- */
-const shouldUseMocks = (envDefault: boolean): boolean => {
-  const forcesMocks = process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
-  const forcesApi = process.env.NEXT_PUBLIC_USE_MOCKS === 'false';
-  
-  if (forcesMocks) return true;
-  if (forcesApi) return false;
-  return envDefault;
-};
+/** URL real del backend TMS Navitel */
+const REAL_BACKEND_URL = "https://api-service.gruponavitel.com/api/v1";
 
 const configs: Record<Environment, ApiConfig> = {
   development: {
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api",
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || REAL_BACKEND_URL,
     timeout: 30000,
-    useMocks: shouldUseMocks(true), // Usar mocks en desarrollo por defecto
   },
   staging: {
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || "https://staging-api.navitel.com/api",
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || REAL_BACKEND_URL,
     timeout: 30000,
-    useMocks: shouldUseMocks(false),
   },
   production: {
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || "https://api.navitel.com/api",
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || REAL_BACKEND_URL,
     timeout: 15000,
-    useMocks: shouldUseMocks(true), // Usar mocks por defecto en producción para demo
   },
 };
 
@@ -50,12 +36,32 @@ export const apiConfig = configs[currentEnv];
  * Facilita agregar nuevos módulos sin modificar código existente (OCP)
  */
 export const API_ENDPOINTS = {
+  // ── DASHBOARD ────────────────────────
+  dashboard: {
+    stats: "/dashboard/stats",
+    vehiclesOverview: "/dashboard/vehicles/overview",
+    shipments: "/dashboard/shipments",
+    vehiclesOnRoute: "/dashboard/vehicles/on-route",
+  },
+
+  // ── BITACORA ─────────────────────────
+  bitacora: {
+    base: "/bitacora",
+    stats: "/bitacora/stats",
+    summaryVehicles: "/bitacora/summary/vehicles",
+    summaryGeofences: "/bitacora/summary/geofences",
+    export: "/bitacora/export",
+    geofenceBreaches: "/bitacora/geofence-breaches",
+  },
+
   // ── AUTH ──────────────────────────────
+  // El backend expone estos endpoints SIN prefijo /api/v1 (root del host).
+  // El apiClient los maneja vía rootUrl() para esquivar el namespace versionado.
   auth: {
     login: "/auth/login",
     logout: "/auth/logout",
-    refresh: "/auth/refresh",
-    me: "/auth/me",
+    refresh: "/auth/refresh",      // doc oficial Rev3 confirma su existencia
+    me: "/auth/me",                // ⚠ no documentado en Rev3 — verificar con backend
   },
 
   // ── MÓDULO MAESTRO ───────────────────
@@ -65,20 +71,28 @@ export const API_ENDPOINTS = {
     vehicles: "/master/vehicles",
     operators: "/master/operators",
     products: "/master/products",
-    geofences: "/master/geofences",
+    // CORREGIDO 2026-05-02 según Excel oficial backend:
+    //   - Geofences vive en ROOT (sin /api/v1) — service usa rootUrl()
+    // 2026-05-03: DISCREPANCIA Excel vs producción. Excel oficial dice
+    //   /api/v1/workflows pero producción solo responde en /api/v1/master/workflows
+    //   (probado: /api/v1/workflows da 404, /api/v1/master/workflows da 200).
+    //   Mantenemos /master/workflows hasta que el backend defina el path canónico.
+    geofences: "/geofences",                       // ⚠ Service usa rootUrl() — este path es solo referencial
     assignments: "/master/assignments",
     audit: "/master/audit",
-    maintenance: "/master/maintenance",
+    maintenance: "/maintenance",
     medicalExams: "/master/medical-exams",
-    workflows: "/master/workflows",
+    workflows: "/master/workflows",                // ⚠ DISCREPANCIA Excel/Backend (ver comentario arriba)
+    workflowDefinitions: "/master/workflows",      // backend NO expone /definitions
+    workflowExecutions: "/master/workflows",       // ejecuciones via /master/workflows/:id/executions
   },
 
   // ── MÓDULO OPERACIONES ───────────────
   operations: {
-    orders: "/operations/orders",
-    scheduling: "/operations/scheduling",
-    incidents: "/operations/incidents",
-    orderWorkflows: "/operations/order-workflows",
+    orders: "/orders",                            // Backend: /api/v1/orders (sin /operations)
+    scheduling: "/operations/scheduling",         // Backend SÍ usa /operations/scheduling
+    incidents: "/incidents",                      // ⚠ NO EXISTE en backend. Solo mocks.
+    orderWorkflows: "/master/workflows",          // ⚠ Mismo path que workflows (ver comentario arriba)
   },
 
   // ── MÓDULO MONITOREO ─────────────────
@@ -87,7 +101,7 @@ export const API_ENDPOINTS = {
     historical: "/monitoring/historical",
     retransmission: "/monitoring/retransmission",
     geofenceEvents: "/monitoring/geofence-events",
-    websocket: "/monitoring/ws",
+    websocket: "/monitoring/websocket", // Backend: /monitoring/websocket (no /ws)
   },
 
   // ── MÓDULO FINANZAS ──────────────────
@@ -100,18 +114,24 @@ export const API_ENDPOINTS = {
     aging: "/finance/aging",
     profitability: "/finance/profitability",
     cashFlow: "/finance/cash-flow",
-    customerSummary: "/finance/customers", // + /:customerId/summary
+    customerSummary: "/finance/clientes", // Backend usa español: /finance/clientes/:id/summary
   },
 
   // ── MÓDULO REPORTES ──────────────────
   reports: {
     definitions: "/reports/definitions",
     templates: "/reports/templates",
-    generated: "/reports/generated",
+    generated: "/reports/generated",                 // GET listado/detalle/status/download
+    generate: "/reports/generate",                   // POST para crear un reporte (verificado producción 2026-05-03)
     schedules: "/reports/schedules",
+    // Datos precalculados y stats - paths distintos en backend
+    dataOperational: "/reports/data/operational",
+    dataFinancial: "/reports/data/financial",
+    usageStats: "/reports/usage-stats",
   },
 
   // ── MÓDULO NOTIFICACIONES ────────────
+  // Doc oficial Rev3 confirma que el módulo está implementado.
   notifications: {
     base: "/notifications",
     preferences: "/notifications/preferences",
@@ -138,15 +158,15 @@ export const API_ENDPOINTS = {
     breakdowns: "/maintenance/breakdowns",
     alerts: "/maintenance/alerts",
     metrics: "/maintenance/metrics",
-    documents: "/maintenance/documents",
+    documents: "/maintenance/documents", // ⚠ NO EXISTE en backend. Solo mocks.
     settings: "/maintenance/settings",
   },
 
   // ── SERVICIO DE RUTAS ────────────────
   routing: {
-    calculate: "/routing/calculate",
-    optimize: "/routing/optimize",
-    geocode: "/routing/geocode",
+    calculate: "/route-planner/calculate",
+    optimize: "/route-planner/optimize",
+    geocode: "/route-planner/geocode",
   },
 } as const;
 

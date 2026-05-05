@@ -9,6 +9,7 @@ import type {
   IncidentStatistics,
 } from '@/types/incident';
 import { incidentService } from '@/services/orders';
+import { isBackendNotImplemented } from '@/services/missing-endpoint-helper';
 
 /**
  * Filtros para catálogo de incidencias
@@ -126,6 +127,12 @@ export function useIncidentCatalog(
       const data = await incidentService.getCatalogItems();
       setItems(data);
     } catch (err) {
+      // 2026-05-03 (issue B.1): el módulo /incidents NO está implementado en
+      // el backend. Mostramos catálogo vacío sin error visible.
+      if (isBackendNotImplemented(err)) {
+        setItems([]);
+        return;
+      }
       setError((err as Error).message);
     } finally {
       setIsLoading(false);
@@ -246,6 +253,12 @@ export function useOrderIncidents(orderId: string | null): UseOrderIncidentsResu
       setIncidents(incidentsData);
       setStatistics(statsData);
     } catch (err) {
+      // 2026-05-03 (issue B.1): backend de incidents no implementado.
+      if (isBackendNotImplemented(err)) {
+        setIncidents([]);
+        setStatistics(null);
+        return;
+      }
       setError((err as Error).message);
     } finally {
       setIsLoading(false);

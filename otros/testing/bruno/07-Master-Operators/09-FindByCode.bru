@@ -1,0 +1,22 @@
+meta {
+  name: Find by code
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/master/operators/by-code/OPR-BRUNO-001
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /master/operators/by-code/:code
+
+  **NOTE:** backend NO expone `/by-code` segun comentario en `operators.service.ts`.
+  El service usa `getOptional` con fallback. Request mantenido para tracking.
+}

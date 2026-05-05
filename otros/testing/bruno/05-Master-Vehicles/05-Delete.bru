@@ -1,0 +1,21 @@
+meta {
+  name: Delete vehicle
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/master/vehicles/{{lastVehicleId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # DELETE /master/vehicles/:id
+
+  Soft-delete (sets `deleted_at`). Backend responde 200.
+}

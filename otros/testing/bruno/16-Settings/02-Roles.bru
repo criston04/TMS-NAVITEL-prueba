@@ -1,0 +1,23 @@
+meta {
+  name: Roles
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/settings/roles
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /settings/roles
+
+  Roles del sistema. Envelope `{data: {}, items: []}`.
+
+  Mismo patron de stub que /settings — probablemente aun sin implementar.
+}

@@ -41,6 +41,7 @@ export function RetransmissionContainer({
     gpsCompanies,
     companies,
     isLoading,
+    isRefreshing,
     error,
     filters,
     lastUpdated,
@@ -49,7 +50,9 @@ export function RetransmissionContainer({
     refresh,
   } = useRetransmission({
     autoRefresh: true,
-    refreshIntervalMs: 15000,
+    // 30s: balance entre data fresca y experiencia suave. El refresh es
+    // silencioso (no parpadea la UI), solo gira el icono del boton.
+    refreshIntervalMs: 30000,
   });
 
   /**
@@ -105,9 +108,9 @@ export function RetransmissionContainer({
             variant="outline"
             size="sm"
             onClick={refresh}
-            disabled={isLoading}
+            disabled={isLoading || isRefreshing}
           >
-            <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+            <RefreshCw className={cn("h-4 w-4 mr-2", (isLoading || isRefreshing) && "animate-spin")} />
             Actualizar
           </Button>
           <RetransmissionPdfExport records={records} />

@@ -132,46 +132,60 @@ export function MonitoringDashboard({
     );
   }
 
+  // 2026-05-03: defaults defensivos. KPIs pueden venir con shape parcial del backend.
+  const safeKpis = {
+    activeVehicles: kpis?.activeVehicles ?? 0,
+    totalVehicles: kpis?.totalVehicles ?? 0,
+    activePercentage: kpis?.activePercentage ?? 0,
+    movingVehicles: kpis?.movingVehicles ?? 0,
+    stoppedVehicles: kpis?.stoppedVehicles ?? 0,
+    totalKmToday: kpis?.totalKmToday ?? 0,
+    avgSpeedFleet: kpis?.avgSpeedFleet ?? 0,
+    onTimeDeliveryRate: kpis?.onTimeDeliveryRate ?? 0,
+    completedOrders: kpis?.completedOrders ?? 0,
+    totalOrders: kpis?.totalOrders ?? 0,
+  };
+
   return (
     <div className={cn("grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3", className)}>
       <KPICard
         icon={<Truck className="h-4 w-4 text-blue-600" />}
         label="Flota activa"
-        value={`${kpis.activeVehicles}/${kpis.totalVehicles}`}
-        subValue={`${kpis.activePercentage.toFixed(0)}% en línea`}
+        value={`${safeKpis.activeVehicles}/${safeKpis.totalVehicles}`}
+        subValue={`${safeKpis.activePercentage.toFixed(0)}% en línea`}
         color="bg-blue-100 dark:bg-blue-900/30"
       />
       <KPICard
         icon={<Activity className="h-4 w-4 text-emerald-600" />}
         label="En movimiento"
-        value={kpis.movingVehicles}
-        subValue={`${kpis.stoppedVehicles} detenidos`}
+        value={safeKpis.movingVehicles}
+        subValue={`${safeKpis.stoppedVehicles} detenidos`}
         color="bg-emerald-100 dark:bg-emerald-900/30"
       />
       <KPICard
         icon={<Route className="h-4 w-4 text-violet-600" />}
         label="Km recorridos hoy"
-        value={`${kpis.totalKmToday.toFixed(0)}`}
-        subValue={`Prom: ${kpis.avgSpeedFleet.toFixed(0)} km/h`}
+        value={`${safeKpis.totalKmToday.toFixed(0)}`}
+        subValue={`Prom: ${safeKpis.avgSpeedFleet.toFixed(0)} km/h`}
         color="bg-violet-100 dark:bg-violet-900/30"
       />
       <KPICard
         icon={<CheckCircle2 className="h-4 w-4 text-green-600" />}
         label="Tasa puntualidad"
-        value={`${kpis.onTimeDeliveryRate.toFixed(0)}%`}
-        subValue={`${kpis.completedOrders}/${kpis.totalOrders} órdenes`}
+        value={`${safeKpis.onTimeDeliveryRate.toFixed(0)}%`}
+        subValue={`${safeKpis.completedOrders}/${safeKpis.totalOrders} órdenes`}
         color="bg-green-100 dark:bg-green-900/30"
       />
       <KPICard
         icon={<AlertTriangle className="h-4 w-4 text-amber-600" />}
         label="Alertas activas"
-        value={kpis.activeAlerts}
+        value={kpis?.activeAlerts ?? 0}
         color="bg-amber-100 dark:bg-amber-900/30"
       />
       <KPICard
         icon={<WifiOff className="h-4 w-4 text-red-600" />}
         label="Sin conexión"
-        value={kpis.disconnectedVehicles}
+        value={kpis?.disconnectedVehicles ?? 0}
         color="bg-red-100 dark:bg-red-900/30"
       />
     </div>

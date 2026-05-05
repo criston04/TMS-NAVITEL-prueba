@@ -1,0 +1,105 @@
+meta {
+  name: Create rate
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{baseUrl}}/finance/rates
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "code": "RATE-LIM-ARE",
+    "name": "Tarifa Lima-Arequipa",
+    "category": "route",
+    "baseRate": 1500,
+    "effectiveFrom": "2026-04-22T00:00:00Z",
+    "rateType": "fixed",
+    "currency": "PEN",
+    "unit": "trip",
+    "active": true
+  }
+}
+
+script:post-response {
+  const body = res.getBody();
+  const obj = body?.data || body;
+  if (!obj) return;
+
+  const id = obj.id;
+  if (id) bru.setEnvVar("lastRateId", id);
+
+  const sent = {
+    code: "RATE-LIM-ARE",
+    name: "Tarifa Lima-Arequipa",
+    category: "route",
+    baseRate: 1500,
+    effectiveFrom: "2026-04-22T00:00:00Z",
+    rateType: "fixed",
+    currency: "PEN",
+    unit: "trip",
+    active: true,
+  };
+
+  console.log("===================================================");
+  console.log("            VERIFICACION CREATE RATE               ");
+  console.log("===================================================");
+  console.log("rate id:", id);
+  console.log("");
+  console.log("--- CAMPOS PLANOS ---");
+  for (const k of Object.keys(sent)) {
+    const altKey = k.replace(/[A-Z]/g, m => "_" + m.toLowerCase());
+    const got = obj[k] ?? obj[altKey];
+    if (got === null || got === undefined || got === "") {
+      console.log("  ❌", k.padEnd(18), "PERDIDO/VACIO — env:", JSON.stringify(sent[k]), "rec:", JSON.stringify(got));
+    } else if (typeof got === "string" && typeof sent[k] === "string" && got.startsWith(sent[k])) {
+      console.log("  ✅", k.padEnd(18), JSON.stringify(got));
+    } else if (got === sent[k]) {
+      console.log("  ✅", k.padEnd(18), JSON.stringify(got));
+    } else {
+      console.log("  ⚠️ ", k.padEnd(18), "DIFIERE — env:", JSON.stringify(sent[k]), "rec:", JSON.stringify(got));
+    }
+  }
+
+  console.log("");
+  console.log("--- CAMPOS EXTRA QUE AGREGA EL BACKEND ---");
+  const expectedKeys = new Set([...Object.keys(sent), "id", ...Object.keys(sent).map(k => k.replace(/[A-Z]/g, m => "_" + m.toLowerCase()))]);
+  const extras = Object.keys(obj).filter(k => !expectedKeys.has(k));
+  for (const k of extras) {
+    console.log("  +", k.padEnd(22), "=", JSON.stringify(obj[k]));
+  }
+
+  console.log("===================================================");
+}
+
+docs {
+  # POST /finance/rates
+
+  **Campos requeridos (descubiertos iterativamente):**
+  - `code` — identificador legible, unico
+  - `name`
+  - `category` — observado: `route`, `customer`, `vehicle`, etc.
+  - `baseRate` — numero (NO `amount`)
+  - `effectiveFrom` — ISO, desde cuando aplica
+  - `rateType` — `fixed`, `per_km`, `per_kg`, etc.
+  - `currency`
+  - `unit` — `trip`, `km`, `kg`, etc.
+
+  Shape response incluye: `min_charge`, `max_charge`, `ranges` (tiered pricing),
+  `customer_id`, `customer_group`, `origin_zone`, `destination_zone`,
+  `vehicle_type`, `service_type`, `effective_to`, `tax_inclusive`, `tax_rate`.
+
+  **Quirk:** la `category` enviada se guarda como `""` en el response (posible
+  BUG en el guardado del backend — el campo se acepta pero no persiste su valor).
+}

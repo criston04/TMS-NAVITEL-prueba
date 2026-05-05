@@ -1,0 +1,98 @@
+meta {
+  name: Create geofence (POLYGON)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/master/geofences
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "code": "GEO-0102",
+    "name": "Zona de Reparto Centro Lima",
+    "shortName": "ZRCL",
+    "description": "Zona courier centro histórico.",
+    "address": "Centro Histórico ",
+    "type": "POLYGON",
+    "category": "delivery_zone",
+    "gpoints": [
+      { "lat": -12.0450, "lng": -77.0420 },
+      { "lat": -12.0460, "lng": -77.0430 },
+      { "lat": -12.0470, "lng": -77.0440 },
+      { "lat": -12.0475, "lng": -77.0450 },
+      { "lat": -12.0450, "lng": -77.0420 }
+    ],
+    "lat": -12.0463,
+    "lng": -77.0435,
+    "radius": null,
+    "alt": 0,
+    "color": "#10b981",
+    "opacity": 0.25,
+    "tags": ["courier", "centro"],
+    "alerts": {
+      "onEntry": true,
+      "onExit": false,
+      "onDwell": true,
+      "dwellTimeMinutes": 30,
+      "notifyEmails": ["dispatch@empresa.com"]
+    },
+    "status": "active"
+  }
+}
+
+script:post-response {
+  // v3 Rev3: el endpoint acepta objeto único o array. Response es array con info de sync.
+  const body = res.getBody();
+  const obj = Array.isArray(body) ? body[0] : (body?.data || body);
+  if (!obj) return;
+
+  const id = obj.id || obj.Geofenceid || obj.geofenceid;
+  if (id) bru.setEnvVar("lastGeofenceId", id);
+
+  console.log("===================================================");
+  console.log("           VERIFICACION CREATE GEOFENCE            ");
+  console.log("===================================================");
+  console.log("geofence id:", id);
+  console.log("response keys:", Object.keys(obj).join(", "));
+  console.log("");
+  console.log("NOTA: el POST devuelve un response liviano con info de sync al GPS,");
+  console.log("      no la geofence completa. Para verificar persistencia, hacer GET");
+  console.log("      a /geofences/" + id + " (legacy shape con prefijos g*).");
+  console.log("");
+  console.log("Body completo:", JSON.stringify(obj, null, 2));
+  console.log("===================================================");
+}
+
+docs {
+  # POST /geofences — POLYGON (actualizado a v3 Rev3 — 2026-04-27)
+  
+  ## Comportamiento real (sniff 2026-04-29)
+  - El backend acepta el shape limpio plano (`name`, `lat`, `lng`, `radius`, `gpoints`)
+    en el POST.
+  - **`type` DEBE ir en UPPERCASE: `"CIRCLE"` o `"POLYGON"`.**
+    Si se manda `"polygon"` o `"circular"` el backend responde 400:
+    `"Type must be CIRCLE or POLYGON"`.
+  - El response del POST es un ARRAY con info de sincronización al GPS, no la
+    geofence completa. Para obtener el detalle hay que hacer GET subsiguiente.
+  - El GET LIST devuelve el shape LEGACY con prefijos `g*`: `geofenceid, gname,
+    glat, glng, grad, gpoints (string JSON), gshortname, gaddress, gdescription,
+    alert_on_entry/exit/dwell, dwell_time_minutes, notify_emails, tags`.
+  - **NO enviar `customer_id`** — el backend lo resuelve del JWT.
+  
+  ## Reglas
+  - POLYGON: `gpoints[]` requerido (mín. 3, cerrado repitiendo el primer punto).
+    `lat`/`lng` se usan como centroide. `radius: null`.
+  - CIRCLE: ver `04-Create-Circle.bru`.
+}

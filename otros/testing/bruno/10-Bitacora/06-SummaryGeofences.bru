@@ -1,0 +1,21 @@
+meta {
+  name: Summary by geofences
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/bitacora/summary/geofences
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+docs {
+  # GET /bitacora/summary/geofences
+
+  Resumen agrupado por geocerca. Envelope `{data: []}`.
+}

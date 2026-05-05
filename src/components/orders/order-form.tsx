@@ -46,11 +46,17 @@ import { Badge } from '@/components/ui/badge';
 // Separator no se usa actualmente
 import { cn } from '@/lib/utils';
 
-// Mocks para opciones
-import { customersMock } from '@/mocks/master/customers.mock';
-import { geofencesMock } from '@/mocks/master/geofences.mock';
-import { vehiclesMock } from '@/mocks/master/vehicles.mock';
-import { driversMock } from '@/mocks/master/drivers.mock';
+// Services (backend real)
+import {
+  customersService,
+  geofencesService,
+  vehiclesService,
+  driversService,
+} from '@/services/master';
+import type { Customer } from '@/types/models/customer';
+import type { Geofence } from '@/types/models/geofence';
+import type { Vehicle } from '@/types/models/vehicle';
+import type { Driver } from '@/types/models/driver';
 
 interface OrderFormProps {
   /** Datos iniciales para edición */
@@ -174,10 +180,38 @@ export function OrderForm({
   
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // Carga de datos maestros del backend real (reemplaza mocks)
+  // ═══════════════════════════════════════════════════════════════════════
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [geofences, setGeofences] = useState<Geofence[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+
+  useEffect(() => {
+    const loadMasterData = async () => {
+      try {
+        const [cust, geo, veh, drv] = await Promise.all([
+          customersService.getAll({ pageSize: 200 }).catch(() => ({ items: [] })),
+          geofencesService.getAll({ pageSize: 200 }).catch(() => ({ items: [] })),
+          vehiclesService.getAll({ pageSize: 200 }).catch(() => ({ items: [] })),
+          driversService.getAll({ pageSize: 200 }).catch(() => ({ items: [] })),
+        ]);
+        setCustomers((cust as { items: Customer[] }).items ?? []);
+        setGeofences((geo as { items: Geofence[] }).items ?? []);
+        setVehicles((veh as { items: Vehicle[] }).items ?? []);
+        setDrivers((drv as { items: Driver[] }).items ?? []);
+      } catch (err) {
+        console.warn("[OrderForm] Error cargando datos maestros:", err);
+      }
+    };
+    loadMasterData();
+  }, []);
+
   // Obtener cliente seleccionado
   const selectedCustomer = useMemo(() => {
-    return customersMock.find(c => c.id === customerId);
-  }, [customerId]);
+    return customers.find(c => c.id === customerId);
+  }, [customers, customerId]);
 
   // Auto-asignar workflow cuando cambia el cliente o tipo de carga
   useEffect(() => {
@@ -257,7 +291,7 @@ export function OrderForm({
       if (m.id !== id) return m;
       
       if (field === 'geofenceId') {
-        const geofence = geofencesMock.find(g => g.id === value);
+        const geofence = geofences.find(g => g.id === value);
         if (geofence) {
           const coords = geofence.geometry.type === 'circle' 
             ? geofence.geometry.center 
@@ -409,7 +443,7 @@ export function OrderForm({
                 <SelectValue placeholder="Selecciona un cliente" />
               </SelectTrigger>
               <SelectContent>
-                {customersMock.map(customer => (
+                {customers.map(customer => (
                   <SelectItem key={customer.id} value={customer.id}>
                     <span className="font-medium">{customer.name}</span>
                     <span className="text-muted-foreground ml-2">({customer.tradeName})</span>
@@ -681,7 +715,7 @@ export function OrderForm({
                           <SelectValue placeholder="Selecciona ubicación" />
                         </SelectTrigger>
                         <SelectContent>
-                          {geofencesMock.map(geo => (
+                          {geofences.map(geo => (
                             <SelectItem key={geo.id} value={geo.id}>
                               <div className="flex items-center gap-2">
                                 <span
@@ -751,7 +785,7 @@ export function OrderForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Sin asignar</SelectItem>
-                {vehiclesMock.map(vehicle => (
+                {vehicles.map(vehicle => (
                   <SelectItem key={vehicle.id} value={vehicle.id}>
                     <span className="font-medium">{vehicle.plate}</span>
                     <span className="text-muted-foreground ml-2">
@@ -771,7 +805,7 @@ export function OrderForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Sin asignar</SelectItem>
-                {driversMock.map(driver => (
+                {drivers.map(driver => (
                   <SelectItem key={driver.id} value={driver.id}>
                     {driver.fullName || `${driver.firstName} ${driver.lastName}`}
                   </SelectItem>
