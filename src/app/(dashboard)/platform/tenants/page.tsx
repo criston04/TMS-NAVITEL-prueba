@@ -55,9 +55,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import type { Tenant, TenantStatus, SubscriptionPlan, CreateTenantDTO, SystemModuleCode } from "@/types/platform";
 import { getModulesForPlan } from "@/types/platform";
-import { tenantService } from "@/services/platform.service";
+import { tenantService, tenantModuleService } from "@/services/platform.service";
+
+const ROOT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 
 const statusConfig: Record<TenantStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   active: { label: "Activo", variant: "default" },
@@ -68,7 +81,7 @@ const statusConfig: Record<TenantStatus, { label: string; variant: "default" | "
 };
 
 const planConfig: Record<SubscriptionPlan, { label: string; color: string }> = {
-  starter: { label: "Starter", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
+  basic: { label: "Basic", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300" },
   professional: { label: "Professional", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
   enterprise: { label: "Enterprise", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400" },
   custom: { label: "Custom", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" },
@@ -80,7 +93,14 @@ export default function TenantsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [planFilter, setPlanFilter] = useState<string>("all");
+  const [showCancelled, setShowCancelled] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Tenant | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  // 2026-05-14: el endpoint GET /platform/tenants NO devuelve enabled_modules en el listado.
+  // Hay que pedir GET /platform/tenants/:id/modules por cada tenant en background.
+  // null = aún cargando, number = ya cargado.
+  const [moduleCounts, setModuleCounts] = useState<Map<string, number | null>>(new Map());
   const [newTenant, setNewTenant] = useState({
     code: "",
     name: "",
@@ -106,27 +126,106 @@ export default function TenantsPage() {
     setLoading(true);
     try {
       const response = await tenantService.getAll({ pageSize: 100 });
-      setTenants(response.items);
+      // 2026-05-07: defensive — el backend a veces responde sin items[]
+      setTenants(Array.isArray(response?.items) ? response.items : []);
     } catch (err) {
       console.error("Error loading tenants:", err);
+      setTenants([]);
     } finally {
       setLoading(false);
     }
   }
 
+  // 2026-05-14: lazy-load del count de módulos por tenant.
+  // El backend (GET /platform/tenants) no incluye enabled_modules en el listado,
+  // así que pedimos /platform/tenants/:id/modules por cada uno en secuencia.
+  // - Delay de 800ms entre requests para respetar rate-limit (10 req/min del backend).
+  // - apiClient cachea por 30s, así que re-renders no re-pegan al backend.
+  // - Si el componente se desmonta o cambia tenants, abortamos con `cancelled`.
+  useEffect(() => {
+    if (tenants.length === 0) return;
+
+    let cancelled = false;
+
+    // Inicializar a null (loading) los tenants nuevos que aún no tienen count.
+    setModuleCounts((prev) => {
+      const next = new Map(prev);
+      for (const t of tenants) {
+        if (!next.has(t.id)) next.set(t.id, null);
+      }
+      return next;
+    });
+
+    (async () => {
+      for (const tenant of tenants) {
+        if (cancelled) return;
+        // Skip tenants cancelados — su count ya no importa en la lista.
+        if (tenant.status === "cancelled") {
+          setModuleCounts((prev) => {
+            const next = new Map(prev);
+            next.set(tenant.id, 0);
+            return next;
+          });
+          continue;
+        }
+        try {
+          const modules = await tenantModuleService.getByTenant(tenant.id);
+          if (cancelled) return;
+          const count = modules.filter((m) => m.isEnabled).length;
+          setModuleCounts((prev) => {
+            const next = new Map(prev);
+            next.set(tenant.id, count);
+            return next;
+          });
+        } catch (err) {
+          console.error(`Error loading modules for tenant ${tenant.id}:`, err);
+          if (cancelled) return;
+          // Fallback a 0 ante error (el usuario verá 0 y al entrar al detalle verá la verdad).
+          setModuleCounts((prev) => {
+            const next = new Map(prev);
+            next.set(tenant.id, 0);
+            return next;
+          });
+        }
+        // Espaciar requests para evitar 429 del backend (10 req/min).
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tenants]);
+
   const filtered = useMemo(() => {
+    if (!Array.isArray(tenants)) return [];
     return tenants.filter((t) => {
+      // Backend hace soft-delete: tenants "eliminados" quedan como status='cancelled'.
+      // Por default los ocultamos a menos que el usuario active el toggle.
+      if (!showCancelled && t.status === "cancelled") return false;
+
+      // Defensive: campos pueden venir undefined si el backend cambio shape
+      const name = t.name ?? "";
+      const code = t.code ?? "";
+      const taxId = t.taxId ?? "";
+      const email = t.email ?? "";
       const matchesSearch =
         !search ||
-        t.name.toLowerCase().includes(search.toLowerCase()) ||
-        t.code.toLowerCase().includes(search.toLowerCase()) ||
-        t.taxId.includes(search) ||
-        t.email.toLowerCase().includes(search.toLowerCase());
+        name.toLowerCase().includes(search.toLowerCase()) ||
+        code.toLowerCase().includes(search.toLowerCase()) ||
+        taxId.includes(search) ||
+        email.toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === "all" || t.status === statusFilter;
       const matchesPlan = planFilter === "all" || t.plan === planFilter;
       return matchesSearch && matchesStatus && matchesPlan;
     });
-  }, [tenants, search, statusFilter, planFilter]);
+  }, [tenants, search, statusFilter, planFilter, showCancelled]);
+
+  // Contar cuántos cancelled hay (para mostrar el toggle con el número)
+  const cancelledCount = useMemo(
+    () => tenants.filter((t) => t.status === "cancelled").length,
+    [tenants],
+  );
 
   async function handleCreate() {
     try {
@@ -147,8 +246,13 @@ export default function TenantsPage() {
         enabledModules: defaultModules as SystemModuleCode[],
         enableTrial: newTenant.enableTrial,
         trialDays: newTenant.enableTrial ? newTenant.trialDays : undefined,
+        // Campos OBLIGATORIOS segun PLATAFORMA.md §4.3.4 (defaults razonables para Peru)
+        timezone: "America/Lima",
+        defaultCurrency: "PEN",
+        defaultLanguage: "es",
       };
       await tenantService.create(dto);
+      toast.success(`Tenant "${newTenant.name}" creado correctamente`);
       setCreateOpen(false);
       setNewTenant({
         code: "", name: "", legalName: "", taxId: "", email: "", phone: "",
@@ -157,6 +261,21 @@ export default function TenantsPage() {
       });
       loadTenants();
     } catch (err) {
+      const status = (err as { status?: number })?.status;
+      const msg = err instanceof Error ? err.message : "Error creando tenant";
+      // Bug §4.3.9 conocido: 500 viene del backend por FK created_by invalido.
+      if (status === 500) {
+        toast.error(
+          "El backend no pudo crear el tenant (HTTP 500). Bug conocido §4.3.9: falta registro del admin en platform_users. Reportado al equipo backend.",
+          { duration: 10000 },
+        );
+      } else if (status === 400) {
+        toast.error(`Validación: ${msg}`);
+      } else if (status === 409) {
+        toast.error("Ya existe un tenant con ese código o RUC.");
+      } else {
+        toast.error(status ? `HTTP ${status}: ${msg}` : msg);
+      }
       console.error("Error creating tenant:", err);
     }
   }
@@ -164,8 +283,11 @@ export default function TenantsPage() {
   async function handleSuspend(id: string) {
     try {
       await tenantService.suspend(id, { reason: "Suspendido desde panel de plataforma" });
+      toast.success("Tenant suspendido");
       loadTenants();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error suspendiendo tenant";
+      toast.error(msg);
       console.error("Error suspending tenant:", err);
     }
   }
@@ -173,19 +295,80 @@ export default function TenantsPage() {
   async function handleReactivate(id: string) {
     try {
       await tenantService.reactivate(id);
+      toast.success("Tenant reactivado");
       loadTenants();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error reactivando tenant";
+      toast.error(msg);
       console.error("Error reactivating tenant:", err);
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("¿Estás seguro de eliminar este tenant? Esta acción no se puede deshacer.")) return;
+  /**
+   * 2026-05-14: activación de un tenant `pending` (recién creado).
+   *
+   * Estrategia con fallback:
+   *  1) Intenta `POST /platform/tenants/:id/reactivate` — es la misma operación
+   *     lógica (poner el tenant en `active`). El backend puede aceptarlo si su
+   *     state-machine modela `pending → active` igual que `suspended → active`.
+   *  2) Si devuelve INVALID_TRANSITION (state-machine estricto), cae a
+   *     `PUT /platform/tenants/:id` con `{ status: "active" }`.
+   */
+  async function handleActivate(id: string, tenantName: string) {
     try {
-      await tenantService.delete(id);
+      await tenantService.reactivate(id);
+      toast.success(`Tenant "${tenantName}" activado`);
       loadTenants();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      const isInvalidTransition =
+        msg.includes("INVALID_TRANSITION") || msg.includes("invalid transition");
+      if (isInvalidTransition) {
+        // Fallback: el backend no acepta reactivate desde pending. Usamos PUT.
+        try {
+          await tenantService.update(id, { status: "active" });
+          toast.success(`Tenant "${tenantName}" activado`);
+          loadTenants();
+          return;
+        } catch (err2) {
+          const msg2 = err2 instanceof Error ? err2.message : "Error activando tenant";
+          toast.error(msg2);
+          console.error("Error activating tenant (fallback PUT):", err2);
+          return;
+        }
+      }
+      toast.error(msg || "Error activando tenant");
+      console.error("Error activating tenant (reactivate):", err);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await tenantService.delete(deleteTarget.id);
+      toast.success(`Tenant "${deleteTarget.name ?? deleteTarget.code}" eliminado`);
+      setDeleteTarget(null);
+      loadTenants();
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      const msg = err instanceof Error ? err.message : "Error eliminando tenant";
+      // El backend hace soft-delete. Si el tenant ya esta cancelled, devuelve 400 con
+      // mensaje "INVALID_TRANSITION: tenant is already cancelled".
+      if (msg.includes("INVALID_TRANSITION") || msg.includes("already cancelled")) {
+        toast.warning("Este tenant ya fue eliminado anteriormente (status = cancelado). La lista se refrescará.");
+        setDeleteTarget(null);
+        loadTenants(); // recargar para que el frontend vea el status real
+      } else if (status === 404) {
+        toast.error("El tenant ya no existe en el backend.");
+        setDeleteTarget(null);
+        loadTenants();
+      } else {
+        toast.error(status ? `HTTP ${status}: ${msg}` : msg);
+      }
       console.error("Error deleting tenant:", err);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -210,13 +393,21 @@ export default function TenantsPage() {
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Código</Label>
+                <Label htmlFor="code">Código *</Label>
                 <Input
                   id="code"
-                  placeholder="EMPRESA-CODIGO"
+                  placeholder="EMPRESACODIGO"
                   value={newTenant.code}
-                  onChange={(e) => setNewTenant({ ...newTenant, code: e.target.value.toUpperCase().replace(/\s+/g, "-") })}
+                  onChange={(e) => setNewTenant({
+                    ...newTenant,
+                    // El backend exige solo alfanumerico (sin guiones ni espacios).
+                    code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""),
+                  })}
+                  maxLength={32}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Solo letras y números (sin guiones ni espacios). Ej: <code>TRANSPGARCIA</code>
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre Comercial</Label>
@@ -283,13 +474,28 @@ export default function TenantsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="country">País</Label>
-                <Input
-                  id="country"
-                  placeholder="PE"
+                <Label htmlFor="country">País *</Label>
+                <Select
                   value={newTenant.country}
-                  onChange={(e) => setNewTenant({ ...newTenant, country: e.target.value })}
-                />
+                  onValueChange={(v) => setNewTenant({ ...newTenant, country: v })}
+                >
+                  <SelectTrigger id="country">
+                    <SelectValue placeholder="PE" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PE">Perú (PE)</SelectItem>
+                    <SelectItem value="CO">Colombia (CO)</SelectItem>
+                    <SelectItem value="CL">Chile (CL)</SelectItem>
+                    <SelectItem value="EC">Ecuador (EC)</SelectItem>
+                    <SelectItem value="MX">México (MX)</SelectItem>
+                    <SelectItem value="AR">Argentina (AR)</SelectItem>
+                    <SelectItem value="BR">Brasil (BR)</SelectItem>
+                    <SelectItem value="US">Estados Unidos (US)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Código ISO de 2 letras (no escribir el nombre del país).
+                </p>
               </div>
 
               <Separator className="col-span-2" />
@@ -304,10 +510,10 @@ export default function TenantsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="starter">Starter</SelectItem>
-                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="basic">Basic</SelectItem>
+                    <SelectItem value="professional">Standard</SelectItem>
+                    <SelectItem value="custom">Premium</SelectItem>
                     <SelectItem value="enterprise">Enterprise</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -401,12 +607,26 @@ export default function TenantsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los planes</SelectItem>
-                  <SelectItem value="starter">Starter</SelectItem>
+                  <SelectItem value="basic">Basic</SelectItem>
                   <SelectItem value="professional">Professional</SelectItem>
                   <SelectItem value="enterprise">Enterprise</SelectItem>
                   <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
+              {cancelledCount > 0 && (
+                <label className="flex items-center gap-2 text-sm shrink-0 cursor-pointer select-none ml-auto">
+                  <input
+                    type="checkbox"
+                    checked={showCancelled}
+                    onChange={(e) => setShowCancelled(e.target.checked)}
+                    className="h-4 w-4 rounded border-input"
+                  />
+                  <span className="text-muted-foreground">
+                    Mostrar eliminados
+                    <span className="ml-1 text-xs">({cancelledCount})</span>
+                  </span>
+                </label>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -449,15 +669,45 @@ export default function TenantsPage() {
                   </TableHeader>
                   <TableBody>
                     {filtered.map((tenant) => {
-                      const status = statusConfig[tenant.status];
-                      const plan = planConfig[tenant.plan];
-                      const moduleCount = tenant.enabledModules.filter((m) => m.isEnabled).length;
+                      // Fallbacks defensivos: si el backend devuelve un valor de status/plan
+                      // que no esta en el config (ej: legacy "professional", "trial" en status),
+                      // usamos el valor crudo en lugar de crashear.
+                      const status = statusConfig[tenant.status] ?? {
+                        label: String(tenant.status ?? "desconocido"),
+                        variant: "outline" as const,
+                      };
+                      const plan = planConfig[tenant.plan] ?? {
+                        label: String(tenant.plan ?? "—"),
+                        color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+                      };
+                      // El listado del backend no trae enabledModules; usamos el count
+                      // lazy-cargado por tenant. `undefined` = aún no iniciado, `null` = en vuelo.
+                      const lazyCount = moduleCounts.get(tenant.id);
+                      const moduleCount: number | null =
+                        Array.isArray(tenant.enabledModules) && tenant.enabledModules.length > 0
+                          ? tenant.enabledModules.filter((m) => m.isEnabled).length
+                          : lazyCount === undefined
+                            ? null
+                            : lazyCount;
+                      const isRoot = tenant.id === ROOT_TENANT_ID;
                       return (
                         <TableRow key={tenant.id}>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{tenant.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{tenant.name}</p>
+                                {isRoot && (
+                                  <Badge variant="outline" className="text-[10px] h-5 border-amber-400 text-amber-700 dark:text-amber-400">
+                                    ROOT · Navitel
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">{tenant.code} · {tenant.taxId}</p>
+                              {isRoot && (
+                                <p className="text-[10px] text-muted-foreground/70 italic">
+                                  Tenant principal del sistema · No se puede suspender ni eliminar
+                                </p>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -471,7 +721,13 @@ export default function TenantsPage() {
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-1">
                               <Users className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{tenant.currentUsersCount}/{tenant.maxUsers}</span>
+                              {/* Workaround bug backend: si tiene master_user_id asignado, count >= 1 */}
+                              <span className="text-sm">
+                                {tenant.masterUserId
+                                  ? Math.max(tenant.currentUsersCount ?? 0, 1)
+                                  : (tenant.currentUsersCount ?? 0)
+                                }/{tenant.maxUsers}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
@@ -483,7 +739,11 @@ export default function TenantsPage() {
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-1">
                               <Box className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{moduleCount}</span>
+                              {moduleCount === null ? (
+                                <span className="text-sm text-muted-foreground/60">…</span>
+                              ) : (
+                                <span className="text-sm">{moduleCount}</span>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -516,28 +776,37 @@ export default function TenantsPage() {
                                     Editar
                                   </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                {tenant.status === "active" || tenant.status === "trial" ? (
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    onClick={() => handleSuspend(tenant.id)}
-                                  >
-                                    <PauseCircle className="mr-2 h-4 w-4" />
-                                    Suspender
-                                  </DropdownMenuItem>
-                                ) : tenant.status === "suspended" ? (
-                                  <DropdownMenuItem onClick={() => handleReactivate(tenant.id)}>
-                                    <PlayCircle className="mr-2 h-4 w-4" />
-                                    Reactivar
-                                  </DropdownMenuItem>
-                                ) : null}
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => handleDelete(tenant.id)}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Eliminar
-                                </DropdownMenuItem>
+                                {tenant.id !== ROOT_TENANT_ID && tenant.status !== "cancelled" && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    {tenant.status === "active" || tenant.status === "trial" ? (
+                                      <DropdownMenuItem
+                                        className="text-destructive"
+                                        onClick={() => handleSuspend(tenant.id)}
+                                      >
+                                        <PauseCircle className="mr-2 h-4 w-4" />
+                                        Suspender
+                                      </DropdownMenuItem>
+                                    ) : tenant.status === "suspended" ? (
+                                      <DropdownMenuItem onClick={() => handleReactivate(tenant.id)}>
+                                        <PlayCircle className="mr-2 h-4 w-4" />
+                                        Reactivar
+                                      </DropdownMenuItem>
+                                    ) : tenant.status === "pending" ? (
+                                      <DropdownMenuItem onClick={() => handleActivate(tenant.id, tenant.name ?? tenant.code)}>
+                                        <PlayCircle className="mr-2 h-4 w-4" />
+                                        Activar
+                                      </DropdownMenuItem>
+                                    ) : null}
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() => setDeleteTarget(tenant)}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Eliminar
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -551,6 +820,42 @@ export default function TenantsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Confirmación de eliminación */}
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && !deleting && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este tenant?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vas a eliminar el tenant{" "}
+              <span className="font-semibold text-foreground">
+                {deleteTarget?.name ?? deleteTarget?.code}
+              </span>
+              {deleteTarget?.taxId && (
+                <>
+                  {" "}
+                  (RUC <span className="font-mono">{deleteTarget.taxId}</span>)
+                </>
+              )}
+              . Esta acción no se puede deshacer y se perderán todos los datos asociados:
+              usuarios, vehículos, órdenes, módulos contratados y referencias de pago.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Eliminando..." : "Sí, eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageWrapper>
   );
 }

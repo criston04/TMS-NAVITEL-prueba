@@ -2,6 +2,7 @@ import { Driver } from "@/types/models/driver";
 import { Vehicle, VehicleType } from "@/types/models/vehicle";
 import { API_ENDPOINTS } from "@/config/api.config";
 import { apiClient } from "@/lib/api";
+import { masterEvents } from "@/services/integration/master-events";
 
 /**
  * ⚠️ MÓDULO COMPLETO PENDIENTE DE BACKEND (verificado 2026-05-03)
@@ -174,23 +175,51 @@ class AssignmentService {
   }
 
   /**
-   * Crea una nueva asignación
+   * Crea una nueva asignación.
+   * 2026-05-05: emite evento al bus para que ordenes activas con ese
+   * driver/vehicle se enteren del cambio.
    */
   async createAssignment(
     request: AssignmentRequest,
-    _driver: Driver,
-    _vehicle: Vehicle
+    driver: Driver,
+    vehicle: Vehicle
   ): Promise<Assignment> {
-    void _driver;
-    void _vehicle;
-    return apiClient.post<Assignment>(API_ENDPOINTS.master.assignments, request);
+    const assignment = await apiClient.post<Assignment>(API_ENDPOINTS.master.assignments, request);
+
+    masterEvents.driverAssigned({
+      assignmentId: assignment.id,
+      driverId: driver.id,
+      driverName: [driver.firstName, driver.lastName].filter(Boolean).join(" ").trim(),
+      vehicleId: vehicle.id,
+      vehiclePlate: vehicle.plate,
+      startDate: request.startDate ?? new Date().toISOString(),
+      endDate: request.endDate,
+    });
+
+    return assignment;
   }
 
   /**
-   * Desasigna un conductor de un vehículo
+   * Desasigna un conductor de un vehículo.
+   * 2026-05-05: emite evento al bus tras un unassign exitoso.
    */
   async unassign(assignmentId: string, reason?: string): Promise<void> {
-    return apiClient.delete<void>(`${API_ENDPOINTS.master.assignments}/${assignmentId}`, { params: reason ? { reason } : undefined });
+    // Capturar info de la asignacion antes de borrarla para emitir el evento
+    let driverId: string | undefined;
+    let vehicleId: string | undefined;
+    try {
+      const before = await apiClient.get<Assignment | null>(`${API_ENDPOINTS.master.assignments}/${assignmentId}`);
+      driverId = before?.driverId;
+      vehicleId = before?.vehicleId;
+    } catch {
+      // si el read falla seguimos con el delete; el evento queda sin ids
+    }
+
+    await apiClient.delete<void>(`${API_ENDPOINTS.master.assignments}/${assignmentId}`, { params: reason ? { reason } : undefined });
+
+    if (driverId && vehicleId) {
+      masterEvents.driverUnassigned({ assignmentId, driverId, vehicleId });
+    }
   }
 
   /**

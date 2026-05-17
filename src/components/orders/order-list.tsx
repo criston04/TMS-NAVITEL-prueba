@@ -42,6 +42,11 @@ interface OrderListProps {
   onPageChange: (page: number) => void;
   /** Click en orden */
   onOrderClick: (order: Order) => void;
+  /**
+   * 2026-05-05: Callback para enviar UNA orden al transportista desde el
+   * dropdown contextual de cada fila. Si se omite, el item no aparece.
+   */
+  onSendOrder?: (order: Order) => void;
   /** Vista actual */
   viewMode?: 'list' | 'grid';
   /** Callback al cambiar vista */
@@ -241,6 +246,7 @@ function OrderListComponent({
   onClearSelection,
   onPageChange,
   onOrderClick,
+  onSendOrder,
   viewMode = 'list',
   onViewModeChange,
   className,
@@ -343,6 +349,7 @@ function OrderListComponent({
             else onClearSelection();
           }}
           onClick={onOrderClick}
+          onSend={onSendOrder}
         />
       )}
 

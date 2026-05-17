@@ -36,6 +36,12 @@ import {
 import dynamic from "next/dynamic";
 import { driversService, vehiclesService } from "@/services/master";
 import { isBackendNotImplemented } from "@/services/missing-endpoint-helper";
+import {
+  saveDriverCache,
+  mergeDriverWithCache,
+  clearDriverCache,
+  pruneExpiredDriverCaches,
+} from "@/lib/cache/driver-cache";
 import { useService } from "@/hooks/use-service";
 import { useEntityCache } from "@/contexts/entity-cache-context";
 import { Driver, DriverStats, DriverStatus, DriverAvailability, LicenseCategory, DriverDocumentType, Vehicle } from "@/types/models";
@@ -487,16 +493,42 @@ export default function DriversPage() {
     return () => clearTimeout(timeout);
   }, [search, refreshDrivers]);
 
+  // 2026-05-16: limpieza de cache local de drivers expirados (>30 días).
+  // Solo se ejecuta una vez al montar la página.
+  useEffect(() => {
+    pruneExpiredDriverCaches();
+  }, []);
+
   // Handlers
   const handleOpenCreate = useCallback(() => {
     setSelectedDriver(null);
     setIsFormModalOpen(true);
   }, []);
 
-  const handleOpenEdit = useCallback((driver: Driver) => {
-    setSelectedDriver(driver);
+  const handleOpenEdit = useCallback(async (driver: Driver) => {
+    // 2026-05-16: el listado puede devolver una version trimmed (sin license
+    // ni emergencyContact). Estrategia:
+    //   1. Mostrar inmediatamente el driver del listado mergeado con el cache local
+    //      (que tiene los sub-objetos si el usuario creó/editó este driver antes).
+    //   2. En paralelo, intentar refetch del detalle. Si funciona y trae datos
+    //      completos, los usamos. Si no, ya tenemos el cache local cargado.
+    const mergedFromList = mergeDriverWithCache(driver);
+    setSelectedDriver(mergedFromList);
     setIsFormModalOpen(true);
     setIsDetailDrawerOpen(false);
+
+    try {
+      const full = await driversService.getById(driver.id);
+      if (full) {
+        const mergedFromDetail = mergeDriverWithCache(full);
+        setSelectedDriver(mergedFromDetail);
+      }
+    } catch (err) {
+      if (!isBackendNotImplemented(err)) {
+        console.warn("[drivers] No se pudo refetch detalle, usando version del listado:", err);
+      }
+      // Mantener el driver mergeado del listado (ya está en state)
+    }
   }, []);
 
   const handleOpenView = useCallback((driver: Driver) => {
@@ -522,12 +554,22 @@ export default function DriversPage() {
       // Sin esto, el transformer recibe claves equivocadas y descarta campos.
       const driverPayload = mapDriverFormToDriver(data);
 
+      let savedDriverId: string | undefined;
       if (selectedDriver) {
-        await driversService.update(selectedDriver.id, driverPayload);
+        const updated = await driversService.update(selectedDriver.id, driverPayload);
+        savedDriverId = updated?.id ?? selectedDriver.id;
         toast.success("Conductor actualizado correctamente");
       } else {
-        await driversService.create(driverPayload as Parameters<typeof driversService.create>[0]);
+        const created = await driversService.create(
+          driverPayload as Parameters<typeof driversService.create>[0],
+        );
+        savedDriverId = created?.id;
         toast.success("Conductor creado correctamente");
+      }
+      // 2026-05-16: cachear datos completos para que el form de edición
+      // los muestre incluso si el backend GET no devuelve los sub-objetos.
+      if (savedDriverId) {
+        saveDriverCache(savedDriverId, driverPayload as Partial<Driver>);
       }
       setIsFormModalOpen(false);
       setSelectedDriver(null);
@@ -544,6 +586,8 @@ export default function DriversPage() {
     setIsSubmitting(true);
     try {
       await driversService.delete(selectedDriver.id);
+      // 2026-05-16: limpiar el cache local también
+      clearDriverCache(selectedDriver.id);
       toast.success("Conductor eliminado correctamente");
       setIsDeleteDialogOpen(false);
       setSelectedDriver(null);
@@ -1061,6 +1105,8 @@ export default function DriversPage() {
         onEdit={handleOpenEdit}
         onDelete={handleOpenDelete}
         onAssignVehicle={() => selectedDriver && handleOpenAssignment(selectedDriver)}
+        // 2026-05-17: refresh la lista al registrar/editar exámenes desde el drawer
+        onRefresh={handleRefresh}
       />
 
       {/* Diálogo de confirmación de eliminación */}

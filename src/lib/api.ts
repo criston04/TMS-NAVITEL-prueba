@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { apiConfig } from "@/config/api.config";
 
 
@@ -13,6 +14,8 @@ interface ApiError extends Error {
   status: number;
   code?: string;
   details?: unknown;
+  /** Segundos que el backend pide esperar antes de reintentar (header Retry-After). */
+  retryAfterSec?: number;
 }
 
 
@@ -375,15 +378,45 @@ function setCachedResponse<T>(url: string, result: T): void {
 /**
  * Invalida el cache de GET para una URL base. Se llama tras mutations.
  * Si `urlPrefix` es undefined, limpia TODO el cache.
+ *
+ * 2026-05-05 (bug fix): Antes solo invalidaba claves que empezaran con la
+ * URL EXACTA del endpoint mutado. El problema: `DELETE /orders/abc-123`
+ * pasaba `urlPrefix = ".../orders/abc-123"` que no matcheaba el cache de
+ * la LISTA `.../orders?pageSize=10`, asi que la lista quedaba stale 3s y
+ * la orden borrada seguia apareciendo. Ahora ademas de invalidar la URL
+ * exacta, sube por la jerarquia de paths (sin query) para invalidar
+ * tambien el cache del recurso colección y todos sus ancestros.
  */
 function invalidateGetCache(urlPrefix?: string): void {
   if (!urlPrefix) {
     getResponseCache.clear();
     return;
   }
+
+  // Construir set de prefijos a invalidar: el original + cada ancestro.
+  // Ej: ".../api/v1/orders/abc-123/items"
+  //   → [".../api/v1/orders/abc-123/items", ".../api/v1/orders/abc-123", ".../api/v1/orders"]
+  // Paramos cuando llegamos a /api/v1 (la raiz de la API) para no
+  // invalidar cosas tipo /api/v1 (listing global) por accidente.
+  const prefixes = new Set<string>();
+  let cur = urlPrefix.split("?")[0];
+  prefixes.add(cur);
+  while (true) {
+    const lastSlash = cur.lastIndexOf("/");
+    if (lastSlash <= 0) break;
+    const parent = cur.slice(0, lastSlash);
+    // Detener antes de empezar a invalidar la raiz de la API
+    if (parent.endsWith("/api/v1") || parent.endsWith("/api") || parent === "" || !parent.includes("/")) break;
+    prefixes.add(parent);
+    cur = parent;
+  }
+
   for (const key of getResponseCache.keys()) {
-    if (key.startsWith(urlPrefix)) {
-      getResponseCache.delete(key);
+    for (const p of prefixes) {
+      if (key.startsWith(p)) {
+        getResponseCache.delete(key);
+        break;
+      }
     }
   }
 }
@@ -479,6 +512,33 @@ function tripCircuitBreaker(url: string): void {
   const key = getCircuitKey(url);
   circuitBreakerUntil.set(key, Date.now() + CIRCUIT_BREAKER_TTL_MS);
   console.warn(`[apiClient] Circuit breaker abierto para ${key} por ${CIRCUIT_BREAKER_TTL_MS}ms`);
+  notifyRateLimit();
+}
+
+/**
+ * Notificacion global cuando el backend devuelve 429.
+ *
+ * Usa un toast con `id` constante para que multiples 429 simultaneos colapsen
+ * en un solo toast (no spamear). Tambien aplica throttle de 8s para evitar que
+ * cada retry agotado dispare un nuevo toast.
+ *
+ * Si el backend envia header `Retry-After: N`, se muestra el tiempo exacto.
+ */
+let lastRateLimitToastAt = 0;
+const RATE_LIMIT_TOAST_THROTTLE_MS = 8_000;
+
+function notifyRateLimit(retryAfterSec?: number): void {
+  if (typeof window === "undefined") return; // SSR
+  const now = Date.now();
+  if (now - lastRateLimitToastAt < RATE_LIMIT_TOAST_THROTTLE_MS) return;
+  lastRateLimitToastAt = now;
+  const msg = retryAfterSec
+    ? `El servidor está saturado. Espera ${retryAfterSec}s e intenta de nuevo.`
+    : "El servidor está saturado. Espera unos segundos e intenta de nuevo.";
+  toast.warning(msg, {
+    id: "api-rate-limit",
+    duration: Math.min(10_000, (retryAfterSec ?? 6) * 1000),
+  });
 }
 
 /**
@@ -581,7 +641,17 @@ export const apiClient = {
           parsedAsJson && body && typeof body === "object" && "details" in body
             ? (body as { details: unknown }).details
             : undefined;
-        throw createApiError(response.status, message, details);
+        // 429: capturar Retry-After (segundos) y notificar al usuario.
+        let retryAfterSec: number | undefined;
+        if (response.status === 429) {
+          const headerVal = response.headers.get("Retry-After") ?? response.headers.get("retry-after");
+          const parsed = headerVal ? parseInt(headerVal, 10) : NaN;
+          retryAfterSec = Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+          notifyRateLimit(retryAfterSec);
+        }
+        const apiErr = createApiError(response.status, message, details);
+        if (retryAfterSec) apiErr.retryAfterSec = retryAfterSec;
+        throw apiErr;
       }
 
       logResponse(method, url, response.status, body);
@@ -633,7 +703,7 @@ export const apiClient = {
     const inflight = inflightGets.get(url);
     if (inflight) return inflight as Promise<T>;
 
-    // 4. Disparar nueva request con retry-on-429 (backoff exponencial)
+    // 4. Disparar nueva request con retry-on-429 (respeta header Retry-After)
     const requestWithRetry = async (): Promise<T> => {
       let lastError: unknown = null;
       for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
@@ -641,10 +711,14 @@ export const apiClient = {
           return await this.request<T>("GET", endpoint, undefined, options);
         } catch (err) {
           const status = (err as { status?: number })?.status;
+          const retryAfterSec = (err as { retryAfterSec?: number })?.retryAfterSec;
           if (status === 429 && attempt < RETRY_DELAYS_MS.length) {
-            // Rate-limit: esperar y reintentar
-            const delay = RETRY_DELAYS_MS[attempt];
-            console.warn(`[apiClient] 429 en ${url}. Reintentando en ${delay}ms (intento ${attempt + 1}/${RETRY_DELAYS_MS.length}).`);
+            // Si el backend mando Retry-After, RESPETARLO (en vez del backoff fijo).
+            // Cap a 30s para no congelar la UI demasiado tiempo.
+            const backoffMs = RETRY_DELAYS_MS[attempt];
+            const respectfulMs = retryAfterSec ? Math.min(retryAfterSec * 1000, 30_000) : backoffMs;
+            const delay = Math.max(backoffMs, respectfulMs);
+            console.warn(`[apiClient] 429 en ${url}. Esperando ${delay}ms (Retry-After: ${retryAfterSec ?? "—"}s, intento ${attempt + 1}/${RETRY_DELAYS_MS.length}).`);
             await sleep(delay);
             lastError = err;
             continue;

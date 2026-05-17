@@ -1,12 +1,14 @@
 'use client';
 
-import { memo, useMemo, useState } from 'react';
+import { memo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   MoreHorizontal,
   AlertTriangle,
   Clock,
   CheckCircle2,
   Printer,
+  Send,
 } from 'lucide-react';
 import type { Order } from '@/types/order';
 import {
@@ -27,7 +29,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { STATUS_CONFIG, PRIORITY_CONFIG } from './order-card';
+import { getStatusConfig, getPriorityConfig } from './order-card';
 import { printOrderReport } from './order-print-report';
 import { AlertModal } from '@/components/ui/alert-modal';
 
@@ -54,6 +56,13 @@ interface OrderTableProps {
   onSelectAll?: (checked: boolean) => void;
   allSelected?: boolean;
   onClick: (order: Order) => void;
+  /**
+   * 2026-05-05: callback opcional para enviar UNA orden al transportista
+   * desde el menu contextual (...) de la fila. Si no se provee, el item
+   * "Enviar al transportista" no aparece. Mantiene compat con consumidores
+   * que no implementan single-send.
+   */
+  onSend?: (order: Order) => void;
   className?: string;
 }
 
@@ -119,9 +128,11 @@ function OrderTableComponent({
   onSelectAll,
   allSelected,
   onClick,
+  onSend,
   className,
 }: Readonly<OrderTableProps>) {
   const [printBlockedAlert, setPrintBlockedAlert] = useState(false);
+  const router = useRouter();
 
   return (
     <div className={cn('rounded-md border bg-card overflow-x-auto', className)}>
@@ -151,8 +162,8 @@ function OrderTableComponent({
         </TableHeader>
         <TableBody>
           {orders.map((order) => {
-            const statusConfig = STATUS_CONFIG[order.status];
-            const priorityConfig = PRIORITY_CONFIG[order.priority];
+            const statusConfig = getStatusConfig(order.status);
+            const priorityConfig = getPriorityConfig(order.priority);
             const origin = order.milestones[0];
             const destination = order.milestones.at(-1);
             const isSelected = selectedIds.has(order.id);
@@ -322,7 +333,23 @@ function OrderTableComponent({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => onClick(order)}>Ver detalles</DropdownMenuItem>
-                      <DropdownMenuItem>Editar orden</DropdownMenuItem>
+                      {/* 2026-05-05 (bug fix): el item "Editar orden" no tenia onClick.
+                          Agregamos navegacion a /orders/:id/edit (misma ruta que usa
+                          el boton de Edit en el detail page, app/(dashboard)/orders/[id]/page.tsx:172). */}
+                      <DropdownMenuItem onClick={() => router.push(`/orders/${order.id}/edit`)}>
+                        Editar orden
+                      </DropdownMenuItem>
+                      {/* 2026-05-05: item "Enviar al transportista" inline por fila.
+                          Visible para draft, pending y assigned. Para draft el handler
+                          (sendSmart) hace la cascada PATCH /status a pending + POST
+                          /bulk-send en una sola accion, sin que el usuario tenga que
+                          activar la orden manualmente primero. */}
+                      {onSend && (order.status === 'draft' || order.status === 'pending' || order.status === 'assigned') && (
+                        <DropdownMenuItem onClick={() => onSend(order)}>
+                          <Send className="h-4 w-4 mr-2" />
+                          {order.status === 'draft' ? 'Activar y enviar' : 'Enviar al transportista'}
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => {
                         if (!printOrderReport(order)) {
                           setPrintBlockedAlert(true);

@@ -56,6 +56,12 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { operatorsService } from '@/services/master';
+import {
+  saveOperatorCache,
+  mergeOperatorWithCache,
+  clearOperatorCache,
+  pruneExpiredOperatorCaches,
+} from '@/lib/cache/operator-cache';
 import type { CreateOperatorDTO } from '@/services/master';
 import { useService } from '@/hooks/use-service';
 import type { Operator, OperatorStats, OperatorType, OperatorStatus } from '@/types/models/operator';
@@ -159,6 +165,11 @@ export default function OperatorsPage() {
     }) ?? [];
   }, [operatorsRaw, typeFilter, statusFilterValue]);
 
+  // 2026-05-16: limpieza de cache local de operadores expirados (>30 días).
+  useEffect(() => {
+    pruneExpiredOperatorCaches();
+  }, []);
+
   // Re-fetch cuando cambia la búsqueda
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -179,7 +190,10 @@ export default function OperatorsPage() {
   }, []);
 
   const handleOpenEdit = useCallback((operator: Operator) => {
-    setSelectedOperator(operator);
+    // 2026-05-16: el backend NO persiste contacts/checklist/documents.
+    // Mergeamos con el cache local para mostrar lo que el usuario llenó antes.
+    const merged = mergeOperatorWithCache(operator);
+    setSelectedOperator(merged);
     setIsFormModalOpen(true);
     setIsDetailDrawerOpen(false);
   }, []);
@@ -219,12 +233,23 @@ export default function OperatorsPage() {
         notes: data.notes,
       };
 
+      let savedOperatorId: string | undefined;
       if (selectedOperator) {
-        await operatorsService.update(selectedOperator.id, dto);
+        const updated = await operatorsService.update(selectedOperator.id, dto);
+        savedOperatorId = updated?.id ?? selectedOperator.id;
         toast.success('Operador actualizado correctamente');
       } else {
-        await operatorsService.create(dto);
+        const created = await operatorsService.create(dto);
+        savedOperatorId = created?.id;
         toast.success('Operador registrado correctamente');
+      }
+      // 2026-05-16: cachear contacts/checklist/documents que el backend NO persiste
+      if (savedOperatorId) {
+        // Construimos un Operator parcial con los sub-objetos cacheables
+        saveOperatorCache(savedOperatorId, {
+          contacts: dto.contacts as Operator["contacts"],
+          notes: dto.notes,
+        });
       }
       setIsFormModalOpen(false);
       setSelectedOperator(null);
@@ -242,6 +267,8 @@ export default function OperatorsPage() {
     setIsSubmitting(true);
     try {
       await operatorsService.delete(selectedOperator.id);
+      // 2026-05-16: limpiar cache local
+      clearOperatorCache(selectedOperator.id);
       toast.success('Operador eliminado correctamente');
       setIsDeleteDialogOpen(false);
       setSelectedOperator(null);

@@ -302,7 +302,8 @@ export function OrderForm({
             ...m,
             geofenceId: value,
             geofenceName: geofence.name,
-            address: geofence.address || '',
+            // 2026-05-15: backend exige origin_address; usamos nombre como fallback
+            address: geofence.address || geofence.name || '',
             coordinates: coords,
           };
         }

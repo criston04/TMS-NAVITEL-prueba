@@ -48,14 +48,18 @@ export default function ActivityPage() {
     setLoading(true);
     try {
       const response = await platformDashboardService.getActivityLog({ page, pageSize: 20 });
+      // 2026-05-07: defensive — el backend a veces no incluye envelope completo
+      const items = Array.isArray(response?.items) ? response.items : [];
       if (page === 1) {
-        setActivities(response.items);
+        setActivities(items);
       } else {
-        setActivities((prev) => [...prev, ...response.items]);
+        setActivities((prev) => [...prev, ...items]);
       }
-      setHasMore(response.pagination.hasNext);
+      setHasMore(response?.pagination?.hasNext ?? false);
     } catch (err) {
       console.error("Error loading activity:", err);
+      if (page === 1) setActivities([]);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }

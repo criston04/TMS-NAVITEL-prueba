@@ -108,8 +108,8 @@ const STATUS_CONFIG: Record<Order['status'], {
 /**
  * Configuración de prioridades
  */
-const PRIORITY_CONFIG: Record<Order['priority'], { 
-  label: string; 
+const PRIORITY_CONFIG: Record<Order['priority'], {
+  label: string;
   className: string;
 }> = {
   low: { label: 'Baja', className: 'text-gray-500' },
@@ -117,6 +117,26 @@ const PRIORITY_CONFIG: Record<Order['priority'], {
   high: { label: 'Alta', className: 'text-orange-500' },
   urgent: { label: 'Urgente', className: 'text-red-500 font-semibold' },
 };
+
+/**
+ * 2026-05-05 (bug fix): Lookups defensivos. El backend puede devolver
+ * `priority: ""` (string vacio) o un `status` que no esta en el enum
+ * (ej. ordenes legacy o estados nuevos no contemplados). Sin fallback,
+ * `STATUS_CONFIG[undefined].className` crashea con
+ * "Cannot read properties of undefined (reading 'className')".
+ */
+const FALLBACK_STATUS = STATUS_CONFIG.pending;
+const FALLBACK_PRIORITY = PRIORITY_CONFIG.normal;
+
+export function getStatusConfig(status: Order['status'] | string | null | undefined) {
+  if (!status) return FALLBACK_STATUS;
+  return STATUS_CONFIG[status as Order['status']] ?? FALLBACK_STATUS;
+}
+
+export function getPriorityConfig(priority: Order['priority'] | string | null | undefined) {
+  if (!priority) return FALLBACK_PRIORITY;
+  return PRIORITY_CONFIG[priority as Order['priority']] ?? FALLBACK_PRIORITY;
+}
 
 /**
  * Formatea una fecha de forma legible
@@ -173,8 +193,8 @@ function OrderCardComponent({
   showCheckbox = true,
   className,
 }: Readonly<OrderCardProps>) {
-  const statusConfig = STATUS_CONFIG[order.status];
-  const priorityConfig = PRIORITY_CONFIG[order.priority];
+  const statusConfig = getStatusConfig(order.status);
+  const priorityConfig = getPriorityConfig(order.priority);
   const StatusIcon = statusConfig.icon;
 
   // Calcular tiempo de entrega

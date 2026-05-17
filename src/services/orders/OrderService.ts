@@ -12,8 +12,10 @@ import type {
   OrderRealtimeEvent,
 } from '@/types/order';
 import { tmsEventBus } from '@/services/integration/event-bus.service';
+import { orderEvents } from '@/services/integration/order-events';
 import { API_ENDPOINTS } from '@/config/api.config';
 import { apiClient } from '@/lib/api';
+import { safeCall } from '@/services/missing-endpoint-helper';
 import {
   mapOrderFromBackend,
   mapOrderToBackend,
@@ -27,16 +29,30 @@ class OrderService {
   private readonly eventListeners: Map<string, Set<(event: OrderRealtimeEvent) => void>> = new Map();
 
   /**
-   * Obtiene órdenes con filtros y paginación
+   * Obtiene órdenes con filtros y paginación.
+   *
+   * 2026-05-05 (bug fix): antes calculabamos statusCounts iterando sobre
+   * la lista PAGINADA (10 items) lo cual hacia que las KPI cards mostraran
+   * "Total ordenes: 10" cuando en realidad habia 34. Ahora traemos en
+   * paralelo /orders/stats que devuelve byStatus con totales reales de
+   * TODA la base. Si /stats falla (404, 500), caemos al calculo local.
    */
   async getOrders(filters: OrderFilters = {}): Promise<OrdersResponse> {
-    // Backend canonicamente responde: {items: T[], meta: {total, page, pageSize, totalPages}}
-    // Cada item viene en shape snake_case/flat del backend — aplicamos mapper a cada uno.
-    // statusCounts NO viene del backend, lo calculamos local.
-    const response = await apiClient.get<Record<string, unknown>>(
-      API_ENDPOINTS.operations.orders,
-      { params: filters as unknown as Record<string, string> }
-    );
+    const [response, statsResponse] = await Promise.all([
+      apiClient.get<Record<string, unknown>>(
+        API_ENDPOINTS.operations.orders,
+        { params: filters as unknown as Record<string, string> }
+      ),
+      // Traer stats globales en paralelo. safeCall devuelve null si el
+      // endpoint no existe o falla, asi que el listado sigue funcionando.
+      safeCall(
+        "GET /orders/stats",
+        () => apiClient.get<Record<string, unknown>>(
+          `${API_ENDPOINTS.operations.orders}/stats`
+        ),
+        null as Record<string, unknown> | null
+      ),
+    ]);
 
     const meta = (response.meta ?? response.pagination ?? {}) as Record<string, number>;
     const rawList = (response.items ?? response.data ?? []) as unknown[];
@@ -45,23 +61,36 @@ class OrderService {
       .map(mapOrderFromBackend);
 
     const pageSize = (response.pageSize as number) ?? meta.pageSize ?? filters.pageSize ?? 10;
-    const total = (response.total as number) ?? meta.total ?? list.length;
     const page = (response.page as number) ?? meta.page ?? filters.page ?? 1;
-    const totalPages = (response.totalPages as number) ?? meta.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
 
-    // statusCounts: el backend no lo devuelve. Lo calculamos del listado actual
-    // (aproximacion de la pagina, no del total). TODO pedir a backend que lo incluya.
-    const statusCounts: Record<OrderStatus, number> = (response.statusCounts as Record<OrderStatus, number>) ?? {
-      draft: 0, pending: 0, assigned: 0, in_transit: 0,
-      at_milestone: 0, delayed: 0, completed: 0, closed: 0, cancelled: 0,
-    };
-    if (!response.statusCounts) {
+    // statusCounts: prioridad de fuentes (de mas confiable a menos):
+    //   1. /orders/stats response.byStatus (totales reales)
+    //   2. response.statusCounts (si el backend lo agrega al list endpoint)
+    //   3. Conteo local de la pagina actual (fallback)
+    const statsData = (statsResponse?.data ?? statsResponse) as Record<string, unknown> | null;
+    const byStatusFromStats = statsData?.byStatus as Record<OrderStatus, number> | undefined;
+    const totalFromStats = statsData?.total as number | undefined ?? statsData?.totalOrders as number | undefined;
+
+    const statusCounts: Record<OrderStatus, number> = byStatusFromStats
+      ?? (response.statusCounts as Record<OrderStatus, number>)
+      ?? {
+        draft: 0, pending: 0, assigned: 0, in_transit: 0,
+        at_milestone: 0, delayed: 0, completed: 0, closed: 0, cancelled: 0,
+      };
+    if (!byStatusFromStats && !response.statusCounts) {
       for (const order of list) {
         if (order.status && order.status in statusCounts) {
           statusCounts[order.status]++;
         }
       }
     }
+
+    // Total: prioridad similar
+    //   1. /orders/stats.total (mas confiable, total real)
+    //   2. response.total / meta.total (del list endpoint)
+    //   3. list.length (fallback de la pagina)
+    const total = totalFromStats ?? (response.total as number) ?? meta.total ?? list.length;
+    const totalPages = (response.totalPages as number) ?? meta.totalPages ?? Math.max(1, Math.ceil(total / pageSize));
 
     return { data: list, total, page, pageSize, totalPages, statusCounts };
   }
@@ -110,112 +139,34 @@ class OrderService {
     }
   }
 
-  /**
-   * Obtiene una orden por número de orden
+  /*
+   * 2026-05-06: METODOS ELIMINADOS (codigo muerto, ningun consumidor).
+   *
+   * Eliminados:
+   *  - getOrderByNumber(orderNumber)        ← /orders/by-number/:n (404)
+   *  - getStatusCounts()                    ← /orders/status-counts (404)
+   *  - getOrdersByDriver(driverId, opts)    ← /orders/by-driver/:id (404)
+   *  - getOrdersByVehicle(vehicleId, opts)  ← /orders/by-vehicle/:id (404)
+   *
+   * Por que se eliminaron:
+   *  1. Ninguno de estos metodos era llamado desde la UI:
+   *     - getStatusCounts: sin consumidor.
+   *     - getOrdersByDriver: solo usado por useDriverOrderHistory hook
+   *       (eliminado tambien) que no se importaba en ningun componente.
+   *     - getOrdersByVehicle: sin consumidor.
+   *     - getOrderByNumber: la busqueda por numero usa GET /orders?search=X
+   *       directamente desde el filtro de la pagina /orders.
+   *  2. Los 4 endpoints estan documentados en OPERACIONES_AL_DETALLE.md
+   *     (secciones 2.9, 2.10, 2.11, 2.12) pero el backend solo los implementa
+   *     en path `/operations/orders/X` (no `/orders/X` como dice doc).
+   *  3. Habian quedado como deuda historica con fallbacks via querystring,
+   *     que la UI no usaba.
+   *
+   * Cuando el backend estandarice el path canonico `/orders/X` y la UI
+   * necesite estas vistas (historial por conductor/vehiculo, busqueda
+   * directa por numero, contadores), volveremos a agregarlas siguiendo
+   * la doc fielmente.
    */
-  async getOrderByNumber(orderNumber: string): Promise<Order | null> {
-    // NOTE: backend NO tiene /orders/by-number/:num. Usamos GET /orders?search=X
-    // que soporta busqueda segun el Excel. Tomamos el primer match.
-    const result = await apiClient.get<{ data?: Order[]; items?: Order[] }>(
-      API_ENDPOINTS.operations.orders,
-      { params: { search: orderNumber } }
-    );
-    const list = result.data ?? result.items ?? [];
-    return list.find(o => o.orderNumber === orderNumber) ?? null;
-  }
-
-  /**
-   * Obtiene los contadores por estado
-   */
-  async getStatusCounts(): Promise<Record<OrderStatus, number>> {
-    return apiClient.get<Record<OrderStatus, number>>(`${API_ENDPOINTS.operations.orders}/status-counts`);
-  }
-
-  /**
-   * Obtiene órdenes asignadas a un conductor específico
-   */
-  async getOrdersByDriver(
-    driverId: string,
-    options: {
-      status?: OrderStatus[];
-      startDate?: string;
-      endDate?: string;
-      limit?: number;
-    } = {}
-  ): Promise<{
-    orders: Order[];
-    stats: {
-      total: number;
-      completed: number;
-      cancelled: number;
-      inProgress: number;
-      onTimeDeliveryRate: number;
-      avgDeliveryTime: number;
-    };
-  }> {
-    // NOTE: backend NO tiene /orders/by-driver/:id. Usamos GET /orders?driverId=X
-    // y devolvemos stats vacios (TODO: el backend deberia exponer stats en un futuro).
-    try {
-      const result = await apiClient.get<{ data?: Order[]; items?: Order[]; stats?: typeof options }>(
-        API_ENDPOINTS.operations.orders,
-        { params: { ...options, driverId } as unknown as Record<string, string> }
-      );
-      const orders = (result.data ?? result.items ?? []) as Order[];
-      return {
-        orders,
-        stats: {
-          total: orders.length,
-          completed: 0, cancelled: 0, inProgress: 0,
-          onTimeDeliveryRate: 0, avgDeliveryTime: 0,
-        },
-      };
-    } catch (err) {
-      if ((err as { status?: number }).status === 404) {
-        return { orders: [], stats: { total: 0, completed: 0, cancelled: 0, inProgress: 0, onTimeDeliveryRate: 0, avgDeliveryTime: 0 } };
-      }
-      throw err;
-    }
-  }
-
-  /**
-   * Obtiene órdenes asignadas a un vehículo específico
-   */
-  async getOrdersByVehicle(
-    vehicleId: string,
-    options: {
-      status?: OrderStatus[];
-      startDate?: string;
-      endDate?: string;
-      limit?: number;
-    } = {}
-  ): Promise<{
-    orders: Order[];
-    stats: {
-      total: number;
-      completed: number;
-      cancelled: number;
-      inProgress: number;
-      totalDistanceKm: number;
-    };
-  }> {
-    // NOTE: backend NO tiene /orders/by-vehicle/:id. Usamos GET /orders?vehicleId=X
-    try {
-      const result = await apiClient.get<{ data?: Order[]; items?: Order[] }>(
-        API_ENDPOINTS.operations.orders,
-        { params: { ...options, vehicleId } as unknown as Record<string, string> }
-      );
-      const orders = (result.data ?? result.items ?? []) as Order[];
-      return {
-        orders,
-        stats: { total: orders.length, completed: 0, cancelled: 0, inProgress: 0, totalDistanceKm: 0 },
-      };
-    } catch (err) {
-      if ((err as { status?: number }).status === 404) {
-        return { orders: [], stats: { total: 0, completed: 0, cancelled: 0, inProgress: 0, totalDistanceKm: 0 } };
-      }
-      throw err;
-    }
-  }
 
   /**
    * Crea una nueva orden
@@ -228,7 +179,14 @@ class OrderService {
       payload
     );
     const raw = (response.data ?? response) as BackendOrder;
-    return mapOrderFromBackend(raw);
+    const order = mapOrderFromBackend(raw);
+
+    // 2026-05-05: integracion cross-module. El hub de integracion escucha
+    // 'order:created' para registrar la orden en monitoring, notificaciones
+    // y dashboard. Sin este publish, esos modulos quedaban ciegos.
+    orderEvents.created(order);
+
+    return order;
   }
 
   /**
@@ -264,16 +222,44 @@ class OrderService {
 
   /**
    * Actualiza una orden existente. Bloqueado por bug del backend.
+   *
+   * 2026-05-05: si el update incluye un cambio de status, publicamos
+   * 'order:status_changed' al bus para que monitoring/notificaciones reaccionen.
+   * Capturamos el status previo desde la response del backend (que devuelve
+   * la orden ANTES del update si esta es la primera mutation) o leemos antes.
    */
   async updateOrder(id: string, data: UpdateOrderDTO): Promise<Order> {
     const payload = mapOrderToBackend(data);
+
+    // Para detectar cambio de status, leemos el status previo si el update
+    // contiene status. Si no hay cambio de status, no hay overhead extra.
+    let previousStatus: string | undefined;
+    if (data.status) {
+      try {
+        const before = await this.getOrderById(id);
+        previousStatus = before?.status;
+      } catch {
+        // si falla la lectura previa, seguimos sin emitir status_changed
+        previousStatus = undefined;
+      }
+    }
+
     return this.withBugDetection("Actualizar orden (PATCH /orders/:id)", async () => {
       const response = await apiClient.patch<Record<string, unknown>>(
         `${API_ENDPOINTS.operations.orders}/${id}`,
         payload
       );
       const raw = (response.data ?? response) as BackendOrder;
-      return mapOrderFromBackend(raw);
+      const updated = mapOrderFromBackend(raw);
+
+      // Emit eventos relevantes
+      if (previousStatus && previousStatus !== updated.status) {
+        orderEvents.statusChanged(updated, previousStatus);
+        if (updated.status === "completed") orderEvents.completed(updated);
+        if (updated.status === "cancelled") orderEvents.cancelled(updated);
+      }
+
+      return updated;
     });
   }
 
@@ -287,36 +273,90 @@ class OrderService {
   }
 
   /**
-   * Cambia el estado de una orden
+   * Cambia el estado de una orden.
+   *
+   * 2026-05-05 (bug fix CRITICO): antes esto delegaba a `updateOrder` que
+   * llama a `PATCH /orders/:id` (endpoint generico). El backend IGNORA el
+   * campo `status` en ese endpoint — solo respeta cambios de status si
+   * vienen al endpoint dedicado `PATCH /orders/:id/status`. El sintoma:
+   * la API respondia 200 OK pero el status NO cambiaba en la BD, y la UI
+   * mostraba "Orden enviada" pero la orden seguia en draft.
+   *
+   * Ahora usa el endpoint correcto y publica `order:status_changed` al bus.
    */
   async changeStatus(
     id: string,
     newStatus: OrderStatus,
     _reason?: string
   ): Promise<Order> {
-    return this.updateOrder(id, { status: newStatus });
+    // Capturar status previo para el evento del bus
+    let previousStatus: string | undefined;
+    try {
+      const before = await this.getOrderById(id);
+      previousStatus = before?.status;
+    } catch {
+      previousStatus = undefined;
+    }
+
+    return this.withBugDetection(
+      `Cambiar status (PATCH /orders/:id/status → ${newStatus})`,
+      async () => {
+        const response = await apiClient.patch<Record<string, unknown>>(
+          `${API_ENDPOINTS.operations.orders}/${id}/status`,
+          { status: newStatus }
+        );
+        const raw = (response.data ?? response) as BackendOrder;
+        const updated = mapOrderFromBackend(raw);
+
+        // Emitir eventos al bus
+        if (previousStatus && previousStatus !== updated.status) {
+          orderEvents.statusChanged(updated, previousStatus);
+          if (updated.status === "completed") orderEvents.completed(updated);
+          if (updated.status === "cancelled") orderEvents.cancelled(updated);
+        }
+
+        return updated;
+      }
+    );
   }
 
   /**
    * Asigna vehículo y conductor a una orden. Bloqueado por bug del backend.
+   *
+   * 2026-05-05: emite 'order:assigned' al bus tras una asignacion exitosa.
+   * El backend cambia el status a 'assigned' como side-effect; capturamos el
+   * status previo para emitir tambien 'order:status_changed'.
    */
   async assignVehicleAndDriver(
     id: string,
     vehicleId: string,
     driverId: string
   ): Promise<Order> {
+    let previousStatus: string | undefined;
+    try {
+      const before = await this.getOrderById(id);
+      previousStatus = before?.status;
+    } catch {
+      previousStatus = undefined;
+    }
+
     return this.withBugDetection("Asignar recursos (PATCH /orders/:id/assign)", async () => {
       const response = await apiClient.patch<Record<string, unknown>>(
         `${API_ENDPOINTS.operations.orders}/${id}/assign`,
         { vehicle_id: vehicleId, driver_id: driverId }
       );
       const raw = (response.data ?? response) as BackendOrder;
-      return mapOrderFromBackend(raw);
+      const assigned = mapOrderFromBackend(raw);
+      orderEvents.assigned(assigned, previousStatus ?? assigned.status);
+      return assigned;
     });
   }
 
   /**
    * Inicia el viaje de una orden. Bloqueado por bug del backend.
+   *
+   * 2026-05-05: emite 'order:status_changed' al bus (assigned -> in_transit)
+   * para que monitoring empiece a trackear el vehiculo.
    */
   async startTrip(id: string): Promise<Order> {
     return this.withBugDetection("Iniciar viaje (PATCH /orders/:id/status)", async () => {
@@ -325,7 +365,9 @@ class OrderService {
         { status: 'in_transit' }
       );
       const raw = (response.data ?? response) as BackendOrder;
-      return mapOrderFromBackend(raw);
+      const inTransit = mapOrderFromBackend(raw);
+      orderEvents.statusChanged(inTransit, "assigned");
+      return inTransit;
     });
   }
 
@@ -369,20 +411,24 @@ class OrderService {
       throw new Error(canClose.reason);
     }
 
+    // 2026-05-05 (bug fix): aplicar mapOrderFromBackend para que la response
+    // venga en shape camelCase nested (no raw snake_case del backend).
     const closedOrder = await this.withBugDetection(
       "Cerrar orden (POST /orders/:id/close)",
-      () => apiClient.post<Order>(`${API_ENDPOINTS.operations.orders}/${id}/close`, closureData)
+      async () => {
+        const response = await apiClient.post<Record<string, unknown>>(
+          `${API_ENDPOINTS.operations.orders}/${id}/close`,
+          closureData
+        );
+        const raw = (response.data ?? response) as BackendOrder;
+        return mapOrderFromBackend(raw);
+      }
     );
 
-    // Publicar evento específico de cierre
-    tmsEventBus.publish('order:closed', {
-      orderId: closedOrder.id,
-      orderNumber: closedOrder.orderNumber,
-      customerId: closedOrder.customerId,
-      vehicleId: closedOrder.vehicleId,
-      driverId: closedOrder.driverId,
-      closedBy: closureData.closedBy,
-    }, 'order-service');
+    // 2026-05-05: migrado al helper centralizado orderEvents.closed
+    // (antes se construia el payload inline aqui — ahora un solo lugar
+    // en order-events.ts mantiene el shape estandar).
+    orderEvents.closed(closedOrder, closureData.closedBy);
 
     return closedOrder;
   }
@@ -395,12 +441,19 @@ class OrderService {
     milestoneId: string,
     data: Partial<OrderMilestone>
   ): Promise<Order> {
+    // 2026-05-05 (bug fix): aplicar mapOrderFromBackend para evitar que el
+    // state quede con shape raw del backend (causa crashes de createdAt y
+    // cargo undefined al re-renderizar).
     return this.withBugDetection(
       "Actualizar hito (PATCH /orders/:id/milestones/:milestoneId)",
-      () => apiClient.patch<Order>(
-        `${API_ENDPOINTS.operations.orders}/${orderId}/milestones/${milestoneId}`,
-        data
-      )
+      async () => {
+        const response = await apiClient.patch<Record<string, unknown>>(
+          `${API_ENDPOINTS.operations.orders}/${orderId}/milestones/${milestoneId}`,
+          data
+        );
+        const raw = (response.data ?? response) as BackendOrder;
+        return mapOrderFromBackend(raw);
+      }
     );
   }
 
@@ -432,7 +485,74 @@ class OrderService {
   async sendToExternal(id: string): Promise<Order> {
     // Backend NO tiene /orders/:id/send-external (single). Usamos /bulk-send con un solo ID.
     await apiClient.post(`${API_ENDPOINTS.operations.orders}/bulk-send`, { orderIds: [id] });
-    return apiClient.get<Order>(`${API_ENDPOINTS.operations.orders}/${id}`);
+    // 2026-05-05 (bug fix): la respuesta raw del backend viene en snake_case
+    // y flat (created_at, total_weight, etc.) pero el frontend espera shape
+    // camelCase nested (createdAt, cargo.weightKg, etc.). Sin el transformer
+    // el state queda corrupto y crashea formatDate(order.createdAt) y similares.
+    const response = await apiClient.get<Record<string, unknown>>(
+      `${API_ENDPOINTS.operations.orders}/${id}`
+    );
+    const raw = (response.data ?? response) as BackendOrder;
+    return mapOrderFromBackend(raw);
+  }
+
+  /**
+   * Envia una orden de forma INTELIGENTE.
+   *
+   * 2026-05-05: nuevo metodo que cubre el caso comun "el usuario quiere
+   * enviar una orden recien creada que esta en draft". Antes el flujo era:
+   *   1. Cambiar manualmente status a pending (PATCH /:id/status)
+   *   2. Click en "Enviar" (POST /bulk-send)
+   * Pero el botón "Enviar" solo aparecía con status=pending|assigned, asi
+   * que en draft quedaba bloqueado.
+   *
+   * Comportamiento:
+   *   - draft     → PATCH /:id/status pending → POST /bulk-send → GET /:id
+   *   - pending   → POST /bulk-send → GET /:id
+   *   - assigned  → POST /bulk-send → GET /:id
+   *   - otros     → throw (no se puede enviar)
+   *
+   * Cuando el backend implemente `POST /orders/:id/send` unificado, este
+   * metodo se reduce a un solo call. Ver propuesta en mensaje al backend.
+   */
+  async sendSmart(id: string): Promise<Order> {
+    // Leemos el status actual para decidir el flujo
+    const current = await this.getOrderById(id);
+    if (!current) {
+      throw new Error("Orden no encontrada");
+    }
+
+    const status = current.status;
+    if (status === "closed" || status === "cancelled" || status === "completed") {
+      throw new Error(
+        `No se puede enviar una orden en estado "${status}". Solo se pueden enviar ordenes en borrador, pendientes o asignadas.`
+      );
+    }
+
+    // Si esta en draft, primero cambiamos a pending
+    if (status === "draft") {
+      // Validacion minima: debe tener customer y al menos origin/destination
+      const hasMinimalData =
+        current.customerId &&
+        current.milestones.length >= 2 &&
+        current.milestones[0]?.address &&
+        current.milestones[current.milestones.length - 1]?.address;
+
+      if (!hasMinimalData) {
+        throw new Error(
+          "Faltan datos requeridos: cliente, direccion de origen y direccion de destino son obligatorios para enviar."
+        );
+      }
+
+      // 2026-05-05 (bug fix): usar changeStatus que ya hace PATCH /:id/status
+      // (endpoint dedicado). Antes usaba updateOrder que va al endpoint
+      // generico /orders/:id donde el backend ignora el campo status.
+      // changeStatus tambien emite order:status_changed al bus.
+      await this.changeStatus(id, "pending");
+    }
+
+    // Llamamos a sendToExternal que hace POST /bulk-send + GET /:id
+    return this.sendToExternal(id);
   }
 
   /**

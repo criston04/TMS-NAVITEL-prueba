@@ -363,7 +363,10 @@ function MilestoneEditorComponent({
             ...m,
             geofenceId: value,
             geofenceName: geofence.name,
-            address: geofence.address || '',
+            // 2026-05-15: el backend exige origin_address/destination_address.
+            // Si la geocerca no tiene address, usamos su nombre como fallback
+            // (mejor que enviar string vacio y recibir 400).
+            address: geofence.address || geofence.name || '',
             coordinates: coords,
           };
         }

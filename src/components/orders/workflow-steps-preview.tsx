@@ -139,7 +139,11 @@ interface StepItemProps {
 function StepItem({ step, index, totalSteps, isCompact, isCurrent }: StepItemProps) {
   const milestoneType = getMilestoneType(index, totalSteps);
   const isLast = index === totalSteps - 1;
-  const actionConfig = ACTION_CONFIG[step.action];
+  // 2026-05-05 (bug fix): fallback defensivo. Si el backend devuelve actions
+  // con un `type` no contemplado en el enum WorkflowStepAction (ej. "notify"),
+  // step.action queda undefined y ACTION_CONFIG[undefined] crashea con
+  // "Cannot read properties of undefined (reading 'icon')". Cae a 'custom'.
+  const actionConfig = ACTION_CONFIG[step.action] ?? ACTION_CONFIG.custom;
   const ActionIcon = actionConfig.icon;
 
   if (isCompact) {
@@ -290,7 +294,7 @@ function WorkflowStepsPreviewComponent({
         <div className="flex items-center justify-center gap-0 overflow-x-auto py-2">
           {sortedSteps.map((step, index) => (
             <StepItem
-              key={step.id}
+              key={step.id ?? `step-compact-${index}`}
               step={step}
               index={index}
               totalSteps={sortedSteps.length}
@@ -330,7 +334,10 @@ function WorkflowStepsPreviewComponent({
       <div className="space-y-0">
         {sortedSteps.map((step, index) => (
           <StepItem
-            key={step.id}
+            // 2026-05-05 (bug fix): fallback de key cuando step.id viene
+            // undefined desde un workflow malformado. React warning: "Each
+            // child should have a unique key prop".
+            key={step.id ?? `step-${index}`}
             step={step}
             index={index}
             totalSteps={sortedSteps.length}

@@ -58,23 +58,41 @@ export type PlatformRole =
  * Roles de Usuario Maestro — Nivel 2: Client Admin
  * Administradores principales dentro de una cuenta cliente.
  * Control total sobre su propio tenant.
+ *
+ * 2026-05-08: simplificado segun definicion del Owner del TMS:
+ *   "Maestro - usuario clave del cliente puede crear usuarios y darles permisos"
+ *
+ * `master` es el alias canonico (Patrick). `owner` se mantiene como alias
+ * deprecated para compat con backend que devuelve `OWNER` y datos existentes.
  */
 export type MasterUserRole =
-  | "owner"   // Dueño / Gerente General de la cuenta (Usuario Maestro)
-  | "admin";  // Co-administrador del tenant
+  | "master"   // ⭐ NUEVO — Maestro del cliente (alias canonico de Patrick).
+  | "owner"    // DEPRECATED alias de "master" (compat con `OWNER` del backend).
+  | "admin";   // Co-administrador del tenant (variante del Maestro).
 
 /**
  * Roles de Subusuario — Nivel 3: Operador / Usuario Operativo
- * Usuarios con permisos limitados definidos por el Usuario Maestro.
+ *
+ * 2026-05-08: simplificado segun definicion del Owner del TMS:
+ *   "Supervisor - usuario que usaran los trabajadores del cliente,
+ *    no pueden modificar configuraciones pero si operar en los modulos
+ *    que se le asignen"
+ *
+ * Patrick definio UN solo rol "Supervisor" generico. Los 7 sub-roles
+ * especializados (despachador, gerente_*, etc.) se mantienen como
+ * DEPRECATED para retro-compat con datos existentes — la UI los mapea
+ * automaticamente a "supervisor". El backend deberia migrarlos a futuro.
  */
 export type SubUserRole =
-  | "gerente_operaciones"   // Jefe de Operaciones
-  | "despachador"           // Coordinador / Despachador
-  | "gerente_finanzas"      // Jefe de Finanzas / Contador
-  | "gerente_flota"         // Jefe de Flota / Mantenimiento
-  | "operador_monitoreo"    // Operador de Torre de Control
-  | "conductor"             // Conductor / Chofer
-  | "auditor";              // Auditor / Solo lectura
+  | "supervisor"            // ⭐ NUEVO — generico, sin plantilla. Permisos los asigna el Maestro.
+  // ── DEPRECATED (compat con datos existentes — se mapean a "supervisor"): ──
+  | "gerente_operaciones"
+  | "despachador"
+  | "gerente_finanzas"
+  | "gerente_flota"
+  | "operador_monitoreo"
+  | "conductor"
+  | "auditor";
 
 /**
  * Roles internos del sistema (personal de la empresa) — Nivel 2 + Nivel 3
@@ -83,10 +101,21 @@ export type InternalRole = MasterUserRole | SubUserRole;
 
 /**
  * Roles externos (acceso portal) — Nivel 3 (subusuarios con acceso externo)
+ *
+ * 2026-05-08:
+ *   Patrick: "Cliente — solo visualiza"
+ *   Patrick: "Tercero — solo visualiza y puede interactuar en los modulos
+ *            que se le asignen"
+ *
+ * `cliente` y `tercero` son los aliases canonicos. Los antiguos
+ * (`empresa_cliente`, `operador_logistico`) se mantienen DEPRECATED.
  */
 export type ExternalRole =
-  | "empresa_cliente"       // Cliente con acceso al portal
-  | "operador_logistico";   // Transportista / Operador tercero
+  | "cliente"               // ⭐ NUEVO — solo lectura sobre sus datos.
+  | "tercero"               // ⭐ NUEVO — lectura + interaccion en modulos asignados.
+  // ── DEPRECATED ──
+  | "empresa_cliente"       // alias de "cliente"
+  | "operador_logistico";   // alias de "tercero"
 
 /**
  * Todos los roles del sistema dentro de un tenant (excluye roles de plataforma)
@@ -99,38 +128,42 @@ export type UserRole = InternalRole | ExternalRole;
 export type AnyRole = PlatformRole | UserRole;
 
 /**
- * Agrupación lógica de roles (útil para validaciones rápidas)
+ * Agrupación lógica de roles (útil para validaciones rápidas).
+ *
+ * 2026-05-08: incluye roles NUEVOS (master, supervisor, cliente, tercero)
+ * y DEPRECATED (owner, admin, gerente_*, despachador, operador_monitoreo,
+ * conductor, auditor, empresa_cliente, operador_logistico) para retro-compat.
  */
 export const ROLE_GROUPS = {
   // ── Por Nivel/Tier ──
   /** Nivel 1: Plataforma (Owner del TMS, acceso cross-tenant) */
   PLATFORM: ["platform_owner", "platform_admin"] as const,
-  /** Nivel 2: Usuarios Maestros (Client Admin dentro de un tenant) */
-  MASTER_USERS: ["owner", "admin"] as const,
-  /** Nivel 3: Subusuarios (Operadores / Usuarios Operativos) */
-  SUB_USERS: ["gerente_operaciones", "despachador", "gerente_finanzas", "gerente_flota", "operador_monitoreo", "conductor", "auditor"] as const,
+  /** Nivel 2: Maestros (Client Admin) — incluye nuevos + deprecated */
+  MASTER_USERS: ["master", "owner", "admin"] as const,
+  /** Nivel 3: Subusuarios — incluye "supervisor" nuevo + deprecated */
+  SUB_USERS: ["supervisor", "gerente_operaciones", "despachador", "gerente_finanzas", "gerente_flota", "operador_monitoreo", "conductor", "auditor"] as const,
 
   // ── Por Función ──
-  /** Acceso total dentro del tenant (Usuarios Maestros) */
-  SUPER: ["owner", "admin"] as const,
-  /** Gestión operativa */
-  OPERATIONS: ["owner", "admin", "gerente_operaciones", "despachador"] as const,
+  /** Acceso total dentro del tenant (Maestros) */
+  SUPER: ["master", "owner", "admin"] as const,
+  /** Gestión operativa (todos los maestros + supervisores especializados) */
+  OPERATIONS: ["master", "owner", "admin", "supervisor", "gerente_operaciones", "despachador"] as const,
   /** Gestión financiera */
-  FINANCE: ["owner", "admin", "gerente_finanzas"] as const,
+  FINANCE: ["master", "owner", "admin", "supervisor", "gerente_finanzas"] as const,
   /** Gestión de flota */
-  FLEET: ["owner", "admin", "gerente_flota"] as const,
+  FLEET: ["master", "owner", "admin", "supervisor", "gerente_flota"] as const,
   /** Monitoreo */
-  MONITORING: ["owner", "admin", "gerente_operaciones", "despachador", "operador_monitoreo"] as const,
+  MONITORING: ["master", "owner", "admin", "supervisor", "gerente_operaciones", "despachador", "operador_monitoreo"] as const,
   /** Solo lectura general */
-  READERS: ["owner", "admin", "gerente_operaciones", "despachador", "gerente_finanzas", "gerente_flota", "operador_monitoreo", "auditor"] as const,
+  READERS: ["master", "owner", "admin", "supervisor", "gerente_operaciones", "despachador", "gerente_finanzas", "gerente_flota", "operador_monitoreo", "auditor", "cliente", "empresa_cliente", "tercero", "operador_logistico"] as const,
   /** Pueden crear/gestionar usuarios (dentro del tenant) */
-  USER_MANAGERS: ["owner", "admin"] as const,
+  USER_MANAGERS: ["master", "owner", "admin"] as const,
   /** Pueden cambiar configuración de la cuenta */
-  CONFIG_MANAGERS: ["owner", "admin"] as const,
+  CONFIG_MANAGERS: ["master", "owner", "admin"] as const,
   /** Internos (todos los de la empresa) */
-  INTERNAL: ["owner", "admin", "gerente_operaciones", "despachador", "gerente_finanzas", "gerente_flota", "operador_monitoreo", "conductor", "auditor"] as const,
-  /** Externos */
-  EXTERNAL: ["empresa_cliente", "operador_logistico"] as const,
+  INTERNAL: ["master", "owner", "admin", "supervisor", "gerente_operaciones", "despachador", "gerente_finanzas", "gerente_flota", "operador_monitoreo", "conductor", "auditor"] as const,
+  /** Externos (clientes y terceros) */
+  EXTERNAL: ["cliente", "empresa_cliente", "tercero", "operador_logistico"] as const,
 } as const;
 
 // ════════════════════════════════════════════════════════
@@ -401,6 +434,8 @@ export interface RegisterDTO {
  * Payload para crear usuario dentro del tenant (Usuario Maestro crea subusuarios)
  */
 export interface CreateUserDTO {
+  /** Username de login. OBLIGATORIO. El backend acepta `username` en POST /auth/login. */
+  username: string;
   name: string;
   email: string;
   password: string;
@@ -1055,18 +1090,17 @@ export const DEFAULT_ROLES: RoleDefinition[] = [
     ],
   },
 
-  // ── OPERADOR LOGÍSTICO (EXTERNO) ────────────
+  // ── OPERADOR LOGÍSTICO (EXTERNO) ──────────── DEPRECATED — usar `tercero`
   {
     code: "operador_logistico",
-    label: "Operador Logístico (Tercero)",
+    label: "Operador Logístico (Tercero) [DEPRECATED]",
     description:
-      "Subusuario externo — Transportista o socio externo: accede a órdenes asignadas, actualiza estados de entrega.",
+      "DEPRECATED: usar 'tercero' en su lugar. Subusuario externo — Transportista o socio externo: accede a órdenes asignadas, actualiza estados de entrega.",
     isSystem: true,
     level: 8,
     category: "external",
     tier: "tenant_user",
     permissions: [
-      // Filtrado por carrierId del operador
       { resource: "orders", actions: ["read", "update"] },
       { resource: "monitoring_control_tower", actions: ["read"] },
       { resource: "drivers", actions: ["read"] },
@@ -1081,11 +1115,242 @@ export const DEFAULT_ROLES: RoleDefinition[] = [
       "Solo ve órdenes filtradas por su empresa (carrierId)",
     ],
   },
+
+  // ════════════════════════════════════════════════════════
+  // 2026-05-08: 5 ROLES CANONICOS (definidos por el Owner del TMS)
+  // ════════════════════════════════════════════════════════
+  // Owner       → platform_owner (ya existe arriba)
+  // Maestro     → master         (NUEVO — alias canonico de "owner" del tenant)
+  // Supervisor  → supervisor     (NUEVO — generico, sin plantilla)
+  // Cliente     → cliente        (NUEVO — alias canonico de "empresa_cliente")
+  // Tercero     → tercero        (NUEVO — alias canonico de "operador_logistico")
+  // ════════════════════════════════════════════════════════
+
+  // ── MAESTRO (NUEVO 2026-05-08) ────────
+  // Patrick: "Maestro - usuario clave del cliente puede crear usuarios y darles permisos"
+  {
+    code: "master",
+    label: "Maestro",
+    description:
+      "Usuario clave del cliente. Puede crear usuarios (Supervisor/Cliente/Tercero) y darles permisos sobre los modulos activos del tenant. Control total dentro de su tenant. Equivalente al rol `owner` legacy.",
+    isSystem: true,
+    level: 1,
+    category: "internal",
+    tier: "tenant_admin",
+    permissions: [
+      // Mismos permisos que el rol `owner` legacy
+      { resource: "orders", actions: ["create", "read", "update", "delete", "export", "import", "approve", "assign"] },
+      { resource: "scheduling", actions: ["create", "read", "update", "delete", "assign"] },
+      { resource: "workflows", actions: ["create", "read", "update", "delete", "approve"] },
+      { resource: "incidents", actions: ["create", "read", "update", "delete"] },
+      { resource: "bitacora", actions: ["create", "read", "update", "delete"] },
+      { resource: "route_planner", actions: ["create", "read", "update", "delete"] },
+      { resource: "monitoring_control_tower", actions: ["read"] },
+      { resource: "monitoring_retransmission", actions: ["read", "update"] },
+      { resource: "monitoring_historical", actions: ["read", "export"] },
+      { resource: "monitoring_multiwindow", actions: ["read"] },
+      { resource: "monitoring_alerts", actions: ["create", "read", "update", "delete"] },
+      { resource: "invoices", actions: ["create", "read", "update", "delete", "export", "approve"] },
+      { resource: "payments", actions: ["create", "read", "update", "delete", "approve"] },
+      { resource: "costs", actions: ["create", "read", "update", "delete"] },
+      { resource: "rates", actions: ["create", "read", "update", "delete"] },
+      { resource: "finance_reports", actions: ["read", "export"] },
+      { resource: "settlements", actions: ["create", "read", "update", "delete", "approve"] },
+      { resource: "work_orders", actions: ["create", "read", "update", "delete", "approve"] },
+      { resource: "maintenance_schedules", actions: ["create", "read", "update", "delete"] },
+      { resource: "inspections", actions: ["create", "read", "update", "delete"] },
+      { resource: "parts_inventory", actions: ["create", "read", "update", "delete"] },
+      { resource: "workshops", actions: ["create", "read", "update", "delete"] },
+      { resource: "breakdowns", actions: ["create", "read", "update", "delete"] },
+      { resource: "customers", actions: ["create", "read", "update", "delete", "export", "import"] },
+      { resource: "drivers", actions: ["create", "read", "update", "delete", "export", "import"] },
+      { resource: "vehicles", actions: ["create", "read", "update", "delete", "export", "import"] },
+      { resource: "operators", actions: ["create", "read", "update", "delete"] },
+      { resource: "products", actions: ["create", "read", "update", "delete"] },
+      { resource: "geofences", actions: ["create", "read", "update", "delete"] },
+      { resource: "assignments", actions: ["create", "read", "update", "delete"] },
+      { resource: "reports", actions: ["create", "read", "update", "delete", "export"] },
+      { resource: "report_schedules", actions: ["create", "read", "update", "delete"] },
+      { resource: "notifications", actions: ["read", "update"] },
+      { resource: "notification_templates", actions: ["create", "read", "update", "delete"] },
+      { resource: "settings_general", actions: ["read", "update"] },
+      { resource: "settings_operations", actions: ["read", "update"] },
+      { resource: "settings_fleet", actions: ["read", "update"] },
+      { resource: "settings_finance", actions: ["read", "update"] },
+      { resource: "settings_notifications", actions: ["read", "update"] },
+      { resource: "settings_security", actions: ["read", "update"] },
+      { resource: "settings_appearance", actions: ["read", "update"] },
+      { resource: "roles", actions: ["create", "read", "update", "delete"] },
+      { resource: "users", actions: ["create", "read", "update", "delete"] },
+      { resource: "integrations", actions: ["create", "read", "update", "delete"] },
+      { resource: "audit_log", actions: ["read", "export"] },
+      { resource: "subscription", actions: ["read"] },
+    ],
+    restrictions: [
+      "No puede crear nuevas cuentas de clientes (tenants)",
+      "No puede activar módulos no contratados por la plataforma",
+      "No puede transferir unidades entre tenants",
+      "No puede gestionar facturación de la plataforma",
+    ],
+  },
+
+  // ── SUPERVISOR (NUEVO 2026-05-08) ──────
+  // Patrick: "Supervisor - usuario que usaran los trabajadores del cliente
+  //          no pueden modificar configuraciones pero si operar en los modulos
+  //          que se le asignen"
+  //
+  // SIN PERMISOS DEFAULT — el Maestro arma el set manualmente con
+  // customPermissions. Esto es lo que pide Patrick (1 rol generico).
+  {
+    code: "supervisor",
+    label: "Supervisor",
+    description:
+      "Trabajador del cliente. Opera los modulos que el Maestro le asigne. " +
+      "NO puede modificar configuraciones del sistema. SIN permisos por defecto " +
+      "— el Maestro debe armar el set de permisos via 'customPermissions' al crear el usuario.",
+    isSystem: true,
+    level: 4,
+    category: "internal",
+    tier: "tenant_user",
+    // VACIO — el Maestro asigna permisos via customPermissions
+    permissions: [],
+    restrictions: [
+      "No puede crear usuarios",
+      "No puede modificar estructura de permisos",
+      "No puede activar o desactivar módulos",
+      "No puede cambiar configuración de la cuenta",
+      "Solo opera modulos que el Maestro le asigne explicitamente",
+    ],
+  },
+
+  // ── CLIENTE (NUEVO 2026-05-08) ─────────
+  // Patrick: "Cliente - solo visualiza"
+  //
+  // Mismos permisos que `empresa_cliente` legacy: solo lectura sobre sus datos.
+  {
+    code: "cliente",
+    label: "Cliente",
+    description:
+      "Solo visualiza datos que el Maestro le permita. Acceso al portal del cliente " +
+      "donde ve sus ordenes, vehiculos asignados, etc. en modo lectura.",
+    isSystem: true,
+    level: 7,
+    category: "external",
+    tier: "tenant_user",
+    permissions: [
+      { resource: "orders", actions: ["read"] },
+      { resource: "monitoring_control_tower", actions: ["read"] },
+      { resource: "monitoring_historical", actions: ["read"] },
+      { resource: "invoices", actions: ["read"] },
+      { resource: "notifications", actions: ["read"] },
+    ],
+    restrictions: [
+      "Solo lectura — NO puede modificar nada",
+      "Solo ve sus propios datos (filtrado por customerId)",
+      "No puede crear, editar ni eliminar registros",
+      "No tiene acceso a configuraciones",
+    ],
+  },
+
+  // ── TERCERO (NUEVO 2026-05-08) ─────────
+  // Patrick: "Tercero - solo visualiza y puede interactuar en los modulos
+  //          que se le asignen"
+  //
+  // Mismos permisos que `operador_logistico` legacy.
+  {
+    code: "tercero",
+    label: "Tercero",
+    description:
+      "Transportista u operador externo del cliente. Visualiza datos " +
+      "y puede INTERACTUAR (crear/editar) en los modulos que el Maestro le asigne. " +
+      "Diferencia con Cliente: Tercero PUEDE accionar; Cliente solo visualiza.",
+    isSystem: true,
+    level: 8,
+    category: "external",
+    tier: "tenant_user",
+    permissions: [
+      // Filtrado por carrierId. Mismos permisos que operador_logistico legacy.
+      { resource: "orders", actions: ["read", "update"] },
+      { resource: "monitoring_control_tower", actions: ["read"] },
+      { resource: "drivers", actions: ["read"] },
+      { resource: "vehicles", actions: ["read"] },
+      { resource: "notifications", actions: ["read", "update"] },
+    ],
+    restrictions: [
+      "No puede crear usuarios",
+      "No puede modificar estructura de permisos",
+      "No puede activar o desactivar módulos",
+      "No puede cambiar configuración de la cuenta",
+      "Solo ve y opera sobre datos asignados (filtrado por carrierId)",
+    ],
+  },
 ];
 
 // ════════════════════════════════════════════════════════
 // HELPERS
 // ════════════════════════════════════════════════════════
+
+/**
+ * Mapeo de roles LEGACY → roles canonicos de Patrick (2026-05-08).
+ *
+ * Cuando el backend devuelve un rol antiguo (ej. "despachador", "owner",
+ * "empresa_cliente"), este mapeo lo convierte al rol canonico equivalente
+ * para efectos de UI.
+ *
+ * La conversion es **solo para display**. Los permisos default del rol legacy
+ * siguen aplicando si el usuario tiene `customPermissions: []` (vacio).
+ */
+const LEGACY_ROLE_MAP: Record<string, UserRole> = {
+  // Maestro
+  owner: "master",
+  master_user: "master",  // 2026-05-13: backend devuelve "master_user" desde POST /platform/tenants/:id/master-users
+  // Supervisor (todos los sub-roles especializados → 1 rol generico)
+  gerente_operaciones: "supervisor",
+  despachador: "supervisor",
+  gerente_finanzas: "supervisor",
+  gerente_flota: "supervisor",
+  operador_monitoreo: "supervisor",
+  conductor: "supervisor",
+  auditor: "supervisor",
+  // Cliente
+  empresa_cliente: "cliente",
+  // Tercero
+  operador_logistico: "tercero",
+};
+
+/**
+ * Normaliza un rol al canonico de Patrick (2026-05-08).
+ *
+ * Reglas:
+ *  1. Lowercase del input.
+ *  2. Si es un rol legacy (gerente_*, despachador, conductor, auditor, etc.) → mapeo.
+ *  3. Si es un rol canonico (master/supervisor/cliente/tercero/platform_*) → tal cual.
+ *
+ * **NO toca los permisos** — solo cambia el `code` del rol para display.
+ * El sistema de permisos sigue resolviendo desde DEFAULT_ROLES por code.
+ */
+export function normalizeRole(role: string | AnyRole): AnyRole {
+  if (!role) return role as AnyRole;
+  const lower = (typeof role === "string" ? role.toLowerCase() : role) as string;
+  return (LEGACY_ROLE_MAP[lower] ?? lower) as AnyRole;
+}
+
+/**
+ * Devuelve el label visible del rol (NUEVO o LEGACY).
+ *
+ * Ejemplos:
+ *   getRoleDisplayName("master") → "Maestro"
+ *   getRoleDisplayName("owner")  → "Maestro"  (mapeo legacy)
+ *   getRoleDisplayName("despachador") → "Supervisor (Despachador legacy)"
+ */
+export function getRoleDisplayName(role: string | AnyRole): string {
+  if (!role) return "Sin rol";
+  const normalized = normalizeRole(role);
+  const def = DEFAULT_ROLES.find((r) => r.code === normalized);
+  if (def) return def.label;
+  // Si no hay match en DEFAULT_ROLES, capitalizar el code
+  return String(role).split("_").map((s) => s[0]?.toUpperCase() + s.slice(1)).join(" ");
+}
 
 /**
  * Verifica si un rol tiene acceso a una acción sobre un recurso.
@@ -1100,7 +1365,13 @@ export function hasPermission(
   // Defensivo: el backend hoy devuelve roles en UPPERCASE ("OWNER") pero
   // DEFAULT_ROLES está en lowercase ("owner"). Normalizamos para no romper
   // si algo se filtra sin normalizar.
-  const normalizedRole = (typeof role === "string" ? role.toLowerCase() : role) as AnyRole;
+  // 2026-05-14: usar normalizeRole() para mapear LEGACY (master_user, owner,
+  // despachador, empresa_cliente, etc.) al canonico (master, supervisor, cliente, tercero).
+  // Sin esto, un user con role="master_user" no encuentra permisos en DEFAULT_ROLES
+  // y el sidebar filtra todos los modulos.
+  const normalizedRole = normalizeRole(
+    typeof role === "string" ? role.toLowerCase() : (role as string),
+  );
 
   // Si hay permisos personalizados (no vacíos), usar esos
   const permissions =
@@ -1155,10 +1426,12 @@ export function isPlatformRole(role: AnyRole): role is PlatformRole {
 }
 
 /**
- * Verifica si un rol es de nivel Usuario Maestro (Client Admin)
+ * Verifica si un rol es de nivel Usuario Maestro (Client Admin).
+ * 2026-05-08: incluye "master" (canonico de Patrick), "owner" (legacy alias) y "admin" (co-admin).
+ * 2026-05-13: agregado "master_user" — el backend lo devuelve desde POST /platform/tenants/:id/master-users.
  */
 export function isMasterUserRole(role: AnyRole): role is MasterUserRole {
-  return role === "owner" || role === "admin";
+  return role === "master" || role === "owner" || role === "admin" || (role as string) === "master_user";
 }
 
 /**
@@ -1171,7 +1444,7 @@ export function isSubUserRole(role: AnyRole): boolean {
 
 /**
  * Verifica si un usuario puede crear otros usuarios.
- * Solo los Usuarios Maestros (owner, admin) y la Plataforma pueden.
+ * Solo los Usuarios Maestros (master, owner, admin) y la Plataforma pueden.
  */
 export function canCreateUsers(role: AnyRole): boolean {
   return isPlatformRole(role) || isMasterUserRole(role);
@@ -1179,7 +1452,7 @@ export function canCreateUsers(role: AnyRole): boolean {
 
 /**
  * Verifica si un usuario puede modificar la configuración de la cuenta.
- * Solo los Usuarios Maestros (owner, admin) pueden.
+ * Solo los Usuarios Maestros (master, owner, admin) pueden.
  */
 export function canModifyAccountConfig(role: AnyRole): boolean {
   return isPlatformRole(role) || isMasterUserRole(role);

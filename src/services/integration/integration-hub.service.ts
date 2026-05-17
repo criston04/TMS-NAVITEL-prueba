@@ -21,6 +21,62 @@ import {
   type GeofenceEventPayload,
   type RouteConfirmedPayload,
 } from './event-bus.service';
+import { getStoredUser } from '@/lib/auth-storage';
+
+/**
+ * 2026-05-14 SECURITY FIX: las claves de localStorage estaban globales y causaban
+ * fuga de datos entre usuarios distintos del mismo navegador (e.g. órdenes
+ * auto-generadas del usuario A aparecían para el usuario B). Ahora se scopean
+ * por userId. Si no hay usuario logueado, NO se lee ni escribe nada.
+ *
+ * Claves antes (sin scope):  tms-generated-orders, tms-auto-costs, tms-auto-invoices,
+ *                            tms-scheduling-assignments, tms-vehicle-status-updates,
+ *                            tms-milestone-updates
+ * Claves ahora (scoped):     tms-<name>-<userId>
+ *
+ * `clearAuthSession()` también barre estas keys en logout (defensa en profundidad).
+ */
+function getCurrentUserId(): string | null {
+  if (typeof window === 'undefined') return null;
+  const user = getStoredUser<{ id?: string }>();
+  return user?.id ?? null;
+}
+
+function scopedKey(name: string): string | null {
+  const uid = getCurrentUserId();
+  if (!uid) return null;
+  return `tms-${name}-${uid}`;
+}
+
+/** Lee un array JSON del localStorage scoped. Devuelve [] si no hay user o no hay datos. */
+function readScopedArray<T>(name: string): T[] {
+  if (typeof window === 'undefined') return [];
+  const key = scopedKey(name);
+  if (!key) return [];
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Escribe un array JSON al localStorage scoped. No hace nada si no hay user. */
+function writeScopedArray<T>(name: string, data: T[]): void {
+  if (typeof window === 'undefined') return;
+  const key = scopedKey(name);
+  if (!key) {
+    console.warn(`[TMSIntegrationHub] No userId — skip persisting ${name}`);
+    return;
+  }
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.warn(`[TMSIntegrationHub] Error persisting ${name}:`, e);
+  }
+}
 
 /**
  * Hub de integración que conecta todos los módulos del TMS.
@@ -286,14 +342,9 @@ class TMSIntegrationHub {
       generatedOrders.push(order);
     }
 
-    // Persistir en localStorage para que OrderService las recupere
-    if (typeof window !== 'undefined') {
-      const existing = JSON.parse(localStorage.getItem('tms-generated-orders') || '[]');
-      localStorage.setItem(
-        'tms-generated-orders',
-        JSON.stringify([...existing, ...generatedOrders])
-      );
-    }
+    // Persistir en localStorage scoped por user, para que OrderService las recupere
+    const existingGenerated = readScopedArray<Record<string, unknown>>('generated-orders');
+    writeScopedArray('generated-orders', [...existingGenerated, ...generatedOrders]);
 
     console.log(
       `[TMSIntegrationHub] Route Planner → Orders: ${generatedOrders.length} órdenes generadas`
@@ -332,12 +383,9 @@ class TMSIntegrationHub {
       createdBy: 'system',
     };
 
-    // Persistir costo en localStorage
-    if (typeof window !== 'undefined') {
-      const existingCosts = JSON.parse(localStorage.getItem('tms-auto-costs') || '[]');
-      existingCosts.push(transportCost);
-      localStorage.setItem('tms-auto-costs', JSON.stringify(existingCosts));
-    }
+    // Persistir costo en localStorage scoped por user
+    const existingCosts = readScopedArray<typeof transportCost>('auto-costs');
+    writeScopedArray('auto-costs', [...existingCosts, transportCost]);
 
     tmsEventBus.publish('finance:cost_recorded', {
       costId: transportCost.id,
@@ -370,12 +418,11 @@ class TMSIntegrationHub {
    * Pre-genera factura borrador vinculada al cliente
    */
   private async handleOrderClosed(payload: OrderClosedPayload): Promise<void> {
-    // Recuperar costos acumulados para esta orden
-    let orderCosts: Array<{ amount: number }> = [];
-    if (typeof window !== 'undefined') {
-      const allCosts = JSON.parse(localStorage.getItem('tms-auto-costs') || '[]');
-      orderCosts = allCosts.filter((c: { orderId?: string }) => c.orderId === payload.orderId);
-    }
+    // Recuperar costos acumulados para esta orden (solo del usuario actual)
+    const allCosts = readScopedArray<{ orderId?: string; amount: number }>('auto-costs');
+    const orderCosts: Array<{ amount: number }> = allCosts.filter(
+      (c) => c.orderId === payload.orderId,
+    );
 
     const totalCosts = orderCosts.reduce((sum, c) => sum + c.amount, 0);
 
@@ -412,12 +459,9 @@ class TMSIntegrationHub {
     draftInvoice.totalAmount = Math.round((draftInvoice.subtotal + draftInvoice.taxAmount) * 100) / 100;
     draftInvoice.amountDue = draftInvoice.totalAmount;
 
-    // Persistir en localStorage
-    if (typeof window !== 'undefined') {
-      const existingInvoices = JSON.parse(localStorage.getItem('tms-auto-invoices') || '[]');
-      existingInvoices.push(draftInvoice);
-      localStorage.setItem('tms-auto-invoices', JSON.stringify(existingInvoices));
-    }
+    // Persistir en localStorage scoped por user
+    const existingInvoices = readScopedArray<typeof draftInvoice>('auto-invoices');
+    writeScopedArray('auto-invoices', [...existingInvoices, draftInvoice]);
 
     tmsEventBus.publish('finance:invoice_created', {
       invoiceId: draftInvoice.id,
@@ -508,10 +552,21 @@ class TMSIntegrationHub {
    * Scheduling Assignment → Orders persistence
    */
   private async handleSchedulingAssigned(payload: SchedulingAssignedPayload): Promise<void> {
-    // Persistir la asignación en localStorage para que OrderService la vea
-    if (typeof window !== 'undefined') {
-      const assignments = JSON.parse(localStorage.getItem('tms-scheduling-assignments') || '[]');
-      assignments.push({
+    // Persistir la asignación en localStorage scoped por user, para que OrderService la vea
+    interface SchedulingAssignment {
+      orderId: string;
+      orderNumber: string;
+      vehicleId: string;
+      vehiclePlate: string;
+      driverId: string;
+      driverName: string;
+      scheduledDate: string;
+      assignedAt: string;
+    }
+    const assignments = readScopedArray<SchedulingAssignment>('scheduling-assignments');
+    writeScopedArray<SchedulingAssignment>('scheduling-assignments', [
+      ...assignments,
+      {
         orderId: payload.orderId,
         orderNumber: payload.orderNumber,
         vehicleId: payload.vehicleId,
@@ -520,9 +575,8 @@ class TMSIntegrationHub {
         driverName: payload.driverName,
         scheduledDate: payload.scheduledDate,
         assignedAt: new Date().toISOString(),
-      });
-      localStorage.setItem('tms-scheduling-assignments', JSON.stringify(assignments));
-    }
+      },
+    ]);
 
     console.log(
       `[TMSIntegrationHub] Scheduling → Orders: ${payload.orderNumber} asignada a ${payload.vehiclePlate}/${payload.driverName}`
@@ -580,16 +634,22 @@ class TMSIntegrationHub {
   ): void {
     if (typeof window === 'undefined') return;
 
-    const updates = JSON.parse(localStorage.getItem('tms-vehicle-status-updates') || '[]');
+    interface VehicleStatusUpdate {
+      vehicleId: string;
+      status: string;
+      availableFrom?: string;
+      updatedAt: string;
+    }
+    const updates = readScopedArray<VehicleStatusUpdate>('vehicle-status-updates');
     // Reemplazar si ya existe para este vehículo
-    const filtered = updates.filter((u: { vehicleId: string }) => u.vehicleId !== vehicleId);
+    const filtered = updates.filter((u) => u.vehicleId !== vehicleId);
     filtered.push({
       vehicleId,
       status,
       availableFrom,
       updatedAt: new Date().toISOString(),
     });
-    localStorage.setItem('tms-vehicle-status-updates', JSON.stringify(filtered));
+    writeScopedArray<VehicleStatusUpdate>('vehicle-status-updates', filtered);
   }
 
   /**
@@ -604,16 +664,26 @@ class TMSIntegrationHub {
   ): void {
     if (typeof window === 'undefined') return;
 
-    const updates = JSON.parse(localStorage.getItem('tms-milestone-updates') || '[]');
-    updates.push({
-      orderId,
-      milestoneId,
-      status,
-      actualEntry,
-      actualExit,
-      updatedAt: new Date().toISOString(),
-    });
-    localStorage.setItem('tms-milestone-updates', JSON.stringify(updates));
+    interface MilestoneUpdate {
+      orderId: string;
+      milestoneId: string;
+      status: string;
+      actualEntry?: string;
+      actualExit?: string;
+      updatedAt: string;
+    }
+    const updates = readScopedArray<MilestoneUpdate>('milestone-updates');
+    writeScopedArray<MilestoneUpdate>('milestone-updates', [
+      ...updates,
+      {
+        orderId,
+        milestoneId,
+        status,
+        actualEntry,
+        actualExit,
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
   }
 }
 

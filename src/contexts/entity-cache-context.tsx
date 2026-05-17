@@ -39,6 +39,7 @@ import type { Driver } from "@/types/models/driver";
 import type { Vehicle } from "@/types/models/vehicle";
 import type { Operator } from "@/types/models/operator";
 import type { Geofence } from "@/types/models/geofence";
+import { useAuth } from "@/contexts/auth-context";
 
 // ════════════════════════════════════════════════════════════════════════════
 // TIPOS
@@ -197,10 +198,30 @@ export function EntityCacheProvider({ children }: { children: React.ReactNode })
     setIsLoading(false);
   }, [fetchCustomers, fetchDrivers, fetchVehicles, fetchOperators]);
 
-  // Carga inicial al montar el dashboard
+  // 2026-05-14 SEGURIDAD: limpiar cache cuando el usuario se desautentica
+  // (logout) o cambia (login con otro user). Evita fuga de datos entre
+  // tenants — si User A logout y User B login, los Selects no muestran
+  // customers/drivers/vehiculos del Tenant de A.
+  //
+  // Tracking del user actual via su id (cambia entre logins) o ausencia (logout).
+  const { user, platformUser, isAuthenticated } = useAuth();
+  const currentUserId = user?.id ?? platformUser?.id ?? null;
+
   useEffect(() => {
+    if (!isAuthenticated) {
+      // Logout o sesión expirada: limpiar TODO el cache de entidades
+      setCustomers([]);
+      setDrivers([]);
+      setVehicles([]);
+      setOperators([]);
+      setGeofences([]);
+      setErrors({ customers: null, drivers: null, vehicles: null, operators: null, geofences: null });
+      setIsLoading(false);
+      return;
+    }
+    // Autenticado (cambio de user incluido): recargar
     refreshAll();
-  }, [refreshAll]);
+  }, [isAuthenticated, currentUserId, refreshAll]);
 
   // ──────────────────────────────────────────────────────────────────────────
   // Maps memoizados para lookup O(1)

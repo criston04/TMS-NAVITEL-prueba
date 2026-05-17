@@ -41,7 +41,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { OrderTimeline, STATUS_CONFIG, PRIORITY_CONFIG, MilestoneManualEntryModal, printOrderReport } from '@/components/orders';
+import { OrderTimeline, STATUS_CONFIG, getStatusConfig, getPriorityConfig, MilestoneManualEntryModal, printOrderReport } from '@/components/orders';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,28 +70,38 @@ interface OrderDetailPageProps {
 }
 
 /**
- * Formatea una fecha
+ * Formatea una fecha.
+ * 2026-05-05 (bug fix): defensivo contra fechas undefined/null/invalidas.
+ * Antes crasheaba con `RangeError: Invalid time value` cuando order.createdAt
+ * llegaba undefined despues de un POST /orders/bulk-send (la response cambiaba
+ * el shape del order). Ahora devuelve "—" si la fecha no es valida.
  */
-function formatDate(date: Date): string {
+function formatDate(date: Date | string | null | undefined): string {
+  if (!date) return '—';
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat('es-MX', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(d);
 }
 
 /**
- * Formatea fecha corta
+ * Formatea fecha corta. Mismo patron defensivo.
  */
-function formatShortDate(date: Date): string {
+function formatShortDate(date: Date | string | null | undefined): string {
+  if (!date) return '—';
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '—';
   return new Intl.DateTimeFormat('es-MX', {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(d);
 }
 
 // COMPONENTE SKELETON
@@ -152,7 +162,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { order, isLoading, error, startTrip, sendToExternal } = useOrder(id, {
+  const { order, isLoading, error, startTrip, refresh: refreshOrder } = useOrder(id, {
     realtimeUpdates: true,
   });
   const { closeOrder, deleteOrder } = useOrders({ autoFetch: false });
@@ -176,9 +186,23 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     await startTrip();
   }, [startTrip]);
 
+  /**
+   * 2026-05-05: usa OrderService.sendSmart para que funcione tambien desde
+   * status=draft (cascada PATCH a pending + POST bulk-send en una sola accion).
+   * Antes esto solo llamaba a sendToExternal que requeria status>=pending.
+   */
   const handleSendToExternal = useCallback(async () => {
-    await sendToExternal();
-  }, [sendToExternal]);
+    if (!order) return;
+    try {
+      const { orderService } = await import('@/services/orders');
+      await orderService.sendSmart(order.id);
+      toastSuccess('Orden enviada al transportista', `${order.orderNumber}`);
+      // Re-fetch la orden para que la UI muestre el status actualizado (pending)
+      await refreshOrder();
+    } catch (err) {
+      toastError(t('common.error'), (err as Error).message ?? 'No se pudo enviar');
+    }
+  }, [order, refreshOrder, toastSuccess, toastError, t]);
 
   const handleExport = useCallback(async () => {
     if (order) {
@@ -289,13 +313,20 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     );
   }
 
-  const statusConfig = STATUS_CONFIG[order.status];
-  const priorityConfig = PRIORITY_CONFIG[order.priority];
+  const statusConfig = getStatusConfig(order.status);
+  const priorityConfig = getPriorityConfig(order.priority);
   const StatusIcon = statusConfig.icon;
 
   // Determinar acciones disponibles
+  // 2026-05-05: canSendToExternal ahora incluye 'draft' porque sendSmart
+  // hace la cascada draft→pending automaticamente. El label del boton
+  // tambien cambia segun el estado para dar contexto visual al usuario.
   const canStartTrip = order.status === 'assigned' && order.vehicle && order.driver;
-  const canSendToExternal = order.status === 'pending' || order.status === 'assigned';
+  const canSendToExternal =
+    order.status === 'draft' ||
+    order.status === 'pending' ||
+    order.status === 'assigned';
+  const sendButtonLabel = order.status === 'draft' ? 'Activar y enviar' : 'Enviar';
   const canClose = order.status === 'completed';
 
   return (
@@ -335,7 +366,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             {canSendToExternal && (
               <Button variant="outline" className="gap-2" onClick={handleSendToExternal}>
                 <Send className="w-4 h-4" />
-                Enviar
+                {sendButtonLabel}
               </Button>
             )}
             <Button variant="outline" size="icon" onClick={() => { if (!printOrderReport(order)) setPrintBlockedAlert(true); }} title="Imprimir orden">
@@ -524,20 +555,26 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 <CardTitle className="text-lg">Información general</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Package className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Tipo de carga</p>
-                    <p className="font-medium">{order.cargo.type}</p>
+                {/* 2026-05-05 (bug fix): order.cargo puede llegar undefined si la
+                    orden viene de un cache antiguo o de un endpoint que no pasa
+                    por mapOrderFromBackend. Acceso defensivo con `?.` y
+                    fallbacks. Solo mostramos las filas si el campo existe. */}
+                {order.cargo?.type && (
+                  <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Tipo de carga</p>
+                      <p className="font-medium">{order.cargo.type}</p>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {Boolean(order.cargo.weightKg) && (
+                {Boolean(order.cargo?.weightKg) && (
                   <div className="flex items-center gap-3">
                     <Package className="w-5 h-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">Peso</p>
-                      <p className="font-medium">{order.cargo.weightKg.toLocaleString()} kg</p>
+                      <p className="font-medium">{order.cargo!.weightKg!.toLocaleString()} kg</p>
                     </div>
                   </div>
                 )}

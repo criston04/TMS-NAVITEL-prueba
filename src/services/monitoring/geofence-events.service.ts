@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from "@/config/api.config";
 import { apiClient } from "@/lib/api";
 import { notificationService } from "@/services/notification.service";
+import { monitoringEvents } from "@/services/integration/monitoring-events";
 import type {
   GeofenceEvent,
   GeofenceDwellSummary,
@@ -65,14 +66,34 @@ class GeofenceEventsService {
   }
 
   /**
-   * Crea un nuevo evento de geocerca.
+   * Crea un nuevo evento de geocerca (entry o exit).
+   *
    * 2026-05-03: agregado unwrap por consistencia con el patron del modulo.
+   * 2026-05-05: publica al tmsEventBus segun eventType para que el hub
+   * actualice los milestones de la orden afectada (cierra el ciclo
+   * MONITOREO -> OPERACIONES que estaba roto).
    */
   async createEvent(data: CreateGeofenceEventDTO): Promise<GeofenceEvent> {
     const raw = await apiClient.post<unknown>(API_ENDPOINTS.monitoring.geofenceEvents, data);
     const created = unwrap<GeofenceEvent>(raw);
     this.notifyListeners(created);
     await this.sendEventNotification(created);
+
+    // Cross-module: propagar al bus segun el tipo de evento
+    const eventInput = {
+      vehicleId: created.vehicleId,
+      vehiclePlate: created.vehiclePlate,
+      geofenceId: created.geofenceId,
+      geofenceName: created.geofenceName,
+      orderId: undefined as string | undefined, // backend aun no asocia orderId
+      timestamp: created.entryTimestamp ?? created.exitTimestamp ?? created.timestamp ?? undefined,
+    };
+    if (created.eventType === "entry") {
+      monitoringEvents.geofenceEntry(eventInput);
+    } else if (created.eventType === "exit") {
+      monitoringEvents.geofenceExit(eventInput);
+    }
+
     return created;
   }
 
@@ -89,7 +110,10 @@ class GeofenceEventsService {
 
   /**
    * Registra una salida de geocerca.
+   *
    * 2026-05-03: agregado unwrap.
+   * 2026-05-05: publica 'monitoring:geofence_exit' al bus para que el hub
+   * marque el milestone como completado y propague a otros modulos.
    */
   async recordExit(
     vehicleId: string,
@@ -103,7 +127,18 @@ class GeofenceEventsService {
       coordinates,
       speed,
     });
-    return unwrap<GeofenceEvent>(raw);
+    const exitEvent = unwrap<GeofenceEvent>(raw);
+
+    monitoringEvents.geofenceExit({
+      vehicleId: exitEvent.vehicleId,
+      vehiclePlate: exitEvent.vehiclePlate,
+      geofenceId: exitEvent.geofenceId,
+      geofenceName: exitEvent.geofenceName,
+      orderId: undefined,
+      timestamp: exitEvent.exitTimestamp ?? exitEvent.timestamp ?? undefined,
+    });
+
+    return exitEvent;
   }
 
   // ANÁLISIS Y ESTADÍSTICAS

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import type {
   AuthUser,
@@ -35,7 +35,7 @@ import {
   getRefreshToken,
   type StoredUser,
 } from "@/lib/auth-storage";
-import { refreshAccessToken } from "@/lib/api";
+import { refreshAccessToken, apiClient } from "@/lib/api";
 
 // ════════════════════════════════════════════════════════
 // TIPOS DEL CONTEXTO
@@ -133,7 +133,8 @@ async function prefetchAccessToken(): Promise<void> {
   try {
     const newAccess = await refreshAccessToken();
     if (!newAccess) {
-      // refresh falló (401, 403, o cualquier otro error): limpiar sesión
+      // refresh falló (401, 403, o cualquier otro error): limpiar sesión + cache
+      apiClient.invalidateCache();
       clearAuthSession();
     }
     // Si OK, ya está persistido en memoria por persistTokens dentro del helper.
@@ -172,6 +173,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (typeof (normalized as { role?: string }).role === "string") {
             (normalized as { role: string }).role = (normalized as { role: string }).role.toLowerCase();
           }
+
+          // 2026-05-07: Promover a platform_owner si es admin del tenant raiz
+          // (mientras el backend no exponga `tier: "platform"` explicito).
+          // Mismo fix que esta en src/app/(auth)/login/page.tsx.
+          const ROOT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
+          const n = normalized as { role?: string; tier?: string; tenantId?: string };
+          if (
+            n.tier !== "platform" &&
+            (n.role === "owner" || n.role === "master" || n.role === "admin") &&
+            n.tenantId === ROOT_TENANT_ID
+          ) {
+            n.role = n.role === "admin" ? "platform_admin" : "platform_owner";
+            n.tier = "platform";
+          }
+          // 2026-05-08: si NO es platform y el rol es legacy "owner", promover a "master"
+          if (n.tier !== "platform" && n.role === "owner") {
+            n.role = "master";
+          }
+          // 2026-05-14: backend devuelve "master_user" desde POST /platform/tenants/:id/master-users
+          if (n.tier !== "platform" && n.role === "master_user") {
+            n.role = "master";
+          }
+
           if (isPlatformUser(normalized)) {
             setPlatformUser(normalized);
             setUser(null);
@@ -187,6 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch {
+        apiClient.invalidateCache();
         clearAuthSession();
       } finally {
         setIsLoading(false);
@@ -270,6 +295,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (normalized as { role: string }).role = (normalized as { role: string }).role.toLowerCase();
     }
 
+    // 2026-05-07: Promover a platform_owner si es admin del tenant raiz.
+    const ROOT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
+    const n2 = normalized as { role?: string; tier?: string; tenantId?: string };
+    if (
+      n2.tier !== "platform" &&
+      (n2.role === "owner" || n2.role === "master" || n2.role === "admin") &&
+      n2.tenantId === ROOT_TENANT_ID
+    ) {
+      n2.role = n2.role === "admin" ? "platform_admin" : "platform_owner";
+      n2.tier = "platform";
+    }
+    // 2026-05-08: legacy `owner` (no platform) → `master` canonico
+    if (n2.tier !== "platform" && n2.role === "owner") {
+      n2.role = "master";
+    }
+    // 2026-05-14: el backend devuelve `master_user` desde POST /platform/tenants/:id/master-users.
+    // Promovemos al canonico `master` (sino, hasPermission devuelve permisos vacios
+    // porque DEFAULT_ROLES tiene `code: "master"`, no "master_user").
+    if (n2.tier !== "platform" && n2.role === "master_user") {
+      n2.role = "master";
+    }
+
     if (isPlatformUser(normalized)) {
       setPlatformUser(normalized);
       setUser(null);
@@ -280,20 +327,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStoredUser(normalized as unknown as StoredUser);
   }, []);
 
+  // 2026-05-14 PERF: refs para que los callbacks `logout` y `updateUser` sean
+  // ESTABLES (nunca cambien la referencia) — antes recreaban en cada
+  // router/user change, lo que rerendea TODOS los consumers de useAuth().
+  const routerRef = useRef(router);
+  const userRef = useRef(user);
+  useEffect(() => { routerRef.current = router; }, [router]);
+  useEffect(() => { userRef.current = user; }, [user]);
+
   const logout = useCallback(() => {
+    // 2026-05-14: FUGA DE DATOS — al hacer logout, el HTTP cache (getResponseCache
+    // en api.ts) y los contextos del dominio (EntityCacheContext, etc.) podian
+    // mantener datos del User A en memoria. Si User B logea en mismo navegador
+    // dentro de 30s, veria customers/drivers/vehiculos del Tenant A.
+    //
+    // Fix: invalidar TODO el cache HTTP + reset de auth states.
+    // EntityCacheContext escucha cambios de `isAuthenticated` para resetearse.
+    apiClient.invalidateCache();
     setUser(null);
     setPlatformUser(null);
     clearAuthSession();
-    router.push("/login");
-  }, [router]);
+    routerRef.current.push("/login");
+  }, []); // Estable: usa routerRef.current
 
   const updateUser = useCallback((data: Partial<AuthUser>) => {
-    if (user) {
-      const updatedUser = { ...user, ...data };
+    const current = userRef.current;
+    if (current) {
+      const updatedUser = { ...current, ...data };
       setUser(updatedUser);
       setStoredUser(updatedUser as unknown as StoredUser);
     }
-  }, [user]);
+  }, []); // Estable: usa userRef.current
 
   /** Verifica si el usuario tiene permiso sobre un recurso + acción */
   const can = useCallback((resource: PermissionResource, action: PermissionAction): boolean => {
@@ -375,12 +439,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     restrictions,
     // Password
     requiresPasswordChange,
+    // 2026-05-14 PERF: login/logout/updateUser son ESTABLES (refs internas)
+    // → no necesitan estar en deps. Esto reduce recreaciones del contextValue.
   }), [
-    user, platformUser, isLoading, login, logout, updateUser,
+    user, platformUser, isLoading,
     can, hasRoleFn, inGroupFn,
     currentTier, isPlatformFlag, isMasterUserFlag, isSubUserFlag,
     canCreateUsersFlag, canModifyConfigFlag, canManageModulesFlag, canTransferVehiclesFlag,
     hasModuleEnabledFn, enabledModules, currentScope, restrictions, requiresPasswordChange,
+    login, logout, updateUser, // estables — incluidos para satisfacer exhaustive-deps
   ]);
 
   // 2026-05-03 (UI bug fix): bloquear children mientras `isLoading=true`

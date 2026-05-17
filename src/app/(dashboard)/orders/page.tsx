@@ -188,24 +188,89 @@ export default function OrdersPage() {
   }, [filters, setFilters]);
 
   // Ejecutar acción masiva
+  // 2026-05-05 (bug fix): antes el toast siempre decia "exito" porque
+  // executeAction nunca lanzaba excepcion (capturaba errores internamente).
+  // Ahora leemos los results reales y mostramos toast informativo.
   const handleBulkAction = useCallback(async (action: 'send_to_carrier' | 'send_to_gps' | 'export' | 'delete') => {
     if (action === 'export') {
       await handleExport();
+      return;
+    }
+
+    const totalSelected = selectedIds.size;
+    const outcome = await executeAction(action, Array.from(selectedIds));
+    const okCount = outcome.success.length;
+    const failCount = outcome.failed.length;
+
+    if (action === 'delete') {
+      // Caso: todas eliminadas OK
+      if (failCount === 0 && okCount > 0) {
+        toastSuccess(
+          t('orders.orderDeleted'),
+          `${okCount} ${t('orders.totalOrders').toLowerCase()}`
+        );
+      } else if (okCount > 0 && failCount > 0) {
+        // Caso: parcialmente OK
+        toastError(
+          `Eliminacion parcial: ${okCount} de ${totalSelected}`,
+          `${failCount} no se pudieron eliminar (probablemente no estaban en estado borrador).`
+        );
+      } else {
+        // Caso: ninguna eliminada
+        const firstError = outcome.failed[0]?.error ?? 'Error desconocido.';
+        toastError(
+          `No se pudo eliminar ${failCount === 1 ? 'la orden' : 'ninguna de las ordenes'}`,
+          firstError
+        );
+      }
+      // Limpiar seleccion y refrescar siempre que haya habido al menos 1 exito
+      if (okCount > 0) {
+        clearSelection();
+        await refresh();
+      }
     } else {
-      try {
-        await executeAction(action, Array.from(selectedIds));
-        if (action === 'delete') {
-          toastSuccess(t('orders.orderDeleted'), `${selectedIds.size} ${t('orders.totalOrders').toLowerCase()}`);
-          clearSelection();
-          await refresh();
-        } else {
-          toastSuccess(t('orders.bulkActionSuccess'), `${selectedIds.size} ${t('orders.totalOrders').toLowerCase()}`);
-        }
-      } catch {
+      // Otras acciones (send_to_carrier, send_to_gps)
+      if (failCount === 0 && okCount > 0) {
+        toastSuccess(
+          t('orders.bulkActionSuccess'),
+          `${okCount} ${t('orders.totalOrders').toLowerCase()}`
+        );
+      } else if (okCount > 0) {
+        toastError(
+          `Accion parcial: ${okCount} de ${totalSelected}`,
+          `${failCount} fallaron.`
+        );
+      } else {
         toastError(t('common.error'), t('orders.bulkActionError'));
       }
     }
-  }, [selectedIds, executeAction, handleExport, clearSelection, refresh, toastSuccess, toastError]);
+  }, [selectedIds, executeAction, handleExport, clearSelection, refresh, toastSuccess, toastError, t]);
+
+  /**
+   * 2026-05-05: Envio individual desde el menu contextual (...) de cada fila.
+   *
+   * Usa OrderService.sendSmart que es "inteligente":
+   *   - Si la orden esta en draft, primero la pasa a pending (PATCH /status)
+   *   - Despues hace POST /orders/bulk-send + GET /:id
+   *
+   * Asi cubrimos el caso comun: el usuario crea una orden y quiere enviarla
+   * inmediatamente sin tener que hacer 2 clicks (cambiar status manualmente
+   * + enviar).
+   */
+  const handleSendSingleOrder = useCallback(async (order: Order) => {
+    try {
+      const { orderService } = await import('@/services/orders');
+      await orderService.sendSmart(order.id);
+      toastSuccess(
+        'Orden enviada al transportista',
+        `${order.orderNumber}`
+      );
+      await refresh();
+    } catch (err) {
+      const msg = (err as Error).message ?? 'Error desconocido';
+      toastError('No se pudo enviar la orden', msg);
+    }
+  }, [refresh, toastSuccess, toastError]);
 
   const activeStatus = useMemo(() => {
     const currentArray = toStatusArray(filters.status);
@@ -305,6 +370,7 @@ export default function OrdersPage() {
           onClearSelection={clearSelection}
           onPageChange={setPage}
           onOrderClick={handleOrderClick}
+          onSendOrder={handleSendSingleOrder}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
         />

@@ -667,7 +667,11 @@ export function OrderFormWizard({
         } : undefined,
       },
       priority,
-      orderNumber: autoGenerateNumber ? undefined : orderNumber,
+      // 2026-05-05 (bug fix): el backend exige order_number en POST /orders
+      // (deploy 2026-05-03 cambio el contrato — antes lo generaba el; ahora
+      // espera que el cliente lo envie). El wizard ya genera uno automatico
+      // y lo muestra en la UI; lo enviamos siempre, no condicional al modo.
+      orderNumber,
       externalReference: externalReference || undefined,
       workflow: selectedWorkflow ? {
         id: selectedWorkflow.id,
@@ -768,6 +772,14 @@ export function OrderFormWizard({
       ? ([selectedDriverObj.firstName, selectedDriverObj.lastName].filter(Boolean).join(' ').trim() || undefined)
       : undefined;
 
+    // 2026-05-05 (bug fix): Red de seguridad para order_number. El backend
+    // exige el campo (deploy 2026-05-03 cambio el contrato; sin el devuelve
+    // 500). En modo automatico el wizard ya genero uno al mount; en modo
+    // manual el usuario lo escribe. Si por edge case llegamos aqui con
+    // orderNumber vacio, generamos uno inline para no perder la creacion.
+    const finalOrderNumber = orderNumber
+      || `ORD-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+
     const data: CreateOrderDTO = {
       customerId,
       carrierId: carrierId || undefined,
@@ -786,8 +798,11 @@ export function OrderFormWizard({
       ...(driverFullName && {
         driver: { id: driverId, fullName: driverFullName },
       }),
-      // Número de orden manual (si no es automático)
-      ...((!autoGenerateNumber && orderNumber) && { orderNumber }),
+      // 2026-05-05 (bug fix): el backend exige order_number en POST /orders
+      // tras el deploy del 2026-05-03 (antes generaba uno auto; ahora 500 si
+      // el cliente no lo envia). Se envia SIEMPRE; finalOrderNumber tiene
+      // fallback inline por si orderNumber estuviera vacio en edge case.
+      orderNumber: finalOrderNumber,
       // Referencia externa
       externalReference: externalReference || undefined,
       // Operador GPS

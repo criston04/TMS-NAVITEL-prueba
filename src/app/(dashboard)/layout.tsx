@@ -1,5 +1,7 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Navbar } from "@/components/layout/navbar";
+import { LicenseBanner } from "@/components/layout/license-banner";
+import { TierGuard } from "@/components/layout/tier-guard";
 import { CustomerCategoriesProvider } from "@/contexts/customer-categories-context";
 import { EntityCacheProvider } from "@/contexts/entity-cache-context";
 import { IntegrationInitializer } from "@/components/shared/integration-initializer";
@@ -30,10 +32,17 @@ export default function DashboardLayout({
           {/* Navbar */}
           <Navbar />
 
-          {/* Page Content */}
+          {/*
+            License banner — muestra trial / vencimiento / suspension del tenant.
+            Solo renderiza cuando el backend expone GET /me/license. Si no, devuelve null.
+            Ver: src/hooks/useLicense.ts + otros/docs-backend/17-plataforma/PLATAFORMA-BACKEND-HANDOFF.md
+          */}
+          <LicenseBanner />
+
+          {/* Page Content — TierGuard valida la URL contra el tier/rol del usuario */}
           <main className="flex-1 overflow-y-auto min-h-0">
             <CustomerCategoriesProvider>
-              {children}
+              <TierGuard>{children}</TierGuard>
             </CustomerCategoriesProvider>
           </main>
         </div>

@@ -374,13 +374,25 @@ interface BulkActionState {
 }
 
 /**
+ * Resultado de la ejecucion de una accion masiva
+ * 2026-05-05: agregado para que el caller sepa cuantas operaciones
+ * se completaron OK vs fallidas. Antes executeAction no retornaba nada y
+ * el caller no podia distinguir un exito real de un fallo silencioso.
+ */
+export interface BulkActionOutcome {
+  success: string[];
+  failed: Array<{ id: string; error: string }>;
+}
+
+/**
  * Resultado del hook useBulkActions
  */
 interface UseBulkActionsResult {
   /** Estado actual */
   state: BulkActionState;
-  /** Ejecuta acción masiva */
-  executeAction: (action: BulkAction, orderIds: string[], params?: Record<string, unknown>) => Promise<void>;
+  /** Ejecuta acción masiva. Retorna {success, failed} para que el caller
+   * pueda mostrar feedback realista al usuario. */
+  executeAction: (action: BulkAction, orderIds: string[], params?: Record<string, unknown>) => Promise<BulkActionOutcome>;
   /** Resetea estado */
   reset: () => void;
   /** Cancela acción en progreso */
@@ -409,10 +421,10 @@ export function useBulkActions(): UseBulkActionsResult {
     action: BulkAction,
     orderIds: string[],
     params: Record<string, unknown> = {}
-  ) => {
+  ): Promise<BulkActionOutcome> => {
     if (orderIds.length === 0) {
       setState(prev => ({ ...prev, error: 'No hay órdenes seleccionadas' }));
-      return;
+      return { success: [], failed: [] };
     }
 
     cancelledRef.current = false;
@@ -457,7 +469,15 @@ export function useBulkActions(): UseBulkActionsResult {
           }
           success.push(orderId);
         } catch (err) {
-          failed.push({ id: orderId, error: (err as Error).message });
+          // 2026-05-05: mensaje mas claro para el 409 del backend.
+          // DELETE /orders/:id solo funciona si la orden esta en draft;
+          // en cualquier otro estado responde 409 Conflict.
+          const status = (err as { status?: number })?.status;
+          let msg = (err as Error).message;
+          if (action === 'delete' && status === 409) {
+            msg = 'Solo se pueden eliminar ordenes en estado "Borrador". Esta orden esta en otro estado.';
+          }
+          failed.push({ id: orderId, error: msg });
         }
 
         const progress = Math.round(((i + 1) / orderIds.length) * 100);
@@ -473,12 +493,16 @@ export function useBulkActions(): UseBulkActionsResult {
         isExecuting: false,
         progress: 100,
       }));
+      // 2026-05-05: retornar el outcome para que el caller pueda mostrar
+      // toast realista (X exitosas, Y fallidas) en vez de asumir exito.
+      return { success, failed };
     } catch (err) {
       setState(prev => ({
         ...prev,
         isExecuting: false,
         error: (err as Error).message,
       }));
+      return { success, failed };
     }
   }, []);
 

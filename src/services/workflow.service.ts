@@ -38,18 +38,119 @@ function parseJsonField<T>(raw: unknown, fallback: T): T {
   }
 }
 
+/**
+ * 2026-05-03: helper para desempacar el envelope `{data: ...}` que el backend
+ * devuelve sistematicamente en los endpoints nuevos de workflows. Aplica a
+ * shapes que NO son Workflow (validate-geofences, schedule-duration, helpers).
+ */
+function unwrapData<T>(response: unknown): T {
+  if (Array.isArray(response)) return response as T;
+  if (response && typeof response === 'object') {
+    const r = response as { data?: unknown; items?: unknown };
+    if (r.data !== undefined) return r.data as T;
+    if (r.items !== undefined) return r.items as T;
+  }
+  return response as T;
+}
+
+/**
+ * Acciones del backend (shape libre) → WorkflowStepAction del frontend.
+ * Si el tipo no encaja en ninguno de los 9 enums, cae a 'custom' (icono Circle).
+ */
+const BACKEND_TYPE_TO_STEP_ACTION: Record<string, string> = {
+  enter_geofence: 'enter_geofence',
+  exit_geofence: 'exit_geofence',
+  manual_check: 'manual_check',
+  document_upload: 'document_upload',
+  signature: 'signature',
+  photo_capture: 'photo_capture',
+  temperature_check: 'temperature_check',
+  weight_check: 'weight_check',
+  notify: 'custom',
+  notification: 'custom',
+  webhook: 'custom',
+  email: 'custom',
+  sms: 'custom',
+};
+
+function mapBackendActionToStep(action: unknown, idx: number): Record<string, unknown> {
+  if (!action || typeof action !== 'object') {
+    return {
+      id: `step-${idx}`,
+      name: `Paso ${idx + 1}`,
+      sequence: idx,
+      action: 'custom',
+      isRequired: true,
+      canSkip: false,
+      actionConfig: {},
+      transitionConditions: [],
+      notifications: [],
+    };
+  }
+  const a = action as Record<string, unknown>;
+  const rawType = (a.type ?? a.action) as string | undefined;
+  const mappedAction = (rawType && BACKEND_TYPE_TO_STEP_ACTION[rawType]) ?? 'custom';
+  const message = typeof a.message === 'string' ? a.message : undefined;
+  const name =
+    (typeof a.name === 'string' ? a.name : undefined)
+    ?? message
+    ?? `Paso ${idx + 1}`;
+
+  return {
+    id: typeof a.id === 'string' ? a.id : `step-${idx}`,
+    name,
+    description: typeof a.description === 'string' ? a.description : message,
+    sequence: typeof a.sequence === 'number' ? a.sequence : idx,
+    action: mappedAction,
+    isRequired: typeof a.isRequired === 'boolean' ? a.isRequired : true,
+    canSkip: typeof a.canSkip === 'boolean' ? a.canSkip : false,
+    actionConfig: (a.actionConfig && typeof a.actionConfig === 'object')
+      ? a.actionConfig as Record<string, unknown>
+      : { instructions: message },
+    estimatedDurationMinutes: typeof a.estimatedDurationMinutes === 'number'
+      ? a.estimatedDurationMinutes
+      : undefined,
+    transitionConditions: Array.isArray(a.transitionConditions) ? a.transitionConditions : [],
+    notifications: Array.isArray(a.notifications) ? a.notifications : [],
+  };
+}
+
 function normalizeWorkflow(rawInput: unknown): Workflow | null {
   if (!rawInput || typeof rawInput !== 'object') return null;
-  const w = snakeToCamel<Record<string, unknown>>(rawInput);
+
+  // 2026-05-03 (bug fix): el backend a veces devuelve {data: {...}} envuelto,
+  // a veces el workflow directo. Desempacamos defensivamente antes de
+  // normalizar. Detectado en suggestWorkflowForOrder cuando el backend
+  // implemento /master/workflows/suggest devolviendo {data: {workflow}}.
+  let unwrapped: unknown = rawInput;
+  if (rawInput && typeof rawInput === 'object' && 'data' in (rawInput as Record<string, unknown>)) {
+    const inner = (rawInput as { data?: unknown }).data;
+    if (inner && typeof inner === 'object') {
+      unwrapped = inner;
+    } else {
+      // {data: null} o {data: undefined} = sin workflow.
+      return null;
+    }
+  }
+
+  const w = snakeToCamel<Record<string, unknown>>(unwrapped);
 
   // El backend no devuelve `steps` por separado todavia; los `actions` se
-  // serializan como JSON-string. Si actions es array, lo usamos como steps
-  // estimados (cada accion ≈ un hito).
+  // serializan como JSON-string con shape backend-specific:
+  //   [{type:"notify", target:"manager", message:"..."}, ...]
+  // 2026-05-05 (bug fix): Antes copiabamos `actions` directo en `steps` y eso
+  // crasheaba <WorkflowStepsPreview/> con:
+  //   - "Each child should have a unique key" (step.id era undefined)
+  //   - "Cannot read properties of undefined (reading 'icon')" (step.action
+  //     era undefined porque backend usa `type`, no `action`)
+  // Mapeamos cada accion del backend a la forma WorkflowStep que el front
+  // espera, sintetizando id/sequence/action defensivamente.
   const actions = parseJsonField<unknown[]>((w as { actions?: unknown }).actions, []);
-  const steps = Array.isArray((w as { steps?: unknown }).steps)
-    ? ((w as { steps: unknown[] }).steps)
+  const rawSteps = (w as { steps?: unknown }).steps;
+  const steps = Array.isArray(rawSteps)
+    ? (rawSteps as unknown[])
     : Array.isArray(actions)
-      ? actions
+      ? actions.map((a, idx) => mapBackendActionToStep(a, idx))
       : [];
 
   return {
@@ -189,11 +290,39 @@ class UnifiedWorkflowService {
   }
 
   /**
-   * Crear nuevo workflow
+   * Crear nuevo workflow.
+   *
+   * 2026-05-15: el backend devuelve 400 "name, triggerEvent, actions required"
+   * si faltan estos 3 campos top-level. El frontend conceptualiza workflows
+   * como secuencia de `steps` con `action` por paso; el backend espera
+   * además un `triggerEvent` (evento disparador) y un array `actions`
+   * (acciones agregadas). Derivamos ambos automáticamente desde los steps
+   * si no vienen explicitos en el DTO.
    */
   async create(data: CreateWorkflowDTO): Promise<Workflow> {
+    const enriched = data as CreateWorkflowDTO & {
+      triggerEvent?: string;
+      actions?: unknown;
+      steps?: Array<{ action?: string }>;
+    };
+    const payload: Record<string, unknown> = { ...enriched };
+
+    // Default triggerEvent → "order_created" (caso más común en TMS)
+    if (!payload.triggerEvent) {
+      payload.triggerEvent = "order_created";
+    }
+    // Default actions → derivado de steps (cada step.action) o steps completos
+    if (!payload.actions) {
+      if (Array.isArray(enriched.steps) && enriched.steps.length > 0) {
+        // Enviar tanto el array de acciones como referencia al backend
+        payload.actions = enriched.steps;
+      } else {
+        payload.actions = [];
+      }
+    }
+
     // v3 Rev3: POST /workflows/definitions
-    const raw = await apiClient.post<unknown>(API_ENDPOINTS.master.workflowDefinitions, data);
+    const raw = await apiClient.post<unknown>(API_ENDPOINTS.master.workflowDefinitions, payload);
     return normalizeWorkflow(raw) as Workflow;
   }
 
@@ -215,17 +344,21 @@ class UnifiedWorkflowService {
   }
 
   /**
-   * Duplicar workflow como plantilla
+   * Duplicar workflow como plantilla.
+   * 2026-05-03: agregado normalizeWorkflow porque el backend devuelve {data: {...}}.
    */
   async duplicate(id: string, newName: string): Promise<Workflow> {
-    return apiClient.post<Workflow>(`${API_ENDPOINTS.master.workflows}/${id}/duplicate`, { newName });
+    const raw = await apiClient.post<unknown>(`${API_ENDPOINTS.master.workflows}/${id}/duplicate`, { newName });
+    return normalizeWorkflow(raw) as Workflow;
   }
 
   /**
-   * Cambiar estado del workflow
+   * Cambiar estado del workflow.
+   * 2026-05-03: agregado normalizeWorkflow.
    */
   async changeStatus(id: string, status: WorkflowStatus): Promise<Workflow> {
-    return apiClient.patch<Workflow>(`${API_ENDPOINTS.master.workflows}/${id}/status`, { status });
+    const raw = await apiClient.patch<unknown>(`${API_ENDPOINTS.master.workflows}/${id}/status`, { status });
+    return normalizeWorkflow(raw) as Workflow;
   }
 
   // CONEXIÓN CON GEOCERCAS
@@ -235,24 +368,28 @@ class UnifiedWorkflowService {
    * Conecta con el módulo de geocercas
    */
   async getAvailableGeofences(): Promise<WorkflowGeofence[]> {
-    return apiClient.get<WorkflowGeofence[]>(`${API_ENDPOINTS.master.workflows}/helpers/available-geofences`);
+    const raw = await apiClient.get<unknown>(`${API_ENDPOINTS.master.workflows}/helpers/available-geofences`);
+    return unwrapData<WorkflowGeofence[]>(raw);
   }
 
   /**
    * Obtener geocercas filtradas por categoría
    */
   async getGeofencesByCategory(category: string): Promise<WorkflowGeofence[]> {
-    return apiClient.get<WorkflowGeofence[]>(`${API_ENDPOINTS.master.workflows}/helpers/geofences-by-category/${category}`);
+    const raw = await apiClient.get<unknown>(`${API_ENDPOINTS.master.workflows}/helpers/geofences-by-category/${category}`);
+    return unwrapData<WorkflowGeofence[]>(raw);
   }
 
   /**
-   * Validar que los hitos de un workflow tienen geocercas válidas
+   * Validar que los hitos de un workflow tienen geocercas válidas.
+   * 2026-05-03: agregado unwrapData. Backend devuelve {data: {valid, issues}}.
    */
   async validateWorkflowGeofences(workflowId: string): Promise<{
     valid: boolean;
     issues: Array<{ stepId: string; stepName: string; issue: string }>;
   }> {
-    return apiClient.get<{ valid: boolean; issues: Array<{ stepId: string; stepName: string; issue: string }> }>(`${API_ENDPOINTS.master.workflows}/${workflowId}/validate-geofences`);
+    const raw = await apiClient.get<unknown>(`${API_ENDPOINTS.master.workflows}/${workflowId}/validate-geofences`);
+    return unwrapData<{ valid: boolean; issues: Array<{ stepId: string; stepName: string; issue: string }> }>(raw);
   }
 
   // CONEXIÓN CON CLIENTES
@@ -261,7 +398,8 @@ class UnifiedWorkflowService {
    * Obtener clientes disponibles para asignar workflows
    */
   async getAvailableCustomers(): Promise<WorkflowCustomer[]> {
-    return apiClient.get<WorkflowCustomer[]>(`${API_ENDPOINTS.master.workflows}/helpers/available-customers`);
+    const raw = await apiClient.get<unknown>(`${API_ENDPOINTS.master.workflows}/helpers/available-customers`);
+    return unwrapData<WorkflowCustomer[]>(raw);
   }
 
   /**
@@ -310,23 +448,30 @@ class UnifiedWorkflowService {
     totalHours: number;
     breakdown: Array<{ stepName: string; minutes: number }>;
   }> {
-    return apiClient.get<{ totalMinutes: number; totalHours: number; breakdown: Array<{ stepName: string; minutes: number }> }>(`${API_ENDPOINTS.master.workflows}/${workflowId}/schedule-duration`);
+    // 2026-05-03: agregado unwrapData. Backend devuelve {data: {totalMinutes, totalHours, breakdown}}.
+    const raw = await apiClient.get<unknown>(`${API_ENDPOINTS.master.workflows}/${workflowId}/schedule-duration`);
+    return unwrapData<{ totalMinutes: number; totalHours: number; breakdown: Array<{ stepName: string; minutes: number }> }>(raw);
   }
 
   /**
-   * Sugerir workflow para una orden programada basado en tipo de carga y cliente
+   * Sugerir workflow para una orden programada basado en tipo de carga y cliente.
+   *
+   * 2026-05-03 (bug fix): el backend ahora SI implementa /master/workflows/suggest
+   * (antes era 404 y el codigo caia al fallback getDefault). Pero el shape devuelto
+   * es {data: {workflow sin steps}} y el frontend antes asignaba el envelope
+   * completo a `Workflow` causando crash en `workflow.steps.filter` en
+   * `module-connector.service.ts:120`. Fix: aplicar normalizeWorkflow que
+   * desempaca {data} y sintetiza steps[] desde actions JSON-string.
    */
   async suggestWorkflowForOrder(
     customerId: string,
     cargoType?: string
   ): Promise<Workflow | null> {
-    // NOTE: /workflows/suggest es un endpoint custom del frontend que el backend
-    // NO implementa todavia (ver documentos pendientes/BACKEND_PENDIENTE).
-    // getOptional() trata el 404 como "sin sugerencia" y el caller cae a getDefault().
-    return apiClient.getOptional<Workflow>(
+    const raw = await apiClient.getOptional<unknown>(
       `${API_ENDPOINTS.master.workflows}/suggest`,
       { params: { customerId, cargoType } }
     );
+    return normalizeWorkflow(raw);
   }
 
   /**

@@ -147,6 +147,35 @@ export const API_ENDPOINTS = {
     audit: "/settings/audit",
   },
 
+  // ── MÓDULO USUARIOS DEL TENANT (Nivel 2 → crea Nivel 3) ──
+  // 2026-05-06: agregados para wire-up de UserManagement (antes era 100% mock).
+  // 2026-05-14: CORREGIDO — el backend unificó TODOS los usuarios bajo
+  //   /platform/users (misma tabla, mismo endpoint). El maestro crea sub-usuarios
+  //   pasando su tenantId en el body/query. Ya NO apunta a /users (ese path nunca
+  //   existió en el backend — de ahí el 404 permanente).
+  users: {
+    base: "/platform/users",              // GET list, POST create (filtrar por tenant_id del JWT)
+    detail: "/platform/users",            // GET/PUT/DELETE /platform/users/:id
+    permissions: "/platform/users",       // PATCH /platform/users/:id/permissions
+    scope: "/platform/users",             // PATCH /platform/users/:id/scope
+    resetPassword: "/platform/users",     // POST /platform/users/:id/reset-password
+    status: "/platform/users",            // PATCH /platform/users/:id/status
+    license: "/me/license",               // GET — estado de la licencia del tenant logueado
+  },
+
+  // ── MÓDULO PLATAFORMA (Nivel 1 — Owner del TMS) ──
+  // 2026-05-06: paths ya consumidos por src/services/platform.service.ts
+  platform: {
+    tenants: "/platform/tenants",                       // CRUD + suspend + reactivate
+    tenantModules: "/platform/tenants",                 // /:id/modules
+    masterUsers: "/platform/tenants",                   // /:id/master-users
+    forceReset: "/platform/users",                      // /:userId/force-reset
+    transfers: "/platform/transfers",                   // CRUD + approve/execute/reject
+    dashboard: "/platform/dashboard",
+    activity: "/platform/activity",
+    fleetGroups: "/platform/tenants",                   // /:id/fleet-groups
+  },
+
   // ── MÓDULO MANTENIMIENTO ─────────────
   maintenance: {
     vehicles: "/maintenance/vehicles",
@@ -172,3 +201,17 @@ export const API_ENDPOINTS = {
 
 /** Tipo para los endpoints (útil para autocompletado) */
 export type ApiEndpoints = typeof API_ENDPOINTS;
+
+/**
+ * 2026-05-05: Feature flags para modulos cuyos endpoints NO estan
+ * implementados en el backend todavia. Cuando esten en `false`, los
+ * services correspondientes hacen short-circuit (devuelven valores vacios
+ * sin firingear el request) para no llenar el Network panel de 404.
+ *
+ * Cambiar a `true` cuando el equipo backend confirme que el modulo
+ * esta listo en produccion. Ningun otro cambio de codigo requerido.
+ */
+export const BACKEND_FEATURES = {
+  /** Modulo de incidencias (POST/GET /incidents/*). Estado: no implementado. */
+  incidents: false,
+} as const;

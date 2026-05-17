@@ -36,6 +36,8 @@ import {
   Shield,
   Globe,
   Activity,
+  Settings,
+  Heart,
 } from "lucide-react";
 
 // ════════════════════════════════════════════════════════
@@ -221,8 +223,15 @@ export const navigationConfig: NavGroup[] = [
         href: "/master/geofences",
         icon: MapPinned,
         requiredPermission: { resource: "geofences", action: "read" },
-        requiredModule: "geofences",
+        // Backend agrupa geofences dentro de master_data — el tenant nunca
+        // tendra `geofences` solo en su enabledModules, siempre viene como
+        // parte del bundle master_data.
+        requiredModule: "master_data",
       },
+      // 2026-05-17: removido item "Exámenes Médicos" como módulo separado.
+      // Decisión UX: la gestión de exámenes vive dentro del drawer del
+      // conductor (tabs Documentos y Médico). El módulo standalone no se
+      // requiere — los exámenes son sub-entidad de driver.
     ],
   },
   {
@@ -245,8 +254,9 @@ export const navigationConfig: NavGroup[] = [
 // ════════════════════════════════════════════════════════
 
 export const platformNavigationConfig: NavGroup[] = [
+  // ─── INICIO ───────────────────────────────────────────
   {
-    groupTitle: "PLATAFORMA",
+    groupTitle: "INICIO",
     platformOnly: true,
     items: [
       {
@@ -257,39 +267,71 @@ export const platformNavigationConfig: NavGroup[] = [
         requiredPermission: { resource: "platform_dashboard", action: "read" },
       },
       {
-        title: "Clientes (Tenants)",
+        title: "Actividad Global",
+        href: "/platform/activity",
+        icon: Activity,
+        platformOnly: true,
+        requiredPermission: { resource: "platform_dashboard", action: "read" },
+      },
+    ],
+  },
+
+  // ─── GESTION DE CLIENTES (TENANTS) ────────────────────
+  {
+    groupTitle: "CLIENTES",
+    platformOnly: true,
+    items: [
+      {
+        title: "Cuentas (Tenants)",
         href: "/platform/tenants",
         icon: Building2,
         platformOnly: true,
         requiredPermission: { resource: "platform_tenants", action: "read" },
       },
       {
-        title: "Módulos",
+        title: "Módulos por Cuenta",
         href: "/platform/modules",
         icon: Box,
         platformOnly: true,
         requiredPermission: { resource: "platform_modules", action: "read" },
       },
       {
-        title: "Transferencias",
+        title: "Transferencias de Unidades",
         href: "/platform/transfers",
         icon: Car,
         platformOnly: true,
         requiredPermission: { resource: "platform_transfers", action: "read" },
       },
+    ],
+  },
+
+  // ─── USUARIOS Y SEGURIDAD ─────────────────────────────
+  {
+    groupTitle: "USUARIOS Y SEGURIDAD",
+    platformOnly: true,
+    items: [
       {
-        title: "Usuarios Plataforma",
+        title: "Usuarios de Plataforma",
         href: "/platform/users",
         icon: Shield,
         platformOnly: true,
         requiredPermission: { resource: "platform_users", action: "read" },
       },
+    ],
+  },
+
+  // ─── MI CUENTA ────────────────────────────────────────
+  // Acceso del Platform Owner a su propia configuracion (settings del usuario,
+  // password, branding del TMS, etc.). Las paginas de settings ya existen.
+  {
+    groupTitle: "MI CUENTA",
+    platformOnly: true,
+    items: [
       {
-        title: "Actividad Global",
-        href: "/platform/activity",
-        icon: Activity,
+        title: "Configuración",
+        href: "/settings",
+        icon: Settings,
         platformOnly: true,
-        requiredPermission: { resource: "platform_dashboard", action: "read" },
       },
     ],
   },

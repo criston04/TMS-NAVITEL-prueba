@@ -14,12 +14,95 @@
  */
 
 import type { Driver, DriverDocumentType, DriverAvailability, DriverStatus } from "@/types/models/driver";
-import type { DriverLicense, EmergencyContact, DrivingLimits, LicenseRestrictions } from "@/types/models/driver";
+import type {
+  DriverLicense,
+  EmergencyContact,
+  DrivingLimits,
+  LicenseRestrictions,
+  MedicalExam,
+  MedicalExamType,
+  PsychologicalExam,
+} from "@/types/models/driver";
 import type { ValidationChecklist, EntityStatus } from "@/types/common";
 
 // ════════════════════════════════════════════════════════════════════════════
 // TIPOS DEL BACKEND
 // ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Licencia tal como viene en el ARRAY `licenses` del response del backend.
+ * 2026-05-16: el backend mantiene HISTORIAL de licencias y marca la actual
+ * con `is_current: 1`. Difiere del payload de envío en el nombre del campo
+ * principal: aquí es `license_number`, en el envío es `number`.
+ */
+export interface BackendLicenseItem {
+  id?: string;
+  driver_id?: string;
+  category?: string;
+  license_number?: string;
+  issue_date?: string;
+  expiry_date?: string;
+  issuing_authority?: string;
+  issuing_country?: string;
+  points?: number;
+  max_points?: number;
+  restrictions?: {
+    requires_glasses?: boolean;
+    requires_hearing_aid?: boolean;
+    automatic_only?: boolean;
+    other_restrictions?: string[];
+  };
+  verification_status?: string;
+  file_url?: string | null;
+  is_current?: number | boolean;
+  created_at?: string;
+}
+
+/**
+ * Contacto de emergencia tal como viene en el ARRAY `emergencyContacts` del response.
+ */
+export interface BackendEmergencyContactItem {
+  id?: string;
+  driver_id?: string;
+  name?: string;
+  relationship?: string;
+  relationship_detail?: string;
+  phone?: string;
+  alternative_phone?: string;
+  email?: string;
+  address?: string;
+  created_at?: string;
+}
+
+/**
+ * Examen médico tal como viene en el ARRAY `medicalExams` del response.
+ * 2026-05-16: shape flexible — el backend no ha definido todos los campos aún.
+ * Cuando confirme el contrato, ajustamos los campos requeridos.
+ */
+export interface BackendMedicalExamItem {
+  id?: string;
+  driver_id?: string;
+  type?: string;
+  exam_type?: string;
+  date?: string;
+  exam_date?: string;
+  expiry_date?: string;
+  result?: string;
+  clinic_name?: string;
+  clinic_ruc?: string;
+  doctor_name?: string;
+  doctor_cmp?: string;
+  certificate_number?: string;
+  file_url?: string | null;
+  observations?: string;
+  restrictions?: Array<{
+    code?: string;
+    description?: string;
+    is_temporary?: boolean;
+    affects_driving?: boolean;
+  }>;
+  created_at?: string;
+}
 
 export interface BackendDriver {
   id: string;
@@ -29,13 +112,49 @@ export interface BackendDriver {
   document_number: string;
   first_name: string;
   last_name: string;
+  mother_last_name?: string;
   birth_date?: string | null;
+  blood_type?: string;
+  nationality?: string;
   email: string;
   phone: string;
+  alternative_phone?: string;
   status: string;
   availability: string;
   operator_id?: string | null;
   assigned_vehicle_id?: string | null;
+  // Datos personales/laborales (devueltos en detail si el backend los persiste)
+  address?: string;
+  district?: string;
+  province?: string;
+  department?: string;
+  hire_date?: string | null;
+  termination_date?: string | null;
+  photo_url?: string | null;
+  signature_url?: string | null;
+  notes?: string;
+  tags?: string[] | null;
+  // 2026-05-16: SUB-OBJETOS DEL BACKEND
+  // El backend devuelve ARRAYS con historial:
+  //   - licenses[]: lista de licencias del driver. La actual tiene is_current=1.
+  //   - emergencyContacts[]: lista de contactos. Tomamos el primero como primario.
+  //   - medicalExams[]: historial médico ocupacional.
+  //   - psychologicalExams[]: historial de exámenes psicológicos.
+  // Estos campos se devuelven en GET /master/drivers/:id (NO en listado).
+  licenses?: BackendLicenseItem[];
+  emergencyContacts?: BackendEmergencyContactItem[];
+  medicalExams?: BackendMedicalExamItem[];
+  psychologicalExams?: BackendMedicalExamItem[];
+  // IDs del examen vigente (FK a medicalExams[] / psychologicalExams[])
+  current_medical_exam_id?: string | null;
+  current_psych_exam_id?: string | null;
+  // Antecedentes (boolean como 0/1 en backend)
+  police_record_valid?: number | boolean | null;
+  criminal_record_valid?: number | boolean | null;
+  // Campos legacy (por si el backend cambia y devuelve el shape antiguo)
+  license?: BackendLicensePayload;
+  emergency_contact?: BackendEmergencyContactPayload;
+  documents?: BackendDriverDocumentPayload[];
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
@@ -157,6 +276,255 @@ function defaultDrivingLimits(): DrivingLimits {
   };
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// MAPPERS de sub-objetos backend → frontend
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * 2026-05-16: mapea la licencia del backend al modelo frontend.
+ * Si el backend NO envía el sub-objeto, devuelve `defaultLicense()` para
+ * no romper el tipo. Si lo envía, respeta todos los campos.
+ *
+ * Soporta DOS shapes:
+ *   - Legacy:  { number, ...}  (formato del envío POST)
+ *   - Actual:  { license_number, ...}  (formato del response GET con historial)
+ */
+function mapLicenseFromBackend(
+  b?: BackendLicensePayload | BackendLicenseItem,
+): DriverLicense {
+  if (!b) return defaultLicense();
+  const r = b.restrictions;
+  // El backend usa `license_number` en el response; en el envío usa `number`
+  const number =
+    (b as BackendLicenseItem).license_number ??
+    (b as BackendLicensePayload).number ??
+    "";
+  // Normalizar fechas ISO (ej. "2026-05-14T00:00:00.000Z") → "2026-05-14"
+  // para que los inputs type="date" las acepten.
+  const stripTime = (iso?: string): string => {
+    if (!iso) return "";
+    return iso.length >= 10 ? iso.slice(0, 10) : iso;
+  };
+  return {
+    number,
+    category: (b.category as DriverLicense["category"]) ?? "A-IIa",
+    issueDate: stripTime(b.issue_date),
+    expiryDate: stripTime(b.expiry_date),
+    issuingAuthority: b.issuing_authority ?? "",
+    issuingCountry: b.issuing_country ?? "PE",
+    points: typeof b.points === "number" ? b.points : 0,
+    maxPoints: typeof b.max_points === "number" ? b.max_points : 100,
+    restrictions: r
+      ? {
+          requiresGlasses: !!r.requires_glasses,
+          requiresHearingAid: !!r.requires_hearing_aid,
+          automaticOnly: !!r.automatic_only,
+          otherRestrictions: r.other_restrictions ?? undefined,
+        }
+      : defaultLicenseRestrictions(),
+    verificationStatus:
+      (b.verification_status as DriverLicense["verificationStatus"]) ?? "pending",
+  };
+}
+
+/**
+ * 2026-05-16: extrae la licencia ACTUAL desde un array de licencias.
+ * Lógica: priorizar la que tenga `is_current: 1/true`; si ninguna lo tiene,
+ * usar la primera. Si el array está vacío, retorna `null` para que el
+ * caller decida (usar default o caché local).
+ */
+function pickCurrentLicense(
+  licenses?: BackendLicenseItem[],
+): BackendLicenseItem | null {
+  if (!Array.isArray(licenses) || licenses.length === 0) return null;
+  const current = licenses.find((l) => l.is_current === 1 || l.is_current === true);
+  return current ?? licenses[0];
+}
+
+/**
+ * 2026-05-16: mapea el contacto de emergencia del backend al modelo frontend.
+ *
+ * El backend persiste el relationship tal cual lo recibe (ej. "Hijo/a" en
+ * español, no el enum interno). Hacemos mapeo bidireccional:
+ *   "Esposo/a"  → "spouse"
+ *   "Padre"     → "parent"
+ *   "Madre"     → "parent"
+ *   "Hijo/a"    → "child"
+ *   "Hermano/a" → "sibling"
+ *   "Tío/a"     → "other" (no hay enum específico, guardamos en detail)
+ *   "Amigo/a"   → "friend"
+ *   "Otro"      → "other"
+ *
+ * Si llega un valor no reconocido, se mapea a "other" y se guarda el original
+ * en `relationshipDetail` para no perder data.
+ */
+const RELATIONSHIP_LABEL_TO_ENUM: Record<string, EmergencyContact["relationship"]> = {
+  "Esposo/a": "spouse",
+  "Esposa": "spouse",
+  "Esposo": "spouse",
+  "Padre": "parent",
+  "Madre": "parent",
+  "Hijo/a": "child",
+  "Hijo": "child",
+  "Hija": "child",
+  "Hermano/a": "sibling",
+  "Hermano": "sibling",
+  "Hermana": "sibling",
+  "Amigo/a": "friend",
+  "Amigo": "friend",
+  "Amiga": "friend",
+  "Otro": "other",
+};
+
+function mapEmergencyContactFromBackend(
+  b?: BackendEmergencyContactPayload | BackendEmergencyContactItem,
+): EmergencyContact {
+  if (!b) return defaultEmergencyContact();
+  const validRelationships: EmergencyContact["relationship"][] = [
+    "spouse",
+    "parent",
+    "sibling",
+    "child",
+    "friend",
+    "other",
+  ];
+  const rawRel = b.relationship ?? "";
+
+  // 1. ¿Ya es uno de los enums válidos (en inglés)?
+  let mappedRel: EmergencyContact["relationship"] = "other";
+  let detail = b.relationship_detail;
+  if (validRelationships.includes(rawRel as EmergencyContact["relationship"])) {
+    mappedRel = rawRel as EmergencyContact["relationship"];
+  } else if (RELATIONSHIP_LABEL_TO_ENUM[rawRel]) {
+    // 2. ¿Es un label en español conocido?
+    mappedRel = RELATIONSHIP_LABEL_TO_ENUM[rawRel];
+    // Preservar el label original como detail para que el form lo muestre
+    if (!detail) detail = rawRel;
+  } else if (rawRel) {
+    // 3. Valor no reconocido — guardar en detail
+    mappedRel = "other";
+    if (!detail) detail = rawRel;
+  }
+
+  return {
+    name: b.name ?? "",
+    relationship: mappedRel,
+    relationshipDetail: detail,
+    phone: b.phone ?? "",
+    alternativePhone: b.alternative_phone ?? undefined,
+    address: b.address ?? undefined,
+  };
+}
+
+/**
+ * 2026-05-16: extrae el contacto primario desde el array `emergencyContacts`.
+ * Toma el primero (el backend no marca cuál es primario, asumimos orden).
+ */
+function pickPrimaryEmergencyContact(
+  contacts?: BackendEmergencyContactItem[],
+): BackendEmergencyContactItem | null {
+  if (!Array.isArray(contacts) || contacts.length === 0) return null;
+  return contacts[0];
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MAPPERS de exámenes médicos y psicológicos
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Helper interno: strip de timestamp ISO a "YYYY-MM-DD".
+ */
+function stripTime(iso?: string | null): string {
+  if (!iso) return "";
+  return iso.length >= 10 ? iso.slice(0, 10) : iso;
+}
+
+/**
+ * 2026-05-16: mapea un examen médico ocupacional desde el shape del backend.
+ * Es tolerante a campos faltantes — usa defaults razonables porque el
+ * backend aún no ha definido el contrato completo de medicalExams[].
+ */
+function mapMedicalExamFromBackend(b: BackendMedicalExamItem): MedicalExam {
+  return {
+    id: b.id ?? "",
+    type: (b.type ?? b.exam_type ?? "periodic") as MedicalExamType,
+    date: stripTime(b.date ?? b.exam_date),
+    expiryDate: stripTime(b.expiry_date),
+    result: (b.result as MedicalExam["result"]) ?? "pending",
+    restrictions: Array.isArray(b.restrictions)
+      ? b.restrictions.map((r) => ({
+          code: r.code ?? "",
+          description: r.description ?? "",
+          isTemporary: !!r.is_temporary,
+          affectsDriving: r.affects_driving !== undefined ? !!r.affects_driving : true,
+        }))
+      : [],
+    clinicName: b.clinic_name ?? "",
+    clinicRuc: b.clinic_ruc ?? undefined,
+    doctorName: b.doctor_name ?? "",
+    doctorCmp: b.doctor_cmp ?? undefined,
+    certificateNumber: b.certificate_number ?? "",
+    fileUrl: b.file_url ?? undefined,
+    observations: b.observations ?? undefined,
+    createdAt: b.created_at ?? new Date().toISOString(),
+  };
+}
+
+/**
+ * 2026-05-16: mapea un examen psicológico desde el shape del backend.
+ * Las propiedades de psicológico son similares a las de médico pero con
+ * algunos nombres distintos (centerName en vez de clinicName, etc.).
+ */
+function mapPsychologicalExamFromBackend(
+  b: BackendMedicalExamItem & {
+    center_name?: string;
+    psychologist_name?: string;
+    psychologist_license?: string;
+  },
+): PsychologicalExam {
+  return {
+    id: b.id ?? "",
+    date: stripTime(b.date ?? b.exam_date),
+    expiryDate: stripTime(b.expiry_date),
+    result: (b.result as PsychologicalExam["result"]) ?? "pending",
+    centerName: b.center_name ?? b.clinic_name ?? "",
+    psychologistName: b.psychologist_name ?? b.doctor_name ?? "",
+    psychologistLicense: b.psychologist_license ?? b.doctor_cmp ?? undefined,
+    certificateNumber: b.certificate_number ?? "",
+    // 2026-05-17: el backend aún no devuelve el perfil psicosensométrico
+    // detallado (stress/reaction/attention/pressure). Usamos un default
+    // para satisfacer el tipo. Cuando el backend mande el sub-objeto, lo
+    // mapeamos aquí.
+    profile: {
+      stressLevel: "moderate",
+      reactionTime: "normal",
+      attentionLevel: "good",
+      pressureHandling: "good",
+    },
+    fileUrl: b.file_url ?? undefined,
+    observations: b.observations ?? undefined,
+    createdAt: b.created_at ?? new Date().toISOString(),
+  };
+}
+
+/**
+ * 2026-05-16: encuentra el examen "actual" dado el ID; si no existe, devuelve
+ * el más reciente del historial (por fecha de emisión).
+ */
+function pickCurrentExam<T extends { id: string; date: string }>(
+  history: T[],
+  currentId?: string | null,
+): T | undefined {
+  if (history.length === 0) return undefined;
+  if (currentId) {
+    const found = history.find((e) => e.id === currentId);
+    if (found) return found;
+  }
+  // Fallback: el más reciente por fecha
+  const sorted = [...history].sort((a, b) => (b.date > a.date ? 1 : -1));
+  return sorted[0];
+}
+
 // 2026-05-03: `defaultChecklist` removida. Reemplazada por
 // `computeChecklistFromBackendDriver` que calcula desde los datos reales.
 
@@ -244,6 +612,13 @@ export function mapDriverFromBackend(b: BackendDriver): Driver {
   // Status simplificado para `ActivatableEntity` (solo active/inactive)
   const entityStatus: EntityStatus = b.status === "active" ? "active" : "inactive";
 
+  // 2026-05-16: normalizar fechas ISO con time ("2000-06-05T00:00:00.000Z")
+  // a formato "YYYY-MM-DD" que los inputs type="date" sí aceptan.
+  const stripTimeFromIso = (iso?: string | null): string => {
+    if (!iso) return "";
+    return iso.length >= 10 ? iso.slice(0, 10) : iso;
+  };
+
   return {
     id: b.id,
     code: b.code ?? "",
@@ -255,9 +630,18 @@ export function mapDriverFromBackend(b: BackendDriver): Driver {
     name: fullName,
     email: b.email ?? "",
     phone: b.phone ?? "",
-    birthDate: b.birth_date ?? "",
-    nationality: "PE",
-    address: "",
+    alternativePhone: b.alternative_phone ?? undefined,
+    birthDate: stripTimeFromIso(b.birth_date),
+    bloodType: (b.blood_type as Driver["bloodType"]) ?? undefined,
+    nationality: b.nationality ?? "PE",
+    // 2026-05-16: leer datos personales/laborales del backend si vienen
+    address: b.address ?? "",
+    district: b.district ?? undefined,
+    province: b.province ?? undefined,
+    department: b.department ?? undefined,
+    photoUrl: b.photo_url ?? undefined,
+    signatureUrl: b.signature_url ?? undefined,
+    notes: b.notes ?? undefined,
     availability: (b.availability as DriverAvailability) ?? "available",
 
     // 2026-05-03: el campo `status` en `Driver` está tipado como `DriverStatus`
@@ -271,19 +655,53 @@ export function mapDriverFromBackend(b: BackendDriver): Driver {
     assignedVehicleId: b.assigned_vehicle_id ?? undefined,
 
     // Laboral
-    hireDate: "",
+    hireDate: stripTimeFromIso(b.hire_date),
+    terminationDate: b.termination_date ? stripTimeFromIso(b.termination_date) : undefined,
 
-    // Sub-objetos requeridos que el backend no devuelve — defaults
-    license: defaultLicense(),
-    emergencyContact: defaultEmergencyContact(),
+    // 2026-05-16: Sub-objetos — el backend devuelve ARRAYS:
+    //   - licenses[]: tomamos la que tenga `is_current=1` (o la primera)
+    //   - emergencyContacts[]: tomamos la primera (no hay flag de primario)
+    // Si el backend manda el shape legacy (singular), lo usamos como fallback.
+    license: mapLicenseFromBackend(
+      pickCurrentLicense(b.licenses) ?? b.license ?? undefined,
+    ),
+    emergencyContact: mapEmergencyContactFromBackend(
+      pickPrimaryEmergencyContact(b.emergencyContacts) ?? b.emergency_contact ?? undefined,
+    ),
     drivingLimits: defaultDrivingLimits(),
+
+    // 2026-05-16: ANTECEDENTES — el backend solo envía banderas booleanas
+    // (police_record_valid, criminal_record_valid) sin el detalle (fechas,
+    // número de certificado, etc.). Dejamos `policeRecord` y `criminalRecord`
+    // como undefined hasta que el backend devuelva el objeto completo.
+    // Las banderas booleanas las exponemos en `extraData` para que la UI
+    // las pueda consumir directamente si las necesita.
     // Checklist calculado client-side (el backend NO tiene /:id/checklist
     // implementado y tampoco devuelve checklist en el listado).
     checklist: computeChecklistFromBackendDriver(b),
 
-    // Arrays vacios para historiales que el backend no envia en este endpoint
-    medicalExamHistory: [],
-    psychologicalExamHistory: [],
+    // 2026-05-16: mapeamos los arrays del backend si vienen.
+    //   - medicalExams[] / psychologicalExams[]: el detalle de cada examen.
+    //   - currentMedicalExam / currentPsychologicalExam: derivado del array
+    //     usando `current_medical_exam_id` / `current_psych_exam_id`, o el
+    //     más reciente por fecha si esos IDs no vienen.
+    medicalExamHistory: Array.isArray(b.medicalExams)
+      ? b.medicalExams.map(mapMedicalExamFromBackend)
+      : [],
+    currentMedicalExam: (() => {
+      if (!Array.isArray(b.medicalExams) || b.medicalExams.length === 0) return undefined;
+      const history = b.medicalExams.map(mapMedicalExamFromBackend);
+      return pickCurrentExam(history, b.current_medical_exam_id);
+    })(),
+    psychologicalExamHistory: Array.isArray(b.psychologicalExams)
+      ? b.psychologicalExams.map((p) => mapPsychologicalExamFromBackend(p))
+      : [],
+    currentPsychologicalExam: (() => {
+      if (!Array.isArray(b.psychologicalExams) || b.psychologicalExams.length === 0)
+        return undefined;
+      const history = b.psychologicalExams.map((p) => mapPsychologicalExamFromBackend(p));
+      return pickCurrentExam(history, b.current_psych_exam_id);
+    })(),
     certifications: [],
     documents: [],
     incidents: [],

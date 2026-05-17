@@ -4,6 +4,8 @@ import * as React from "react";
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -299,6 +301,16 @@ export function VehicleDetailDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl p-0">
+        {/* 2026-05-17: SheetTitle/Description requeridos por Radix para
+            accesibilidad (screen readers). Visualmente ocultos porque el
+            drawer renderiza su propio header rico abajo. */}
+        <SheetTitle className="sr-only">
+          Detalle del vehículo: {vehicle.plate}
+        </SheetTitle>
+        <SheetDescription className="sr-only">
+          Información completa del vehículo incluyendo especificaciones,
+          capacidad, seguros, mantenimiento y documentos.
+        </SheetDescription>
         <ScrollArea className="h-full">
           {/* Header */}
           <div className="p-6 border-b bg-muted/30">

@@ -8,8 +8,24 @@ import type {
   CreateIncidentCatalogItemDTO,
   CreateIncidentRecordDTO,
 } from '@/types/incident';
-import { API_ENDPOINTS } from "@/config/api.config";
+import { API_ENDPOINTS, BACKEND_FEATURES } from "@/config/api.config";
 import { apiClient } from "@/lib/api";
+import { safeCall, withMissingEndpointDetection } from "@/services/missing-endpoint-helper";
+
+/**
+ * 2026-05-05: Empty IncidentStatistics que devolvemos cuando el backend
+ * de incidents no esta implementado. Misma forma que el contrato real,
+ * todos los conteos en 0.
+ */
+const EMPTY_STATS = {
+  total: 0,
+  byCategory: {} as Record<string, number>,
+  bySeverity: {} as Record<string, number>,
+  byResolutionStatus: {} as Record<string, number>,
+  byType: { catalog: 0, freeText: 0 },
+  topIncidents: [] as Array<{ name: string; count: number; catalogItemId?: string }>,
+  period: { from: '', to: '' },
+};
 
 /**
  * ⚠️ MÓDULO PENDIENTE DE BACKEND (verificado 2026-05-03)
@@ -67,104 +83,187 @@ const incidentSeverityColors: Record<IncidentSeverity, string> = {
  */
 class IncidentService {
   /**
-   * Obtiene todos los items del catálogo
+   * Obtiene todos los items del catálogo.
+   * 2026-05-05: si el feature flag esta off, NO hace fetch (Network limpio).
    */
   async getCatalogItems(filters?: IncidentCatalogFilters): Promise<IncidentCatalogItem[]> {
-    return apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog`, { params: filters as unknown as Record<string, string> });
+    if (!BACKEND_FEATURES.incidents) return [];
+    return safeCall(
+      "GET /incidents/catalog",
+      () => apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog`, { params: filters as unknown as Record<string, string> }),
+      []
+    );
   }
 
   /**
-   * Obtiene items activos del catálogo
+   * Obtiene items activos del catálogo.
    */
   async getActiveCatalogItems(): Promise<IncidentCatalogItem[]> {
-    return apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog/active`);
+    if (!BACKEND_FEATURES.incidents) return [];
+    return safeCall(
+      "GET /incidents/catalog/active",
+      () => apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog/active`),
+      []
+    );
   }
 
   /**
-   * Obtiene un item del catálogo por ID
+   * Obtiene un item del catálogo por ID.
    */
   async getCatalogItemById(id: string): Promise<IncidentCatalogItem | null> {
-    return apiClient.get<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog/${id}`);
+    if (!BACKEND_FEATURES.incidents) return null;
+    return safeCall(
+      "GET /incidents/catalog/:id",
+      () => apiClient.get<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog/${id}`),
+      null
+    );
   }
 
   /**
-   * Obtiene items por categoría
+   * Obtiene items por categoría.
    */
   async getCatalogItemsByCategory(
     category: IncidentCategory
   ): Promise<IncidentCatalogItem[]> {
-    return apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog`, { params: { category } });
+    if (!BACKEND_FEATURES.incidents) return [];
+    return safeCall(
+      "GET /incidents/catalog?category=",
+      () => apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog`, { params: { category } }),
+      []
+    );
   }
 
   /**
-   * Busca en el catálogo
+   * Busca en el catálogo.
    */
   async searchCatalog(query: string): Promise<IncidentCatalogItem[]> {
-    return apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog/search`, { params: { q: query } });
+    if (!BACKEND_FEATURES.incidents) return [];
+    return safeCall(
+      "GET /incidents/catalog/search",
+      () => apiClient.get<IncidentCatalogItem[]>(`${API_ENDPOINTS.operations.incidents}/catalog/search`, { params: { q: query } }),
+      []
+    );
   }
 
   /**
-   * Obtiene categorías con conteo
+   * Obtiene categorías con conteo.
    */
   async getCategoriesWithCount(): Promise<Map<IncidentCategory, number>> {
-    const data = await apiClient.get<Record<IncidentCategory, number>>(`${API_ENDPOINTS.operations.incidents}/catalog/categories`);
+    if (!BACKEND_FEATURES.incidents) return new Map();
+    const data = await safeCall(
+      "GET /incidents/catalog/categories",
+      () => apiClient.get<Record<IncidentCategory, number>>(`${API_ENDPOINTS.operations.incidents}/catalog/categories`),
+      {} as Record<IncidentCategory, number>
+    );
     return new Map(Object.entries(data) as [IncidentCategory, number][]);
   }
 
   /**
-   * Crea un nuevo item en el catálogo
+   * Crea un nuevo item en el catálogo.
+   * 2026-05-05: writes lanzan error explicativo si backend no implementa.
    */
   async createCatalogItem(data: CreateIncidentCatalogItemDTO): Promise<IncidentCatalogItem> {
-    return apiClient.post<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog`, data);
+    if (!BACKEND_FEATURES.incidents) {
+      throw Object.assign(
+        new Error("El modulo de Incidencias todavia no esta disponible en el backend. La funcionalidad estara activa cuando el equipo backend lo implemente."),
+        { backendNotImplemented: true, status: 404 }
+      );
+    }
+    return withMissingEndpointDetection(
+      "POST /incidents/catalog",
+      () => apiClient.post<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog`, data)
+    );
   }
 
   /**
-   * Actualiza un item del catálogo
+   * Actualiza un item del catálogo.
    */
   async updateCatalogItem(
     id: string,
     data: Partial<CreateIncidentCatalogItemDTO>
   ): Promise<IncidentCatalogItem> {
-    return apiClient.put<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog/${id}`, data);
+    if (!BACKEND_FEATURES.incidents) {
+      throw Object.assign(
+        new Error("El modulo de Incidencias todavia no esta disponible en el backend. La funcionalidad estara activa cuando el equipo backend lo implemente."),
+        { backendNotImplemented: true, status: 404 }
+      );
+    }
+    return withMissingEndpointDetection(
+      "PUT /incidents/catalog/:id",
+      () => apiClient.put<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog/${id}`, data)
+    );
   }
 
   /**
-   * Desactiva un item del catálogo
+   * Desactiva un item del catálogo.
    */
   async deactivateCatalogItem(id: string): Promise<IncidentCatalogItem> {
-    return apiClient.patch<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog/${id}/deactivate`);
+    if (!BACKEND_FEATURES.incidents) {
+      throw Object.assign(
+        new Error("El modulo de Incidencias todavia no esta disponible en el backend. La funcionalidad estara activa cuando el equipo backend lo implemente."),
+        { backendNotImplemented: true, status: 404 }
+      );
+    }
+    return withMissingEndpointDetection(
+      "PATCH /incidents/catalog/:id/deactivate",
+      () => apiClient.patch<IncidentCatalogItem>(`${API_ENDPOINTS.operations.incidents}/catalog/${id}/deactivate`)
+    );
   }
 
   /**
-   * Obtiene incidencias registradas de una orden
+   * Obtiene incidencias registradas de una orden.
+   * 2026-05-05: si feature flag off, NO firingea el request (Network limpio).
    */
   async getOrderIncidents(orderId: string): Promise<IncidentRecord[]> {
-    return apiClient.get<IncidentRecord[]>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}`);
+    if (!BACKEND_FEATURES.incidents) return [];
+    return safeCall(
+      "GET /incidents/orders/:id",
+      () => apiClient.get<IncidentRecord[]>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}`),
+      []
+    );
   }
 
   /**
-   * Registra una incidencia en una orden
+   * Registra una incidencia en una orden.
    */
   async createIncidentRecord(
     orderId: string,
     data: CreateIncidentRecordDTO
   ): Promise<IncidentRecord> {
-    return apiClient.post<IncidentRecord>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}`, data);
+    if (!BACKEND_FEATURES.incidents) {
+      throw Object.assign(
+        new Error("El modulo de Incidencias todavia no esta disponible en el backend. La funcionalidad estara activa cuando el equipo backend lo implemente."),
+        { backendNotImplemented: true, status: 404 }
+      );
+    }
+    return withMissingEndpointDetection(
+      "POST /incidents/orders/:id",
+      () => apiClient.post<IncidentRecord>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}`, data)
+    );
   }
 
   /**
-   * Actualiza una incidencia registrada
+   * Actualiza una incidencia registrada.
    */
   async updateIncidentRecord(
     orderId: string,
     recordId: string,
     data: Partial<IncidentRecord>
   ): Promise<IncidentRecord> {
-    return apiClient.put<IncidentRecord>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}/${recordId}`, data);
+    if (!BACKEND_FEATURES.incidents) {
+      throw Object.assign(
+        new Error("El modulo de Incidencias todavia no esta disponible en el backend. La funcionalidad estara activa cuando el equipo backend lo implemente."),
+        { backendNotImplemented: true, status: 404 }
+      );
+    }
+    return withMissingEndpointDetection(
+      "PUT /incidents/orders/:id/:recordId",
+      () => apiClient.put<IncidentRecord>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}/${recordId}`, data)
+    );
   }
 
   /**
-   * Resuelve una incidencia
+   * Resuelve una incidencia.
    */
   async resolveIncident(
     orderId: string,
@@ -174,25 +273,49 @@ class IncidentService {
       status: 'resolved' | 'unresolved';
     }
   ): Promise<IncidentRecord> {
-    return apiClient.post<IncidentRecord>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}/${recordId}/resolve`, resolution);
+    if (!BACKEND_FEATURES.incidents) {
+      throw Object.assign(
+        new Error("El modulo de Incidencias todavia no esta disponible en el backend. La funcionalidad estara activa cuando el equipo backend lo implemente."),
+        { backendNotImplemented: true, status: 404 }
+      );
+    }
+    return withMissingEndpointDetection(
+      "POST /incidents/orders/:id/:recordId/resolve",
+      () => apiClient.post<IncidentRecord>(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}/${recordId}/resolve`, resolution)
+    );
   }
 
   /**
-   * Elimina una incidencia registrada
+   * Elimina una incidencia registrada.
    */
   async deleteIncidentRecord(orderId: string, recordId: string): Promise<boolean> {
-    await apiClient.delete(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}/${recordId}`);
+    await withMissingEndpointDetection(
+      "DELETE /incidents/orders/:id/:recordId",
+      () => apiClient.delete(`${API_ENDPOINTS.operations.incidents}/orders/${orderId}/${recordId}`)
+    );
     return true;
   }
 
   /**
-   * Obtiene estadísticas de incidencias
+   * Obtiene estadísticas de incidencias.
+   * 2026-05-05: si feature flag off, devuelve EMPTY_STATS sin firingear.
    */
   async getStatistics(dateRange?: {
     from: string;
     to: string;
   }): Promise<IncidentStatistics> {
-    return apiClient.get<IncidentStatistics>(`${API_ENDPOINTS.operations.incidents}/statistics`, { params: dateRange as unknown as Record<string, string> });
+    const fallbackStats: IncidentStatistics = {
+      ...EMPTY_STATS,
+      byCategory: {} as Record<IncidentCategory, number>,
+      bySeverity: {} as Record<IncidentSeverity, number>,
+      period: { from: dateRange?.from ?? '', to: dateRange?.to ?? '' },
+    };
+    if (!BACKEND_FEATURES.incidents) return fallbackStats;
+    return safeCall(
+      "GET /incidents/statistics",
+      () => apiClient.get<IncidentStatistics>(`${API_ENDPOINTS.operations.incidents}/statistics`, { params: dateRange as unknown as Record<string, string> }),
+      fallbackStats
+    );
   }
 
   /**

@@ -21,6 +21,19 @@ import type {
 } from '@/types/scheduling';
 import type { Order } from '@/types/order';
 import { schedulingService, type AssignmentPayload } from '@/services/scheduling-service';
+import { useAuth } from '@/contexts/auth-context';
+
+/**
+ * 2026-05-14 SECURITY FIX: la key de localStorage debe estar scoped por userId.
+ * Antes era 'tms-scheduled-orders' (global) → causaba fuga de órdenes entre
+ * usuarios distintos del mismo navegador. Ahora cada usuario tiene su propio
+ * espacio.
+ */
+const SCHEDULED_ORDERS_KEY_PREFIX = 'tms-scheduled-orders';
+const LEGACY_SCHEDULED_ORDERS_KEY = 'tms-scheduled-orders';
+function getScheduledOrdersKey(userId: string): string {
+  return `${SCHEDULED_ORDERS_KEY_PREFIX}-${userId}`;
+}
 
 // Re-exportamos los tipos canónicos del servicio (antes el hook tenía sus
 // propios MockVehicle / MockDriver / AutoScheduleResult con shape distinto que
@@ -179,25 +192,16 @@ export function useScheduling(): UseSchedulingReturn {
   
   // ----------------------------------------
   // ----------------------------------------
+  // 2026-05-14 SECURITY: el usuario actual es la clave del scoping. Si cambia
+  // (logout / login con otro user), reset completo del estado local.
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [allOrders, setAllOrders] = useState<Order[]>([]);
-  const [scheduledOrders, setScheduledOrders] = useState<ScheduledOrder[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const stored = localStorage.getItem('tms-scheduled-orders');
-      if (stored) {
-        const parsed = JSON.parse(stored) as ScheduledOrder[];
-        // Restaurar Date objects que se serializaron como strings
-        return parsed.map(o => ({
-          ...o,
-          scheduledDate: new Date(o.scheduledDate),
-        }));
-      }
-    } catch (e) {
-      console.warn('[useScheduling] Error cargando scheduled orders de localStorage:', e);
-    }
-    return [];
-  });
+  // 2026-05-14 SECURITY: NO leer de localStorage en init. Se carga abajo en un
+  // useEffect que respeta userId. Inicializar vacío evita el data-leak.
+  const [scheduledOrders, setScheduledOrders] = useState<ScheduledOrder[]>([]);
   const [timelines, setTimelines] = useState<ResourceTimeline[]>([]);
   const [kpis, setSchedulingKpis] = useState<SchedulingKPIs>({
     pendingOrders: 0,
@@ -369,16 +373,59 @@ export function useScheduling(): UseSchedulingReturn {
   }, [allOrders, stateFilter, listSearch]);
 
   // ----------------------------------------
-  // PERSISTIR scheduledOrders en localStorage al cambiar
+  // CARGAR scheduledOrders desde localStorage (scoped por userId)
+  // 2026-05-14 SECURITY: respond to user changes (login/logout/switch).
   // ----------------------------------------
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Sin usuario → estado vacío. NO leer nada de disco.
+    if (!userId) {
+      setScheduledOrders([]);
+      return;
+    }
+
+    // Limpieza legacy: borrar la key global vieja que causó la fuga original.
+    // Cualquier dato ahí está corrupto (mezcla de usuarios). No se migra.
     try {
-      localStorage.setItem('tms-scheduled-orders', JSON.stringify(scheduledOrders));
+      localStorage.removeItem(LEGACY_SCHEDULED_ORDERS_KEY);
+    } catch {
+      // ignore
+    }
+
+    try {
+      const stored = localStorage.getItem(getScheduledOrdersKey(userId));
+      if (stored) {
+        const parsed = JSON.parse(stored) as ScheduledOrder[];
+        setScheduledOrders(
+          parsed.map(o => ({
+            ...o,
+            scheduledDate: new Date(o.scheduledDate),
+          })),
+        );
+      } else {
+        // Usuario nuevo o sin datos guardados → empezar limpio.
+        setScheduledOrders([]);
+      }
+    } catch (e) {
+      console.warn('[useScheduling] Error cargando scheduled orders de localStorage:', e);
+      setScheduledOrders([]);
+    }
+  }, [userId]);
+
+  // ----------------------------------------
+  // PERSISTIR scheduledOrders en localStorage al cambiar (scoped por userId)
+  // ----------------------------------------
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // Sin usuario no escribimos nada (evita escribir bajo la key legacy global).
+    if (!userId) return;
+    try {
+      localStorage.setItem(getScheduledOrdersKey(userId), JSON.stringify(scheduledOrders));
     } catch (e) {
       console.warn('[useScheduling] Error guardando scheduled orders:', e);
     }
-  }, [scheduledOrders]);
+  }, [scheduledOrders, userId]);
 
   // ----------------------------------------
   // ACTUALIZAR timelines cuando cambian scheduledOrders

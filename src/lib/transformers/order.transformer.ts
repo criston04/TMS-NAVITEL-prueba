@@ -687,5 +687,31 @@ export function mapOrderToBackend(
     }
   }
 
+  // ── Fallback defensivo para origin_address / destination_address ──────
+  // 2026-05-15: el backend rechaza con 400 "origin_address es obligatorio"
+  // si no viene. Cuando el usuario solo selecciona una geocerca o coordenadas
+  // sin escribir dirección manual, derivamos un fallback razonable para
+  // que la petición no falle.
+  if (!payload.origin_address) {
+    if (payload.origin_geofence_id) {
+      payload.origin_address = `Geocerca ${payload.origin_geofence_id}`;
+    } else if (
+      typeof payload.origin_lat === "number" &&
+      typeof payload.origin_lng === "number"
+    ) {
+      payload.origin_address = `Lat: ${payload.origin_lat.toFixed(6)}, Lng: ${payload.origin_lng.toFixed(6)}`;
+    }
+  }
+  if (!payload.destination_address) {
+    if (payload.destination_geofence_id) {
+      payload.destination_address = `Geocerca ${payload.destination_geofence_id}`;
+    } else if (
+      typeof payload.destination_lat === "number" &&
+      typeof payload.destination_lng === "number"
+    ) {
+      payload.destination_address = `Lat: ${payload.destination_lat.toFixed(6)}, Lng: ${payload.destination_lng.toFixed(6)}`;
+    }
+  }
+
   return payload;
 }

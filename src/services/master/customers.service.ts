@@ -287,11 +287,21 @@ class CustomersService extends BulkService<Customer> {
   }
 
   /**
-   * Crea un nuevo cliente
+   * Crea un nuevo cliente.
+   *
+   * IMPORTANTE (2026-05-14): el backend EXIGE `code` como campo obligatorio
+   * al crear — sin él responde 422 "Unprocessable Content". El formulario UI
+   * no captura código manualmente, así que lo generamos aquí si no viene
+   * provisto. Verificado contra DB real (existen códigos como CUST-BRUNO-894,
+   * PROBE-individual-208, CUST-TEST-086184, etc.).
    */
   async createCustomer(data: CreateCustomerDTO): Promise<Customer> {
+    const dataWithCode = data as Partial<Customer>;
+    if (!dataWithCode.code) {
+      dataWithCode.code = generateCustomerCode();
+    }
     // Backend espera snake_case. Convertimos payload + response con transformer.
-    const payload = mapCustomerToBackend(data as Partial<Customer>);
+    const payload = mapCustomerToBackend(dataWithCode);
     const response = await this.request<Record<string, unknown>>("POST", this.endpoint, payload);
     const raw = (response.data ?? response) as BackendCustomer;
     return mapCustomerFromBackend(raw);

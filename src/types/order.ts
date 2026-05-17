@@ -393,6 +393,13 @@ export interface CreateOrderDTO {
   externalReference?: string;
   notes?: string;
   tags?: string[];
+  /**
+   * 2026-05-05: Numero de orden generado en el front. El backend lo exige tras
+   * el deploy del 2026-05-03 (antes lo generaba el; ahora devuelve 500 sin el).
+   * Formato: ORD-YYYY-XXXXX. Generado por <OrderNumberField/> en modo
+   * automatico, o ingresado por el usuario en modo manual.
+   */
+  orderNumber?: string;
 }
 
 /**

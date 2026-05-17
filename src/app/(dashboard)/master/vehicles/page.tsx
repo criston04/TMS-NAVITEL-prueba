@@ -39,6 +39,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { vehiclesService, driversService } from "@/services/master";
+import {
+  saveVehicleCache,
+  mergeVehicleWithCache,
+  clearVehicleCache,
+  pruneExpiredVehicleCaches,
+} from "@/lib/cache/vehicle-cache";
 import { isBackendNotImplemented } from "@/services/missing-endpoint-helper";
 import { useService } from "@/hooks/use-service";
 import { Vehicle, VehicleStats, VehicleStatus, VehicleOperationalStatus, VehicleType, FuelType, Driver } from "@/types/models";
@@ -289,6 +295,10 @@ function mapVehicleFormToVehicle(data: VehicleFormData): Partial<Vehicle> {
     operatorId: data.operatorId,
     currentDriverId: data.currentDriverId || undefined,
     currentMileage: data.currentMileage,
+    // 2026-05-05: gpsDeviceId — el transformer (vehicle.transformer.ts:307)
+    // lo mapea a `gps_device_id` en el payload del backend. Verificado
+    // empiricamente que el backend lo persiste como string libre.
+    gpsDeviceId: data.gpsDeviceId || undefined,
     notes: data.notes || undefined,
     isEnabled: data.status === "active",
     specs: {
@@ -437,6 +447,11 @@ export default function VehiclesPage() {
     paginatedVehicles.every(v => selectedIds.has(v.id));
   const isPartialSelected = selectedIds.size > 0 && !isAllSelected;
 
+  // 2026-05-16: limpieza de cache local de vehículos expirados (>30 días).
+  useEffect(() => {
+    pruneExpiredVehicleCaches();
+  }, []);
+
   // Re-fetch cuando cambia la búsqueda
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -452,7 +467,11 @@ export default function VehiclesPage() {
   }, []);
 
   const handleOpenEdit = useCallback((vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle);
+    // 2026-05-16: el backend NO persiste specs/capacity/insurance/documents.
+    // Mergeamos con el cache local para recuperar lo que el usuario llenó
+    // en formularios anteriores. Backend gana cuando trae datos reales.
+    const merged = mergeVehicleWithCache(vehicle);
+    setSelectedVehicle(merged);
     setIsFormModalOpen(true);
     setIsDetailDrawerOpen(false);
   }, []);
@@ -481,14 +500,22 @@ export default function VehiclesPage() {
       // maxWeight vs maxPayload, registration.number vs registration.registrationNumber, etc.)
       const vehiclePayload = mapVehicleFormToVehicle(data);
 
+      let savedVehicleId: string | undefined;
       if (selectedVehicle) {
-        await vehiclesService.update(selectedVehicle.id, vehiclePayload);
+        const updated = await vehiclesService.update(selectedVehicle.id, vehiclePayload);
+        savedVehicleId = updated?.id ?? selectedVehicle.id;
         toast.success("Vehículo actualizado correctamente");
       } else {
-        await vehiclesService.create(
+        const created = await vehiclesService.create(
           vehiclePayload as Parameters<typeof vehiclesService.create>[0]
         );
+        savedVehicleId = created?.id;
         toast.success("Vehículo creado correctamente");
+      }
+      // 2026-05-16: cachear datos completos (specs, capacity, insurance, docs)
+      // que el backend NO persiste, para que aparezcan al editar.
+      if (savedVehicleId) {
+        saveVehicleCache(savedVehicleId, vehiclePayload as Partial<Vehicle>);
       }
       setIsFormModalOpen(false);
       setSelectedVehicle(null);
@@ -505,6 +532,8 @@ export default function VehiclesPage() {
     setIsSubmitting(true);
     try {
       await vehiclesService.delete(selectedVehicle.id);
+      // 2026-05-16: limpiar el cache local también
+      clearVehicleCache(selectedVehicle.id);
       toast.success("Vehículo eliminado correctamente");
       setIsDeleteDialogOpen(false);
       setSelectedVehicle(null);

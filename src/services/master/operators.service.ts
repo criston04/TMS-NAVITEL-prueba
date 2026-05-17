@@ -73,10 +73,22 @@ export interface OperatorsResponse {
  */
 class OperatorsService {
   /**
-   * Obtiene todos los operadores con filtros opcionales
+   * Obtiene todos los operadores con filtros opcionales.
+   *
+   * 2026-05-14: traduce el filtro `status` de nomenclatura frontend
+   * ("enabled"|"blocked"|"pending") a la del backend
+   * ("active"|"inactive"|"blocked"|"suspended"). Antes se enviaba
+   * `?status=enabled` directamente y el backend devolvía lista vacía
+   * porque NO conoce el valor "enabled".
    */
   async getAll(filters?: OperatorFilters): Promise<Operator[]> {
-    return this.fetchListFromBackend(filters as Record<string, unknown>);
+    const params: Record<string, unknown> = { ...(filters ?? {}) };
+    // Traducción de status: frontend → backend
+    if (params.status === "enabled") params.status = "active";
+    else if (params.status === "pending") params.status = "pending"; // mismo nombre
+    else if (params.status === "all") delete params.status;          // sin filtro
+    // "blocked" pasa directo (mismo nombre en backend)
+    return this.fetchListFromBackend(params);
   }
 
   /**

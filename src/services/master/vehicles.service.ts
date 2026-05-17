@@ -3,6 +3,7 @@ import { apiClient } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/api.config";
 import { Vehicle, VehicleStats } from "@/types/models";
 import type { ValidationChecklist, CreateDTO, UpdateDTO, SearchParams, PaginatedResponse } from "@/types/common";
+import { masterEvents } from "@/services/integration/master-events";
 import {
   mapVehicleFromBackend,
   mapVehicleToBackend,
@@ -90,8 +91,22 @@ class VehiclesService extends BulkService<Vehicle> {
     );
   }
 
+  /**
+   * Crear vehículo.
+   *
+   * IMPORTANTE (2026-05-14): el backend EXIGE `code` como campo obligatorio
+   * al crear — sin él responde 422. El formulario UI no captura código
+   * manualmente, así que lo generamos aquí si no viene provisto.
+   * Mismo patrón que customers/drivers/operators.
+   */
   async create(data: CreateDTO<Vehicle>): Promise<Vehicle> {
-    const payload = mapVehicleToBackend(data as Partial<Vehicle>);
+    const dataWithCode = data as Partial<Vehicle>;
+    if (!dataWithCode.code) {
+      const timestamp = Date.now().toString(36).toUpperCase();
+      const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+      dataWithCode.code = `VEH-${timestamp}-${random}`;
+    }
+    const payload = mapVehicleToBackend(dataWithCode);
     const response = await apiClient.post<Record<string, unknown>>(this.endpoint, payload);
     const raw = (response.data ?? response) as BackendVehicle;
     return mapVehicleFromBackend(raw);
@@ -201,7 +216,10 @@ class VehiclesService extends BulkService<Vehicle> {
           { status: "active" }
         );
         const raw = (response.data ?? response) as BackendVehicle;
-        return mapVehicleFromBackend(raw);
+        const vehicle = mapVehicleFromBackend(raw);
+        // 2026-05-05: notificar al bus para que ordenes/monitoring reaccionen
+        masterEvents.vehicleEnabled({ vehicleId: vehicle.id, vehiclePlate: vehicle.plate });
+        return vehicle;
       }
     );
   }
@@ -221,7 +239,15 @@ class VehiclesService extends BulkService<Vehicle> {
           { status: "blocked", reason }
         );
         const raw = (response.data ?? response) as BackendVehicle;
-        return mapVehicleFromBackend(raw);
+        const vehicle = mapVehicleFromBackend(raw);
+        // 2026-05-05: notificar al bus para que ordenes activas con este
+        // vehiculo se enteren y monitoring detenga el tracking.
+        masterEvents.vehicleBlocked({
+          vehicleId: vehicle.id,
+          vehiclePlate: vehicle.plate,
+          reason,
+        });
+        return vehicle;
       }
     );
   }

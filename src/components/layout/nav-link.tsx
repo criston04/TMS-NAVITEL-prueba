@@ -1,10 +1,15 @@
 /**
  * NavLink Component - Componente atómico para items de navegación
+ *
+ * 2026-05-14 PERF: wrapped en React.memo. El Sidebar renderiza ~20+ NavLinks,
+ * cada cambio del AuthContext (login, refresh token, updateUser) recauchaba
+ * todos los links. Con memo, solo se rerendea el que tiene props distintos
+ * (ej: isActive cambia al navegar).
  */
 
 "use client";
 
-import type { FC } from "react";
+import { memo, type FC } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { NavItemProps } from "@/types/navigation";
 
-export const NavLink: FC<Readonly<NavItemProps>> = ({
+const NavLinkComponent: FC<Readonly<NavItemProps>> = ({
   title,
   href,
   icon: Icon,
@@ -65,3 +70,10 @@ export const NavLink: FC<Readonly<NavItemProps>> = ({
 
   return linkContent;
 };
+
+// React.memo: el shallow compare de props evita rerender innecesario cuando
+// el padre (Sidebar) se rerendea por otras razones (auth state change, etc.)
+// pero las props del NavLink (title, href, icon, badge, isCollapsed, isActive)
+// no han cambiado.
+export const NavLink = memo(NavLinkComponent);
+NavLink.displayName = "NavLink";

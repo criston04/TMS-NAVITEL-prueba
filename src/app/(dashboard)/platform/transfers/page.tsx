@@ -35,12 +35,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import type { VehicleTransferRequest, Tenant, CreateVehicleTransferDTO } from "@/types/platform";
 import { vehicleTransferService, tenantService } from "@/services/platform.service";
 
@@ -60,6 +72,11 @@ export default function TransfersPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const [executeTargetId, setExecuteTargetId] = useState<string | null>(null);
+  const [executing, setExecuting] = useState(false);
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejecting, setRejecting] = useState(false);
   const [form, setForm] = useState({
     vehicleIds: "",
     fromTenantId: "",
@@ -81,10 +98,13 @@ export default function TransfersPage() {
         vehicleTransferService.getAll({ pageSize: 100 }),
         tenantService.getAll({ pageSize: 100 }),
       ]);
-      setTransfers(transferRes.items);
-      setTenants(tenantRes.items);
+      // 2026-05-07: defensive — el backend a veces no incluye envelope completo
+      setTransfers(Array.isArray(transferRes?.items) ? transferRes.items : []);
+      setTenants(Array.isArray(tenantRes?.items) ? tenantRes.items : []);
     } catch (err) {
       console.error("Error:", err);
+      setTransfers([]);
+      setTenants([]);
     } finally {
       setLoading(false);
     }
@@ -117,30 +137,47 @@ export default function TransfersPage() {
   async function handleApprove(id: string) {
     try {
       await vehicleTransferService.approve(id);
+      toast.success("Transferencia aprobada");
       loadData();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error aprobando transferencia";
+      toast.error(msg);
       console.error("Error:", err);
     }
   }
 
-  async function handleExecute(id: string) {
-    if (!confirm("¿Ejecutar la transferencia? Los vehículos se moverán al tenant destino.")) return;
+  async function confirmExecute() {
+    if (!executeTargetId) return;
+    setExecuting(true);
     try {
-      await vehicleTransferService.execute(id);
+      await vehicleTransferService.execute(executeTargetId);
+      toast.success("Transferencia ejecutada correctamente");
+      setExecuteTargetId(null);
       loadData();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error ejecutando transferencia";
+      toast.error(msg);
       console.error("Error:", err);
+    } finally {
+      setExecuting(false);
     }
   }
 
-  async function handleReject(id: string) {
-    const reason = prompt("Motivo del rechazo:");
-    if (!reason) return;
+  async function confirmReject() {
+    if (!rejectTargetId || !rejectReason.trim()) return;
+    setRejecting(true);
     try {
-      await vehicleTransferService.reject(id, reason);
+      await vehicleTransferService.reject(rejectTargetId, rejectReason.trim());
+      toast.success("Transferencia rechazada");
+      setRejectTargetId(null);
+      setRejectReason("");
       loadData();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error rechazando transferencia";
+      toast.error(msg);
       console.error("Error:", err);
+    } finally {
+      setRejecting(false);
     }
   }
 
@@ -343,7 +380,10 @@ export default function TransfersPage() {
                                   size="icon"
                                   className="h-7 w-7 text-destructive"
                                   title="Rechazar"
-                                  onClick={() => handleReject(t.id)}
+                                  onClick={() => {
+                                    setRejectTargetId(t.id);
+                                    setRejectReason("");
+                                  }}
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -354,7 +394,7 @@ export default function TransfersPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="h-7 text-xs text-blue-600"
-                                onClick={() => handleExecute(t.id)}
+                                onClick={() => setExecuteTargetId(t.id)}
                               >
                                 <Play className="mr-1 h-3 w-3" />
                                 Ejecutar
@@ -374,6 +414,80 @@ export default function TransfersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirmación: ejecutar transferencia */}
+      <AlertDialog
+        open={executeTargetId !== null}
+        onOpenChange={(open) => !open && !executing && setExecuteTargetId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Ejecutar la transferencia?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Los vehículos se moverán físicamente del tenant origen al tenant destino.
+              Esta acción modifica la asignación de los vehículos y sus históricos vinculados
+              (GPS, mantenimiento si aplica). No se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={executing}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmExecute} disabled={executing}>
+              {executing ? "Ejecutando..." : "Sí, ejecutar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo: rechazar transferencia (requiere motivo) */}
+      <Dialog
+        open={rejectTargetId !== null}
+        onOpenChange={(open) => {
+          if (!open && !rejecting) {
+            setRejectTargetId(null);
+            setRejectReason("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rechazar transferencia</DialogTitle>
+            <DialogDescription>
+              Indica el motivo del rechazo. Se notificará al solicitante y quedará registrado
+              en el historial de la transferencia.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="rejectReason">Motivo *</Label>
+            <Textarea
+              id="rejectReason"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Ej: Los vehículos no cumplen con la documentación requerida para la transferencia"
+              rows={4}
+              disabled={rejecting}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRejectTargetId(null);
+                setRejectReason("");
+              }}
+              disabled={rejecting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmReject}
+              disabled={rejecting || rejectReason.trim().length === 0}
+            >
+              {rejecting ? "Rechazando..." : "Rechazar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageWrapper>
   );
 }

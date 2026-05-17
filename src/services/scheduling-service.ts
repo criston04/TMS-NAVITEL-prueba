@@ -394,18 +394,44 @@ class SchedulingService {
   }
 
   /**
-   * Obtiene sugerencias de recursos para una orden
+   * Obtiene sugerencias de recursos para una orden.
+   *
+   * 2026-05-06 (bug fix): el backend devuelve 500 Internal Server Error en
+   * `GET /operations/scheduling/suggestions/:orderId` con cualquier orderId
+   * real (validacion existe — UUID dummy devuelve 404, pero al procesar una
+   * orden valida el handler crashea internamente). Reportado al backend.
+   *
+   * Para evitar que el modal "Programar Orden" crashee con stack trace de
+   * runtime, capturamos el 500/404 y devolvemos lista vacia. La UI muestra
+   * "No hay sugerencias disponibles" y el usuario puede seguir programando
+   * manualmente seleccionando vehiculo y conductor desde los dropdowns.
    */
   async getSuggestions(
     orderId: string,
     date: Date,
     _existingOrders: ScheduledOrder[] = []
   ): Promise<ResourceSuggestion[]> {
-    const response = await apiClient.get<unknown>(
-      `${API_ENDPOINTS.operations.scheduling}/suggestions/${orderId}`,
-      { params: { date: date.toISOString() } }
-    );
-    return this.unwrapList<ResourceSuggestion>(response);
+    try {
+      const response = await apiClient.get<unknown>(
+        `${API_ENDPOINTS.operations.scheduling}/suggestions/${orderId}`,
+        { params: { date: date.toISOString() } }
+      );
+      return this.unwrapList<ResourceSuggestion>(response);
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 500 || status === 404) {
+        // Bug del backend o orden no encontrada — fallback a lista vacia.
+        // El usuario puede seguir programando manualmente.
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            `[SchedulingService] getSuggestions(${orderId}) → ${status}. ` +
+            "Fallback a lista vacia. El backend tiene un bug en este endpoint."
+          );
+        }
+        return [];
+      }
+      throw err;
+    }
   }
 
   /**

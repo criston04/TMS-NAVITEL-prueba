@@ -157,6 +157,26 @@ export function clearAuthSession(): void {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+
+    // 2026-05-14 SECURITY: barrer TODAS las claves del dominio TMS para
+    // evitar fugas de datos entre usuarios. Cubre:
+    //   tms-scheduled-orders, tms-scheduled-orders-{userId}, tms-customer-categories,
+    //   tms-navitel-multi-window-panels, tms-generated-orders, tms-auto-costs,
+    //   tms-auto-invoices, tms-scheduling-assignments, tms-vehicle-status-updates,
+    //   tms-milestone-updates, y cualquier otro futuro bajo este prefijo.
+    const lsKeysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("tms-")) lsKeysToRemove.push(k);
+    }
+    for (const k of lsKeysToRemove) localStorage.removeItem(k);
+
+    const ssKeysToRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith("tms-")) ssKeysToRemove.push(k);
+    }
+    for (const k of ssKeysToRemove) sessionStorage.removeItem(k);
   } catch {
     // ignore
   }

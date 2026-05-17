@@ -54,8 +54,11 @@ export default function LoginPage() {
   const { t } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  // 2026-05-08: el login del backend acepta `username` (no email).
+  // Verificado empiricamente con `admin / Admin1432!` → 200 OK.
+  // El campo del form se llama `username` para reflejar la realidad.
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
   const [error, setError] = useState("");
@@ -65,7 +68,7 @@ export default function LoginPage() {
     setError("");
     setIsLoading(true);
 
-    if (!formData.email || !formData.password) {
+    if (!formData.username || !formData.password) {
       setError(t("validation.fillAllFields"));
       setIsLoading(false);
       return;
@@ -78,7 +81,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: formData.email,
+          username: formData.username,
           password: formData.password,
         }),
       });
@@ -87,11 +90,30 @@ export default function LoginPage() {
         let msg = "Credenciales inválidas";
         try {
           const errData = await response.json();
-          msg = errData.message || msg;
+          // El backend a veces anida el mensaje doblemente: {message: "{\"code\":429,...}"}
+          let raw = errData?.message ?? "";
+          if (typeof raw === "string" && raw.startsWith("{")) {
+            try {
+              const inner = JSON.parse(raw);
+              raw = inner?.message ?? raw;
+            } catch {
+              /* mantener raw */
+            }
+          }
+          msg = raw || msg;
         } catch {
           // noop
         }
-        setError(msg);
+        // Mensajes amigables por status code
+        if (response.status === 429) {
+          setError(msg || "Demasiados intentos fallidos. Espera unos minutos antes de volver a intentar.");
+        } else if (response.status === 401) {
+          setError(msg || "Usuario o contraseña no válidos.");
+        } else if (response.status === 403) {
+          setError(msg || "Cuenta suspendida o sin acceso.");
+        } else {
+          setError(msg);
+        }
         setIsLoading(false);
         return;
       }
@@ -125,13 +147,49 @@ export default function LoginPage() {
       // hasPermission() no encuentra el rol y devuelve permisos vacíos → solo
       // aparece "Dashboard" en el sidebar.
       const rawRole = (userObj?.role as string) || (jwtPayload?.role as string) || "owner";
-      const role: UserRole = rawRole.toLowerCase() as UserRole;
+      let role: UserRole = rawRole.toLowerCase() as UserRole;
 
       const tenantId = userObj?.tenantId || jwtPayload?.tenantId || "tenant-default";
-      const userId = userObj?.id || jwtPayload?.jti || formData.email;
-      const userName = userObj?.name || userObj?.email || (typeof payload.user === "string" ? payload.user : "") || formData.email;
-      const userEmail = userObj?.email || formData.email;
+      const userId = userObj?.id || jwtPayload?.jti || formData.username;
+      const userName =
+        userObj?.name ||
+        userObj?.email ||
+        (typeof payload.user === "string" ? payload.user : "") ||
+        formData.username;
+      // El backend NO valida formato email — guarda el username tal cual.
+      // Si el response trae `email` lo usamos; sino el username vale como identificador.
+      const userEmail = userObj?.email || formData.username;
       const tenantName = userObj?.tenantName || "Grupo Navitel";
+
+      // ──────────────────────────────────────────────────────────────────────
+      // 2026-05-07: DETECCION DE PLATFORM OWNER (FIX SIDEBAR)
+      // El backend HOY no expone `tier` ni distingue `platform_owner` vs `owner`.
+      // Para el tenant raiz (donde vive el admin del TMS), promovemos a
+      // `platform_owner`/`platform_admin` (Nivel 1 — duenio de la plataforma).
+      // Cuando el backend exponga `tier: "platform"` en el JWT, esta deteccion
+      // queda como fallback inofensivo (el tier explicito gana).
+      // ──────────────────────────────────────────────────────────────────────
+      const ROOT_TENANT_ID = "00000000-0000-0000-0000-000000000001";
+      const explicitTier =
+        (userObj?.tier as string | undefined) ||
+        ((jwtPayload as { tier?: string } | null)?.tier);
+
+      let isPlatformLogin = false;
+      if (explicitTier === "platform") {
+        isPlatformLogin = true;
+      } else if (
+        (role === "owner" || role === "master" || role === "admin") &&
+        tenantId === ROOT_TENANT_ID
+      ) {
+        isPlatformLogin = true;
+        role = role === "admin" ? ("platform_admin" as UserRole) : ("platform_owner" as UserRole);
+      }
+
+      // 2026-05-08: si NO es platform y el rol es legacy "owner", promover a "master"
+      // (el rol canonico de Patrick para el Maestro del cliente).
+      if (!isPlatformLogin && role === "owner") {
+        role = "master" as UserRole;
+      }
 
       // BUG del backend: hoy devuelve `enabledModules: []` (vacío) incluso para
       // OWNER. Si está vacío usamos ALL_MODULES como fallback para no bloquear UI.
@@ -154,7 +212,7 @@ export default function LoginPage() {
         name: userName,
         email: userEmail,
         role,
-        tier: getUserTier(role),
+        tier: isPlatformLogin ? "platform" : getUserTier(role),
         tenantId,
         tenantName,
         isActive,
@@ -211,17 +269,18 @@ export default function LoginPage() {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium text-foreground">
+            <label htmlFor="username" className="text-sm font-medium text-foreground">
               Usuario
             </label>
             <div className="relative group">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input
-                id="email"
+                id="username"
+                name="username"
                 type="text"
                 placeholder="admin"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 disabled={isLoading}
                 className="pl-10 h-11 bg-background border-input transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                 required

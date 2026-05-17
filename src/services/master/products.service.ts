@@ -184,10 +184,21 @@ class ProductsService {
   }
 
   /**
-   * Crea un nuevo producto
+   * Crea un nuevo producto.
+   *
+   * IMPORTANTE (2026-05-14): el backend EXIGE `code` como campo obligatorio
+   * al crear — sin él responde 422. El transformer mapea `sku` → `code` al
+   * backend (ver product.transformer.ts línea 205). Si el usuario no provee
+   * sku, generamos uno automáticamente. Mismo patrón que customers/drivers.
    */
   async create(data: CreateProductDTO): Promise<Product> {
-    const payload = mapProductToBackend(data as Partial<Product>);
+    const dataWithSku = data as Partial<Product>;
+    if (!dataWithSku.sku) {
+      const timestamp = Date.now().toString(36).toUpperCase();
+      const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+      dataWithSku.sku = `PROD-${timestamp}-${random}`;
+    }
+    const payload = mapProductToBackend(dataWithSku);
     const response = await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.master.products, payload);
     const raw = (response.data ?? response) as BackendProduct;
     return mapProductFromBackend(raw);

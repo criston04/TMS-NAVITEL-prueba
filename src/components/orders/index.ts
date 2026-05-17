@@ -1,5 +1,5 @@
 // Componentes principales
-export { OrderCard, STATUS_CONFIG, PRIORITY_CONFIG } from './order-card';
+export { OrderCard, STATUS_CONFIG, PRIORITY_CONFIG, getStatusConfig, getPriorityConfig } from './order-card';
 export { OrderList } from './order-list';
 export { OrderTable } from './order-table';
 export { printOrderReport } from './order-print-report';

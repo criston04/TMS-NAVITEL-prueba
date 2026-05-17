@@ -10,6 +10,16 @@ import {
 } from "@/lib/transformers/driver.transformer";
 
 /**
+ * Genera código único de conductor.
+ * 2026-05-14: backend exige `code` al crear (422 sin él), igual que customers.
+ */
+function generateDriverCode(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+  return `CON-${timestamp}-${random}`;
+}
+
+/**
  * Servicio para gestión de Conductores.
  *
  * 2026-05-03: Diagnóstico actualizado. El backend NO tiene implementadas la
@@ -89,8 +99,21 @@ class DriversService extends BulkService<Driver> {
     );
   }
 
+  /**
+   * Crear — convierte payload a snake_case, response a camelCase.
+   *
+   * IMPORTANTE (2026-05-14): el backend EXIGE `code` como campo obligatorio
+   * al crear — sin él responde 422 "Unprocessable Content" con mensaje
+   * genérico "Ups, tuvimos un problema". El formulario UI no captura código
+   * manualmente, así que lo generamos aquí si no viene provisto.
+   * Mismo patrón aplicado en customers.service.ts.
+   */
   async create(data: CreateDTO<Driver>): Promise<Driver> {
-    const payload = mapDriverToBackend(data as Partial<Driver>);
+    const dataWithCode = data as Partial<Driver>;
+    if (!dataWithCode.code) {
+      dataWithCode.code = generateDriverCode();
+    }
+    const payload = mapDriverToBackend(dataWithCode);
     const response = await apiClient.post<Record<string, unknown>>(this.endpoint, payload);
     const raw = (response.data ?? response) as BackendDriver;
     return mapDriverFromBackend(raw);

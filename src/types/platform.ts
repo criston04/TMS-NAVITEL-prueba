@@ -31,7 +31,7 @@ export type TenantStatus =
  * Plan de suscripción del tenant
  */
 export type SubscriptionPlan =
-  | "starter"       // Plan básico
+  | "basic"         // Plan basico (antes "starter")
   | "professional"  // Plan profesional
   | "enterprise"    // Plan empresarial
   | "custom";       // Plan personalizado
@@ -224,7 +224,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "operations",
     icon: "Package",
     isCore: true,
-    includedInPlans: ["starter", "professional", "enterprise", "custom"],
+    includedInPlans: ["basic", "professional", "custom", "enterprise"],
     displayOrder: 1,
   },
   {
@@ -234,7 +234,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "operations",
     icon: "CalendarDays",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     dependencies: ["orders"],
     displayOrder: 2,
   },
@@ -245,7 +245,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "operations",
     icon: "Route",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     dependencies: ["orders"],
     displayOrder: 3,
   },
@@ -256,7 +256,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "operations",
     icon: "AlertTriangle",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     dependencies: ["orders"],
     displayOrder: 4,
   },
@@ -267,7 +267,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "operations",
     icon: "ClipboardList",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     dependencies: ["orders"],
     displayOrder: 5,
   },
@@ -278,7 +278,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "operations",
     icon: "Navigation",
     isCore: false,
-    includedInPlans: ["enterprise", "custom"],
+    includedInPlans: ["custom", "enterprise"],
     dependencies: ["orders", "vehicles"],
     displayOrder: 6,
   },
@@ -291,7 +291,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "monitoring",
     icon: "TowerControl",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     dependencies: ["vehicles"],
     displayOrder: 10,
   },
@@ -302,12 +302,26 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "monitoring",
     icon: "Bell",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     dependencies: ["monitoring"],
     displayOrder: 11,
   },
 
   // ── FINANZAS ──
+  // 2026-05-14: backend usa `finance` como MÓDULO AGREGADO único.
+  // Activar `finance` da acceso a Facturación, Pagos, Costos, Tarifas
+  // y Liquidaciones en un solo paso. Los códigos individuales siguen
+  // existiendo (abajo) para permisos granulares.
+  {
+    code: "finance",
+    name: "Finanzas",
+    description: "Facturación, Pagos, Costos, Tarifas y Liquidaciones (módulo agregado).",
+    category: "finance",
+    icon: "Wallet",
+    isCore: false,
+    includedInPlans: ["professional", "custom", "enterprise"],
+    displayOrder: 19,
+  },
   {
     code: "invoicing",
     name: "Facturación",
@@ -315,7 +329,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "finance",
     icon: "FileText",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     displayOrder: 20,
   },
   {
@@ -325,7 +339,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "finance",
     icon: "Wallet",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     displayOrder: 21,
   },
   {
@@ -335,7 +349,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "finance",
     icon: "DollarSign",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     displayOrder: 22,
   },
   {
@@ -345,7 +359,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "finance",
     icon: "DollarSign",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     displayOrder: 23,
   },
   {
@@ -355,7 +369,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "finance",
     icon: "Calculator",
     isCore: false,
-    includedInPlans: ["enterprise", "custom"],
+    includedInPlans: ["custom", "enterprise"],
     dependencies: ["orders", "costs"],
     displayOrder: 24,
   },
@@ -368,12 +382,27 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "maintenance",
     icon: "Wrench",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     dependencies: ["vehicles"],
     displayOrder: 30,
   },
 
   // ── DATOS MAESTROS ──
+  // 2026-05-14: backend usa `master_data` como MÓDULO AGREGADO único.
+  // Activar `master_data` da acceso a Clientes, Conductores, Vehículos,
+  // Operadores, Productos y Geocercas en un solo paso. Los códigos individuales
+  // siguen existiendo (abajo) para el sistema de permisos granular, pero NO
+  // son toggleables a nivel de tenant porque el backend solo conoce master_data.
+  {
+    code: "master_data",
+    name: "Datos Maestros",
+    description: "Clientes, Conductores, Vehículos, Operadores, Productos y Geocercas (módulo agregado).",
+    category: "master",
+    icon: "Database",
+    isCore: true,
+    includedInPlans: ["basic", "professional", "custom", "enterprise"],
+    displayOrder: 39,
+  },
   {
     code: "customers",
     name: "Clientes",
@@ -381,7 +410,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "master",
     icon: "Users",
     isCore: true,
-    includedInPlans: ["starter", "professional", "enterprise", "custom"],
+    includedInPlans: ["basic", "professional", "custom", "enterprise"],
     displayOrder: 40,
   },
   {
@@ -391,7 +420,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "master",
     icon: "UserCircle",
     isCore: true,
-    includedInPlans: ["starter", "professional", "enterprise", "custom"],
+    includedInPlans: ["basic", "professional", "custom", "enterprise"],
     displayOrder: 41,
   },
   {
@@ -401,7 +430,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "master",
     icon: "Car",
     isCore: true,
-    includedInPlans: ["starter", "professional", "enterprise", "custom"],
+    includedInPlans: ["basic", "professional", "custom", "enterprise"],
     displayOrder: 42,
   },
   {
@@ -411,7 +440,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "master",
     icon: "Building2",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     displayOrder: 43,
   },
   {
@@ -421,7 +450,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "master",
     icon: "Box",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     displayOrder: 44,
   },
   {
@@ -431,7 +460,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "master",
     icon: "MapPinned",
     isCore: false,
-    includedInPlans: ["professional", "enterprise", "custom"],
+    includedInPlans: ["professional", "custom", "enterprise"],
     displayOrder: 45,
   },
 
@@ -443,7 +472,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "reports",
     icon: "BarChart3",
     isCore: true,
-    includedInPlans: ["starter", "professional", "enterprise", "custom"],
+    includedInPlans: ["basic", "professional", "custom", "enterprise"],
     displayOrder: 50,
   },
 
@@ -455,7 +484,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "support",
     icon: "Bell",
     isCore: true,
-    includedInPlans: ["starter", "professional", "enterprise", "custom"],
+    includedInPlans: ["basic", "professional", "custom", "enterprise"],
     displayOrder: 60,
   },
   {
@@ -465,7 +494,7 @@ export const SYSTEM_MODULES: SystemModuleDefinition[] = [
     category: "support",
     icon: "Plug",
     isCore: false,
-    includedInPlans: ["enterprise", "custom"],
+    includedInPlans: ["custom", "enterprise"],
     displayOrder: 61,
   },
 ];
@@ -647,6 +676,14 @@ export interface UpdateTenantDTO {
   defaultCurrency?: string;
   defaultLanguage?: "es" | "en";
   internalNotes?: string;
+  /**
+   * 2026-05-14: permitir cambios explícitos de status vía PUT.
+   * Útil como fallback cuando el state-machine del backend no acepta la
+   * transición vía los endpoints dedicados (`/suspend`, `/reactivate`).
+   * Específicamente: pasar un tenant de `pending → active` cuando
+   * `POST /reactivate` solo modela `suspended → active`.
+   */
+  status?: TenantStatus;
 }
 
 /**
@@ -660,14 +697,51 @@ export interface SuspendTenantDTO {
 }
 
 /**
+ * 2026-05-07: Renovar / extender la suscripcion de un tenant.
+ * El Owner del TMS lo invoca cuando un cliente renueva.
+ *
+ * Comportamiento esperado del backend:
+ *  - Si `mode === "extend"`: nueva fecha = MAX(NOW(), subscription_end_date) + months
+ *    (o + customMonths si es number). Encadena renovacion sin perder dias pagados.
+ *  - Si `mode === "set_date"`: subscription_end_date = customEndDate (sobrescribe).
+ *  - Si `plan` viene: actualiza el plan tambien.
+ *  - Si `maxUsers` / `maxVehicles` vienen: actualiza limites.
+ *  - INSERT en platform_activity_log con action='subscription.renewed'.
+ *  - Si tenant.status === 'suspended' o 'trial' → cambiar a 'active'.
+ *  - Si tenant.status === 'cancelled' → 422 "No se puede renovar tenant cancelado".
+ *
+ * Endpoint: POST /platform/tenants/:id/renew
+ */
+export interface RenewSubscriptionDTO {
+  /** Modo de renovacion */
+  mode: "extend" | "set_date";
+  /** Para mode='extend': numero de meses preset (1, 3, 6, 12, 24) */
+  months?: 1 | 3 | 6 | 12 | 24;
+  /** Para mode='set_date': fecha exacta de vencimiento (ISO YYYY-MM-DD) */
+  customEndDate?: string;
+  /** Cambiar plan junto con la renovacion */
+  plan?: SubscriptionPlan;
+  /** Actualizar limite de usuarios */
+  maxUsers?: number;
+  /** Actualizar limite de vehiculos */
+  maxVehicles?: number;
+  /** Notas internas / referencia de pago */
+  paymentReference?: string;
+  /** Notificar al usuario maestro por email */
+  notifyMasterUser?: boolean;
+}
+
+/**
  * Crear el usuario maestro de un tenant
  */
 export interface CreateMasterUserDTO {
   /** ID del tenant al que pertenecerá */
   tenantId: string;
+  /** Username de login. OBLIGATORIO. El backend acepta `username` en POST /auth/login. */
+  username: string;
   /** Nombre completo */
   name: string;
-  /** Email (será su login) */
+  /** Email (para notificaciones, NO es el login) */
   email: string;
   /** Contraseña temporal */
   password: string;
@@ -678,13 +752,18 @@ export interface CreateMasterUserDTO {
 }
 
 /**
- * Activar o desactivar módulos para un tenant
+ * Activar o desactivar módulos para un tenant.
+ *
+ * 2026-05-07 (verificado empiricamente): el backend espera el shape
+ * `{ modules: Array<{ moduleCode, isEnabled }> }` (camelCase). NO acepta
+ * `{ enableModules, disableModules }` que era el contrato original — devolvia
+ * 400 "modules array required". Ver `otros/testing/probe-plataforma.mjs`.
  */
 export interface UpdateTenantModulesDTO {
-  /** Módulos a activar */
-  enableModules?: SystemModuleCode[];
-  /** Módulos a desactivar */
-  disableModules?: SystemModuleCode[];
+  modules: Array<{
+    moduleCode: SystemModuleCode;
+    isEnabled: boolean;
+  }>;
 }
 
 /**

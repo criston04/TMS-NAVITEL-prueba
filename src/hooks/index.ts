@@ -14,7 +14,10 @@ export type { VehicleFilters, VehiclesState } from "./useVehicles";
 export * from "./useCustomers";
 export * from "./useDocumentAlerts";
 export * from "./useDriverVehicleAssignment";
-export * from "./useDriverOrderHistory";
+// 2026-05-06: useDriverOrderHistory eliminado (codigo muerto, sin consumidores).
+// Llamaba a OrderService.getOrdersByDriver tambien eliminado. Cuando se
+// implemente la vista "Historial de ordenes" en /master/drivers/:id el
+// hook se reconstruira siguiendo OPERACIONES_AL_DETALLE.md sec 2.10.
 export * from "./useVehicleMaintenance";
 export * from "./useCustomerOperationalStats";
 

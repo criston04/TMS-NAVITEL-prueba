@@ -1,0 +1,512 @@
+{
+  "auditDate": "2026-05-13T19:55:26.910Z",
+  "backend": "https://api-service.gruponavitel.com",
+  "total": 25,
+  "ok": 3,
+  "fail": 22,
+  "status404": 0,
+  "status500": 4,
+  "bySubmodule": {
+    "platform.tenants": {
+      "total": 7,
+      "ok": 2,
+      "fail": 5
+    },
+    "platform.modules": {
+      "total": 3,
+      "ok": 1,
+      "fail": 2
+    },
+    "platform.master": {
+      "total": 2,
+      "ok": 0,
+      "fail": 2
+    },
+    "platform.transfers": {
+      "total": 5,
+      "ok": 0,
+      "fail": 5
+    },
+    "platform.dashboard": {
+      "total": 2,
+      "ok": 0,
+      "fail": 2
+    },
+    "platform.fleet": {
+      "total": 2,
+      "ok": 0,
+      "fail": 2
+    },
+    "users": {
+      "total": 3,
+      "ok": 0,
+      "fail": 3
+    },
+    "license": {
+      "total": 1,
+      "ok": 0,
+      "fail": 1
+    }
+  },
+  "results": [
+    {
+      "submodule": "platform.tenants",
+      "method": "GET",
+      "path": "/platform/tenants",
+      "label": "GET /platform/tenants (listar)",
+      "status": 200,
+      "ok": true,
+      "latencyMs": 385,
+      "responseBody": {
+        "data": [
+          {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "ruc": "2056555",
+            "company_name": "Navitel TMS S.A.C.",
+            "trade_name": "Navitel TMS",
+            "tax_id": null,
+            "status": "active",
+            "address": null,
+            "city": null,
+            "country": "PE",
+            "phone": null,
+            "email": null,
+            "website": null,
+            "logo_url": null,
+            "plan": "enterprise",
+            "subscription_start_date": "2026-04-26T22:39:18.000Z",
+            "subscription_end_date": null,
+            "is_trial_active": 0,
+            "trial_end_date": null,
+            "max_users": 9999,
+            "max_vehicles": 9999,
+            "current_users_count": 1,
+            "current_vehicles_count": 0,
+            "master_user_id": "c27ecc46-41c0-11f1-8df5-06bae16a2111",
+            "master_user_name": "Administrador TMS",
+            "master_user_email": "admin@navitel.com.pe",
+            "timezone": "America/Lima",
+            "default_currency": "PEN",
+            "default_language": "es",
+            "suspension_reason": null,
+            "suspended_at": null,
+            "internal_notes": null,
+            "created_by": "seed",
+            "created_at": "2026-04-26T22:39:18.000Z",
+            "updated_at": "2026-04-26T22:39:18.000Z",
+            "deleted_at": null
+          }
+        ],
+        "meta": {
+          "total": 1,
+          "page": 1,
+          "pageSize": 20
+        }
+      }
+    },
+    {
+      "submodule": "platform.tenants",
+      "method": "POST",
+      "path": "/platform/tenants",
+      "label": "POST /platform/tenants (crear)",
+      "status": 400,
+      "ok": false,
+      "latencyMs": 132,
+      "requestBody": {
+        "code": "VERIF-1778702119718",
+        "name": "Tenant Verif 1778702119718",
+        "legalName": "Tenant Verif 1778702119718 SAC",
+        "taxId": "78702119718",
+        "address": "Av. Test 123",
+        "city": "Lima",
+        "country": "PE",
+        "phone": "+51 999000111",
+        "email": "verif1778702119718@test.com",
+        "plan": "professional",
+        "subscriptionMonths": 12,
+        "enableTrial": false,
+        "maxUsers": 25,
+        "maxVehicles": 100,
+        "enabledModules": [
+          "orders",
+          "customers",
+          "drivers",
+          "vehicles",
+          "notifications"
+        ],
+        "timezone": "America/Lima",
+        "defaultCurrency": "PEN",
+        "defaultLanguage": "es"
+      },
+      "responseBody": {
+        "message": "code must be alphanumeric only"
+      }
+    },
+    {
+      "submodule": "platform.tenants",
+      "method": "GET",
+      "path": "/platform/tenants/:id",
+      "label": "GET /platform/tenants/:id (detalle)",
+      "status": 200,
+      "ok": true,
+      "latencyMs": 142,
+      "responseBody": {
+        "data": {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "ruc": "2056555",
+          "company_name": "Navitel TMS S.A.C.",
+          "trade_name": "Navitel TMS",
+          "tax_id": null,
+          "status": "active",
+          "address": null,
+          "city": null,
+          "country": "PE",
+          "phone": null,
+          "email": null,
+          "website": null,
+          "logo_url": null,
+          "plan": "enterprise",
+          "subscription_start_date": "2026-04-26T22:39:18.000Z",
+          "subscription_end_date": null,
+          "is_trial_active": 0,
+          "trial_end_date": null,
+          "max_users": 9999,
+          "max_vehicles": 9999,
+          "current_users_count": 1,
+          "current_vehicles_count": 0,
+          "master_user_id": "c27ecc46-41c0-11f1-8df5-06bae16a2111",
+          "master_user_name": "Administrador TMS",
+          "master_user_email": "admin@navitel.com.pe",
+          "timezone": "America/Lima",
+          "default_currency": "PEN",
+          "default_language": "es",
+          "suspension_reason": null,
+          "suspended_at": null,
+          "internal_notes": null,
+          "created_by": "seed",
+          "created_at": "2026-04-26T22:39:18.000Z",
+          "updated_at": "2026-04-26T22:39:18.000Z",
+          "deleted_at": null,
+          "usage": {
+            "users": 5,
+            "vehicles": 17
+          },
+          "modules": [
+            {
+              "id": "6a3e9a4e-0711-4bed-8642-f20c6355329a",
+              "tenant_id": "00000000-0000-0000-0000-000000000001",
+              "module_code": "scheduling",
+              "is_enabled": 1,
+              "enabled_at": "2026-05-06T22:24:23.000Z",
+              "enabled_by": "admin",
+              "disabled_at": null,
+              "limits": null,
+              "config": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "submodule": "platform.tenants",
+      "method": "PUT",
+      "path": "/platform/tenants/:id",
+      "label": "PUT /platform/tenants/:id (editar)",
+      "status": 500,
+      "ok": false,
+      "latencyMs": 132,
+      "requestBody": {
+        "internalNotes": "..."
+      },
+      "responseBody": "Internal Server Error"
+    },
+    {
+      "submodule": "platform.tenants",
+      "method": "POST",
+      "path": "/platform/tenants/:id/suspend",
+      "label": "POST /platform/tenants/:id/suspend",
+      "status": 500,
+      "ok": false,
+      "latencyMs": 132,
+      "requestBody": {
+        "reason": "..."
+      },
+      "responseBody": "Internal Server Error"
+    },
+    {
+      "submodule": "platform.tenants",
+      "method": "POST",
+      "path": "/platform/tenants/:id/reactivate",
+      "label": "POST /platform/tenants/:id/reactivate",
+      "status": 500,
+      "ok": false,
+      "latencyMs": 138,
+      "responseBody": "Internal Server Error"
+    },
+    {
+      "submodule": "platform.tenants",
+      "method": "POST",
+      "path": "/platform/tenants/:id/renew",
+      "label": "POST /platform/tenants/:id/renew (NUEVO)",
+      "status": 500,
+      "ok": false,
+      "latencyMs": 138,
+      "requestBody": {
+        "mode": "extend",
+        "months": 1
+      },
+      "responseBody": "Internal Server Error"
+    },
+    {
+      "submodule": "platform.modules",
+      "method": "GET",
+      "path": "/platform/tenants/:id/modules",
+      "label": "GET /platform/tenants/:id/modules",
+      "status": 200,
+      "ok": true,
+      "latencyMs": 132,
+      "responseBody": {
+        "data": [
+          {
+            "id": "6a3e9a4e-0711-4bed-8642-f20c6355329a",
+            "tenant_id": "00000000-0000-0000-0000-000000000001",
+            "module_code": "scheduling",
+            "is_enabled": 1,
+            "enabled_at": "2026-05-06T22:24:23.000Z",
+            "enabled_by": "admin",
+            "disabled_at": null,
+            "limits": null,
+            "config": null
+          }
+        ]
+      }
+    },
+    {
+      "submodule": "platform.modules",
+      "method": "PUT",
+      "path": "/platform/tenants/:id/modules",
+      "label": "PUT /platform/tenants/:id/modules",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 122,
+      "requestBody": {
+        "enableModules": [
+          "scheduling"
+        ],
+        "disableModules": []
+      },
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.modules",
+      "method": "GET",
+      "path": "/platform/tenants/:id/modules/:code/status",
+      "label": "GET /platform/tenants/:id/modules/orders/status",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 121,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.master",
+      "method": "POST",
+      "path": "/platform/tenants/:id/master-users",
+      "label": "POST /platform/tenants/:id/master-users",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 121,
+      "requestBody": {
+        "tenantId": "00000000-0000-0000-0000-000000000001",
+        "name": "Master Verif 1778702122485",
+        "email": "master1778702122485@test.com",
+        "password": "TempPass1234!",
+        "forcePasswordChange": true
+      },
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.master",
+      "method": "POST",
+      "path": "/platform/users/:userId/force-reset",
+      "label": "POST /platform/users/:userId/force-reset (dummy)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 122,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.transfers",
+      "method": "GET",
+      "path": "/platform/transfers",
+      "label": "GET /platform/transfers",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 121,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.transfers",
+      "method": "POST",
+      "path": "/platform/transfers",
+      "label": "POST /platform/transfers (dummy)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 124,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.transfers",
+      "method": "POST",
+      "path": "/platform/transfers/:id/approve",
+      "label": "POST /platform/transfers/:id/approve (dummy)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 120,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.transfers",
+      "method": "POST",
+      "path": "/platform/transfers/:id/execute",
+      "label": "POST /platform/transfers/:id/execute (dummy)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 120,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.transfers",
+      "method": "POST",
+      "path": "/platform/transfers/:id/reject",
+      "label": "POST /platform/transfers/:id/reject (dummy)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 120,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.dashboard",
+      "method": "GET",
+      "path": "/platform/dashboard",
+      "label": "GET /platform/dashboard",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 120,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.dashboard",
+      "method": "GET",
+      "path": "/platform/activity",
+      "label": "GET /platform/activity (log)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 120,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.fleet",
+      "method": "GET",
+      "path": "/platform/tenants/:id/fleet-groups",
+      "label": "GET /platform/tenants/:id/fleet-groups",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 121,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "platform.fleet",
+      "method": "POST",
+      "path": "/platform/tenants/:id/fleet-groups",
+      "label": "POST /platform/tenants/:id/fleet-groups",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 120,
+      "requestBody": {
+        "name": "Grupo Verif"
+      },
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "users",
+      "method": "GET",
+      "path": "/users",
+      "label": "GET /users (listar usuarios del tenant)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 119,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "users",
+      "method": "POST",
+      "path": "/users",
+      "label": "POST /users (crear subusuario)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 120,
+      "requestBody": {
+        "name": "Subusuario 1778702125847",
+        "email": "sub1778702125847@test.com",
+        "password": "TempPass1234!",
+        "role": "despachador",
+        "forcePasswordChange": true
+      },
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "users",
+      "method": "GET",
+      "path": "/users/:id",
+      "label": "GET /users/:id (dummy — para detectar implementacion)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 122,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    },
+    {
+      "submodule": "license",
+      "method": "GET",
+      "path": "/me/license",
+      "label": "GET /me/license (estado de licencia del tenant)",
+      "status": 429,
+      "ok": false,
+      "latencyMs": 507,
+      "responseBody": {
+        "message": "Too many requests, please try again later."
+      }
+    }
+  ]
+}

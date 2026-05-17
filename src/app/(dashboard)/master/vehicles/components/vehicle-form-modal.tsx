@@ -120,6 +120,15 @@ const vehicleFormSchema = z.object({
   status: z.enum(["active", "inactive", "pending", "blocked", "suspended", "on_leave", "terminated"]).default("active"),
   currentMileage: z.number().min(0).default(0),
   currentDriverId: z.string().optional(),
+  /**
+   * 2026-05-05: identificador del dispositivo GPS instalado.
+   * Verificacion empirica: el backend persiste este campo como string libre
+   * (FK a tabla gps_devices). Aceptado en POST/PUT /master/vehicles.
+   * Valor: IMEI del modulo GPS, UUID de Navitel, o ID del operador GPS.
+   * Visible en monitoreo: cuando esta poblado, la orden se asocia al device
+   * y la "GPS platform" empieza a recibir tracking real.
+   */
+  gpsDeviceId: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -182,14 +191,30 @@ export function VehicleFormModal({
 }: VehicleFormModalProps) {
   const [activeTab, setActiveTab] = React.useState("general");
 
-  // Cargar lista de operadores
-  const { 
-    data: operators, 
-    loading: operatorsLoading 
+  // Cargar lista de operadores.
+  // 2026-05-14: cambiado de `{ status: "enabled" }` a `{ status: "all" }`.
+  // Razón: el backend creaba operadores con status="active" (no "enabled"),
+  // y aunque el service ya traduce los valores, mostrar TODOS los operadores
+  // permite al Owner elegir incluso los pending/blocked si necesita
+  // (el filtro estricto a "enabled" escondía operadores recién creados).
+  const {
+    data: operators,
+    loading: operatorsLoading
   } = useService<Operator[]>(
-    () => operatorsService.getAll({ status: "enabled" }),
+    () => operatorsService.getAll({ status: "all" }),
     { immediate: true }
   );
+
+  // 2026-05-14: log para diagnosticar si la lista llega vacía en producción
+  React.useEffect(() => {
+    if (!operatorsLoading && (!operators || operators.length === 0)) {
+      console.warn(
+        "[VehicleFormModal] No se cargaron operadores logísticos. " +
+        "Verifica que existan operadores creados en /master/operators y " +
+        "que el endpoint GET /master/operators los devuelva."
+      );
+    }
+  }, [operators, operatorsLoading]);
 
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleFormSchema) as Resolver<VehicleFormData>,
@@ -237,6 +262,7 @@ export function VehicleFormModal({
       status: "active",
       currentMileage: 0,
       currentDriverId: "",
+      gpsDeviceId: "",
       notes: "",
     },
   });
@@ -293,6 +319,7 @@ export function VehicleFormModal({
         status: vehicle.status,
         currentMileage: vehicle.currentMileage || 0,
         currentDriverId: vehicle.currentDriverId || "",
+        gpsDeviceId: vehicle.gpsDeviceId || "",
         notes: vehicle.notes || "",
       });
     }
@@ -308,7 +335,6 @@ export function VehicleFormModal({
 
   const handleSubmit = async (data: VehicleFormData) => {
     try {
-      console.log("📝 Datos del formulario:", data);
       // Formatear placa antes de enviar
       data.plate = formatPlate(data.plate);
       await onSubmit(data);
@@ -1259,8 +1285,8 @@ export function VehicleFormModal({
                           <FormItem>
                             <FormLabel>Kilometraje Actual (km)</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
+                              <Input
+                                type="number"
                                 min={0}
                                 {...field}
                                 onChange={e => field.onChange(Number(e.target.value))}
@@ -1268,6 +1294,39 @@ export function VehicleFormModal({
                             </FormControl>
                             <FormDescription>
                               Lectura actual del kilometraje
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/*
+                        2026-05-05: Campo "ID Dispositivo GPS" — habilita el
+                        envio real al modulo de monitoreo. Cuando el vehiculo
+                        tiene este ID poblado, las ordenes asignadas al
+                        vehiculo SE asocian a la "GPS platform" del backend
+                        (verificado empiricamente: el response de bulk-send
+                        confirma "X/X orders sent to GPS platform" cuando hay
+                        device, y el sync_status pasa a "sent"). El backend
+                        persiste el campo como string libre — acepta IMEI o
+                        UUID que provea el operador GPS (Navitel, Wialon).
+                      */}
+                      <FormField
+                        control={form.control}
+                        name="gpsDeviceId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ID Dispositivo GPS</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Ej. 865012345678901 (IMEI) o UUID provisto por el operador GPS"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Identificador del módulo GPS instalado en el vehículo.
+                              Sin este dato, el vehículo no se asocia al tracking en tiempo real.
+                              Lo proporciona el operador GPS (Navitel, Wialon u otro).
                             </FormDescription>
                             <FormMessage />
                           </FormItem>

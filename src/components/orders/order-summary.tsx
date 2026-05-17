@@ -130,6 +130,13 @@ const PRIORITY_CONFIG: Record<OrderPriority, { label: string; color: string }> =
   urgent: { label: 'Urgente', color: 'bg-red-500' },
 };
 
+// 2026-05-05 (bug fix): el backend puede devolver priority="" o un valor no
+// contemplado. Helper para evitar crash en el lookup directo.
+function priorityCfg(priority: OrderPriority | string | null | undefined) {
+  if (!priority) return PRIORITY_CONFIG.normal;
+  return PRIORITY_CONFIG[priority as OrderPriority] ?? PRIORITY_CONFIG.normal;
+}
+
 const CARGO_TYPE_LABELS: Record<CargoType, string> = {
   general: 'Carga General',
   refrigerated: 'Refrigerada',
@@ -286,8 +293,8 @@ export function OrderSummary({ data, onEditSection }: OrderSummaryProps) {
           <div>
             <Label>Prioridad</Label>
             <div className="flex items-center gap-2 mt-1">
-              <span className={cn('w-2 h-2 rounded-full', PRIORITY_CONFIG[data.priority].color)} />
-              <span>{PRIORITY_CONFIG[data.priority].label}</span>
+              <span className={cn('w-2 h-2 rounded-full', priorityCfg(data.priority).color)} />
+              <span>{priorityCfg(data.priority).label}</span>
             </div>
           </div>
 

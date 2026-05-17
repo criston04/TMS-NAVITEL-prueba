@@ -163,7 +163,11 @@ function buildOrderPayload(ids, refSuffix) {
   const now = Date.now();
   const start = new Date(now + 86400000).toISOString();      // mañana
   const end = new Date(now + 86400000 + 21600000).toISOString(); // mañana +6h
+  // 2026-05-05: el backend exige order_number (deploy 2026-05-03 cambio el
+  // contrato — antes el backend lo generaba; ahora 500 sin el).
+  const orderNumber = `ORD-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
   return {
+    order_number: orderNumber,
     type: "delivery",
     priority: "high",
     customer_id: ids.customerId,
@@ -309,8 +313,10 @@ async function testAddItems(id) {
 
 async function testStartTrip(id) {
   await sleep(PAUSE);
-  const r = await http("PATCH", `${API_URL}/operations/orders/${id}/start-trip`);
-  record(`PATCH /operations/orders/:id/start-trip`, r.status, r.ok, r.latencyMs,
+  // 2026-05-06: path corregido segun OPERACIONES_AL_DETALLE.md sec 2.20
+  // (era /operations/orders/:id/start-trip — inventado, fuera de doc)
+  const r = await http("PATCH", `${API_URL}/orders/${id}/start-trip`);
+  record(`PATCH /orders/:id/start-trip`, r.status, r.ok, r.latencyMs,
     r.ok ? "" : "puede requerir asignación previa");
   return r.ok;
 }
@@ -330,31 +336,35 @@ async function testStats() {
 
 async function testStatusCounts() {
   await sleep(PAUSE);
-  const r = await http("GET", `${API_URL}/operations/orders/status-counts`);
+  // 2026-05-06: path corregido segun doc sec 2.9 (era /operations/orders/...)
+  const r = await http("GET", `${API_URL}/orders/status-counts`);
   const counts = unwrap(r.data);
-  record(`GET /operations/orders/status-counts`, r.status, r.ok, r.latencyMs,
+  record(`GET /orders/status-counts`, r.status, r.ok, r.latencyMs,
     counts ? Object.keys(counts).length + " estados" : "");
   return r.ok;
 }
 
 async function testByDriver(driverId) {
   await sleep(PAUSE);
-  const r = await http("GET", `${API_URL}/operations/orders/by-driver/${driverId}`);
-  record(`GET /operations/orders/by-driver/:id`, r.status, r.ok, r.latencyMs);
+  // 2026-05-06: path corregido segun doc sec 2.10
+  const r = await http("GET", `${API_URL}/orders/by-driver/${driverId}`);
+  record(`GET /orders/by-driver/:id`, r.status, r.ok, r.latencyMs);
   return r.ok;
 }
 
 async function testByVehicle(vehicleId) {
   await sleep(PAUSE);
-  const r = await http("GET", `${API_URL}/operations/orders/by-vehicle/${vehicleId}`);
-  record(`GET /operations/orders/by-vehicle/:id`, r.status, r.ok, r.latencyMs);
+  // 2026-05-06: path corregido segun doc sec 2.11
+  const r = await http("GET", `${API_URL}/orders/by-vehicle/${vehicleId}`);
+  record(`GET /orders/by-vehicle/:id`, r.status, r.ok, r.latencyMs);
   return r.ok;
 }
 
 async function testByNumber(orderNumber) {
   await sleep(PAUSE);
-  const r = await http("GET", `${API_URL}/operations/orders/by-number/${orderNumber}`);
-  record(`GET /operations/orders/by-number/:n`, r.status, r.ok, r.latencyMs);
+  // 2026-05-06: path corregido segun doc sec 2.12
+  const r = await http("GET", `${API_URL}/orders/by-number/${orderNumber}`);
+  record(`GET /orders/by-number/:n`, r.status, r.ok, r.latencyMs);
   return r.ok;
 }
 

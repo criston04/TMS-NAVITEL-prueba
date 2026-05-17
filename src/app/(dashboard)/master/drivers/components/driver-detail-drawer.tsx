@@ -4,6 +4,8 @@ import * as React from "react";
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -36,6 +38,24 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Driver, MedicalExam, PsychologicalExam, TrainingCertification } from "@/types/models/driver";
+import dynamic from "next/dynamic";
+import { Plus } from "lucide-react";
+
+// Lazy-load de los modales — solo se cargan al hacer click en agregar/editar examen
+const MedicalExamFormModal = dynamic(
+  () =>
+    import("./medical-exam-form-modal").then((m) => ({
+      default: m.MedicalExamFormModal,
+    })),
+  { ssr: false },
+);
+const PsychologicalExamFormModal = dynamic(
+  () =>
+    import("./psychological-exam-form-modal").then((m) => ({
+      default: m.PsychologicalExamFormModal,
+    })),
+  { ssr: false },
+);
 import { getDaysUntilExpiry, getExpiryAlertLevel } from "@/lib/validators/driver-validators";
 
 
@@ -46,6 +66,13 @@ interface DriverDetailDrawerProps {
   onEdit?: (driver: Driver) => void;
   onDelete?: (driver: Driver) => void;
   onAssignVehicle?: (driver: Driver) => void;
+  /**
+   * 2026-05-17: callback opcional para refrescar la data del driver desde el
+   * padre tras registrar/editar/eliminar un examen médico o psicológico.
+   * Si el padre no lo provee, los nuevos exámenes no se reflejan hasta que
+   * el usuario cierre y reabra el drawer.
+   */
+  onRefresh?: () => void;
 }
 
 
@@ -228,8 +255,40 @@ export function DriverDetailDrawer({
   onEdit,
   onDelete,
   onAssignVehicle,
+  onRefresh,
 }: DriverDetailDrawerProps) {
   const [activeTab, setActiveTab] = React.useState("info");
+
+  // 2026-05-17: state para los modales de exámenes (médico y psicológico).
+  // Se abren desde las cards del tab Documentos o desde los botones "+ Nuevo"
+  // del tab Médico.
+  const [medicalModalOpen, setMedicalModalOpen] = React.useState(false);
+  const [editingMedicalExam, setEditingMedicalExam] = React.useState<MedicalExam | null>(null);
+  const [psychModalOpen, setPsychModalOpen] = React.useState(false);
+  const [editingPsychExam, setEditingPsychExam] = React.useState<PsychologicalExam | null>(null);
+
+  const openNewMedicalExam = () => {
+    setEditingMedicalExam(null);
+    setMedicalModalOpen(true);
+  };
+  const openEditMedicalExam = (exam: MedicalExam) => {
+    setEditingMedicalExam(exam);
+    setMedicalModalOpen(true);
+  };
+  const openNewPsychExam = () => {
+    setEditingPsychExam(null);
+    setPsychModalOpen(true);
+  };
+  const openEditPsychExam = (exam: PsychologicalExam) => {
+    setEditingPsychExam(exam);
+    setPsychModalOpen(true);
+  };
+
+  const handleExamSaved = () => {
+    // Refrescar la data del driver (si el padre lo permite) para que el
+    // historial se actualice al instante.
+    onRefresh?.();
+  };
 
   if (!driver) return null;
 
@@ -283,8 +342,19 @@ export function DriverDetailDrawer({
     : 0;
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl p-0">
+        {/* 2026-05-17: SheetTitle/Description requeridos por Radix para
+            accesibilidad (screen readers). Visualmente ocultos porque el
+            drawer renderiza su propio header rico abajo. */}
+        <SheetTitle className="sr-only">
+          Detalle del conductor: {driverFullName}
+        </SheetTitle>
+        <SheetDescription className="sr-only">
+          Información completa del conductor incluyendo datos personales,
+          licencia, exámenes médicos, contactos de emergencia y desempeño.
+        </SheetDescription>
         <ScrollArea className="h-full">
           {/* Header */}
           <div className="p-6 border-b bg-muted/30">
@@ -452,28 +522,42 @@ export function DriverDetailDrawer({
 
               {/* TAB: Documentos */}
               <TabsContent value="docs" className="mt-0 space-y-4">
+                {/* Licencia: click → abrir form de edición del conductor en pestaña licencia */}
                 <DocumentCard
                   title="Licencia de Conducir"
                   subtitle={`${driverLicenseCategory} - ${driverLicenseNumber}`}
                   expiryDate={driverLicenseExpiry}
                   status={getLicenseStatus()}
                   icon={FileText}
+                  onClick={() => onEdit?.(driver)}
                 />
 
+                {/* Examen Médico: click → abre el modal (si hay examen actual → editar; si no → nuevo) */}
                 <DocumentCard
                   title="Examen Médico"
                   subtitle={driver.medicalExamHistory?.[0]?.clinicName}
                   expiryDate={driver.medicalExamHistory?.[0]?.expiryDate}
                   status={getMedicalStatus()}
                   icon={Heart}
+                  onClick={() => {
+                    const latest = driver.medicalExamHistory?.[0];
+                    if (latest) openEditMedicalExam(latest);
+                    else openNewMedicalExam();
+                  }}
                 />
 
+                {/* Evaluación Psicológica: igual al médico pero abre el modal psicológico */}
                 <DocumentCard
                   title="Evaluación Psicológica"
                   subtitle={driver.psychologicalExamHistory?.[0]?.centerName}
                   expiryDate={driver.psychologicalExamHistory?.[0]?.expiryDate}
                   status={getPsychologicalStatus()}
                   icon={Activity}
+                  onClick={() => {
+                    const latest = driver.psychologicalExamHistory?.[0];
+                    if (latest) openEditPsychExam(latest);
+                    else openNewPsychExam();
+                  }}
                 />
 
                 {driver.policeRecord && (
@@ -503,35 +587,81 @@ export function DriverDetailDrawer({
               {/* TAB: Médico */}
               <TabsContent value="medical" className="mt-0 space-y-6">
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 flex flex-row items-center justify-between">
                     <CardTitle className="text-base">Historial de Exámenes Médicos</CardTitle>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={openNewMedicalExam}
+                      className="gap-1"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Nuevo
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     {driver.medicalExamHistory?.length ? (
                       <div className="space-y-2">
                         {driver.medicalExamHistory.map((exam) => (
-                          <ExamHistoryItem key={exam.id} exam={exam} type="medical" />
+                          <div
+                            key={exam.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => openEditMedicalExam(exam)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") openEditMedicalExam(exam);
+                            }}
+                            className="cursor-pointer rounded-md hover:bg-muted/50 transition-colors"
+                          >
+                            <ExamHistoryItem exam={exam} type="medical" />
+                          </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Sin exámenes registrados</p>
+                      <p className="text-sm text-muted-foreground">
+                        Sin exámenes registrados. Click en &quot;Nuevo&quot; para registrar el primero.
+                      </p>
                     )}
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 flex flex-row items-center justify-between">
                     <CardTitle className="text-base">Historial de Evaluaciones Psicológicas</CardTitle>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={openNewPsychExam}
+                      className="gap-1"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Nueva
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     {driver.psychologicalExamHistory?.length ? (
                       <div className="space-y-2">
                         {driver.psychologicalExamHistory.map((exam) => (
-                          <ExamHistoryItem key={exam.id} exam={exam} type="psychological" />
+                          <div
+                            key={exam.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => openEditPsychExam(exam)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") openEditPsychExam(exam);
+                            }}
+                            className="cursor-pointer rounded-md hover:bg-muted/50 transition-colors"
+                          >
+                            <ExamHistoryItem exam={exam} type="psychological" />
+                          </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Sin evaluaciones registradas</p>
+                      <p className="text-sm text-muted-foreground">
+                        Sin evaluaciones registradas. Click en &quot;Nueva&quot; para registrar la primera.
+                      </p>
                     )}
                   </CardContent>
                 </Card>
@@ -719,6 +849,26 @@ export function DriverDetailDrawer({
         </ScrollArea>
       </SheetContent>
     </Sheet>
+
+    {/* 2026-05-17: Modales de exámenes — renderizados como hermanos del Sheet
+        para que sus portales no interfieran con el cierre del drawer.
+        Cada uno se monta solo cuando se necesita (state controlado). */}
+    <MedicalExamFormModal
+      open={medicalModalOpen}
+      onOpenChange={setMedicalModalOpen}
+      drivers={[driver]}
+      exam={editingMedicalExam}
+      defaultDriverId={driver.id}
+      onSaved={handleExamSaved}
+    />
+    <PsychologicalExamFormModal
+      open={psychModalOpen}
+      onOpenChange={setPsychModalOpen}
+      driverId={driver.id}
+      exam={editingPsychExam}
+      onSaved={handleExamSaved}
+    />
+    </>
   );
 }
 

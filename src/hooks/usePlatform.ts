@@ -39,7 +39,6 @@ import {
   platformDashboardService,
   fleetGroupService,
 } from "@/services/platform.service";
-import { isBackendNotImplemented } from "@/services/missing-endpoint-helper";
 
 // ════════════════════════════════════════════════════════
 // TIPOS
@@ -91,16 +90,11 @@ export function usePlatform() {
   const setError = (error: string) => setState((s) => ({ ...s, isLoading: false, error }));
 
   /**
-   * 2026-05-03 (issue B.1): el módulo /platform es uno de los 6 fantasma —
-   * backend NO lo tiene implementado. Cuando un endpoint devuelve 404, en
-   * vez de mostrar "Error" al usuario master, mostramos un mensaje claro:
-   * "Módulo en construcción".
+   * 2026-05-12: backend ya implemento la familia /platform/* segun el handoff.
+   * Cualquier 404 ahora es error real (no "modulo en construccion"). Mostramos
+   * el mensaje tal cual lo manda el backend.
    */
   const handleErrorOrPending = (err: unknown, fallbackMessage: string) => {
-    if (isBackendNotImplemented(err)) {
-      setError("Módulo de Plataforma pendiente del backend (en construcción).");
-      return;
-    }
     setError(err instanceof Error ? err.message : fallbackMessage);
   };
 
