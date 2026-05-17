@@ -47,3 +47,4 @@ temp_interactive_push.bat
 # claude local config (per-developer, no commitear)
 .claude/
 
+branch_structure.json
